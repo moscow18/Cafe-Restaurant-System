@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CafePro POS — إدارة العملاء</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="vendor/sweetalert2.all.min.js"></script>
+  <style>
+    /* ─── Modern FoodAnalytics Design Tokens ─────────────────────── */
+    :root {
+      --cust-bg: #FBF9F6;
+      --cust-surface: #FFFFFF;
+      --cust-border: #EFE9E2;
+      --cust-border-subtle: #F7F3EE;
+      --cust-text: #1E1B18;
+      --cust-text-secondary: #585049;
+      --cust-text-muted: #8E847C;
+      --cust-primary: #FF5B22;
+      --cust-primary-hover: #E64A19;
+      --cust-primary-light: #FFF5F0;
+      --cust-emerald: #10B981;
+      --cust-red: #EF4444;
+      --cust-amber: #F59E0B;
+      --cust-radius: 16px;
+      --cust-shadow: 0 4px 20px -2px rgba(45, 20, 10, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body.app-layout {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--cust-bg);
+      color: var(--cust-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+    }
+
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--cust-bg);
+      min-width: 0;
+    }
+
+    /* ─── Top Command Header ─────────────────────────────────────── */
+    .cust-header {
+      background: var(--cust-surface);
+      border-bottom: 1px solid var(--cust-border);
+      height: 64px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 25;
+      gap: 16px;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .header-main-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--cust-text);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-sub-title {
+      font-size: 11.5px;
+      color: var(--cust-text-muted);
+      font-weight: 600;
+    }
+
+    .header-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .view-mode-toggle {
+      display: flex;
+      background: #F4EFEA;
+      border: 1px solid var(--cust-border);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .view-toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cust-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .view-toggle-btn.active {
+      background: #FFFFFF;
+      color: var(--cust-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* ─── Scrollable Workspace Content ──────────────────────────── */
+    .cust-content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 28px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ─── Sleek FoodAnalytics KPI Cards ─────────────────────────── */
+    .summary-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .summary-metrics-row { grid-template-columns: 1fr; }
+    }
+
+    .cust-kpi-card {
+      background: var(--cust-surface);
+      border: 1px solid var(--cust-border);
+      border-radius: var(--cust-radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--cust-shadow);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .cust-kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px -4px rgba(45, 20, 10, 0.07);
+    }
+
+    .kpi-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon-orange  { background: #FFF3EB; color: #FF5B22; }
+    .kpi-icon-red     { background: #FEF2F2; color: #DC2626; }
+    .kpi-icon-emerald { background: #ECFDF5; color: #059669; }
+
+    .kpi-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .kpi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--cust-text-muted);
+    }
+
+    .kpi-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .kpi-number {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--cust-text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+
+    .kpi-unit {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--cust-text-muted);
+    }
+
+    .kpi-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94A3B8;
+    }
+
+    /* ─── Search & Toolbar Card ─────────────────────────────────── */
+    .cust-toolbar-card {
+      background: var(--cust-surface);
+      border: 1px solid var(--cust-border);
+      border-radius: var(--cust-radius);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: var(--cust-shadow);
+    }
+
+    .toolbar-left-side {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .cust-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .search-icon-svg {
+      position: absolute;
+      right: 14px;
+      width: 16px;
+      height: 16px;
+      color: var(--cust-text-muted);
+      pointer-events: none;
+    }
+
+    .cust-search-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 40px 0 14px;
+      border: 1px solid var(--cust-border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #FBF9F6;
+      color: var(--cust-text);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .cust-search-input:focus {
+      background: #FFFFFF;
+      border-color: var(--cust-primary);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.12);
+    }
+
+    /* Filter Pills */
+    .filter-tabs-group {
+      display: flex;
+      background: #F4EFEA;
+      border: 1px solid var(--cust-border-subtle);
+      border-radius: 9999px;
+      padding: 3px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--cust-text-secondary);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .filter-tab-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--cust-text);
+    }
+
+    .filter-tab-btn.active {
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.3);
+    }
+
+    .filter-tab-btn.active .pill-cnt {
+      background: rgba(255, 255, 255, 0.25);
+      color: #FFFFFF;
+    }
+
+    .pill-cnt {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: #E8E2D9;
+      color: var(--cust-text-secondary);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .results-count-pill {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cust-text-muted);
+      background: #F8F6F2;
+      border: 1px solid var(--cust-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* ─── View 1: Customer Cards Grid ───────────────────────────── */
+    .customers-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 16px;
+    }
+
+    .cust-card-item {
+      background: var(--cust-surface);
+      border: 1px solid var(--cust-border);
+      border-radius: var(--cust-radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: var(--cust-shadow);
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+      position: relative;
+    }
+
+    .cust-card-item:hover {
+      transform: translateY(-2px);
+      border-color: #E2D9CF;
+      box-shadow: 0 8px 24px -4px rgba(45, 20, 10, 0.08);
+    }
+
+    .card-top-identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF8A50 100%);
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(255, 91, 34, 0.25);
+    }
+
+    .card-name-phone {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-customer-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--cust-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-phone-chip {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--cust-text-secondary);
+      direction: ltr;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-balance-box {
+      background: #FBF9F6;
+      border: 1px solid var(--cust-border-subtle);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-balance-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cust-text-muted);
+    }
+
+    .card-balance-val {
+      font-size: 14px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .val-debt   { color: #DC2626; }
+    .val-credit { color: #059669; }
+    .val-zero   { color: var(--cust-text-muted); }
+
+    .card-address-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--cust-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px solid var(--cust-border-subtle);
+    }
+
+    .btn-card-action {
+      flex: 1;
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1px solid var(--cust-border);
+      background: #FFFFFF;
+      color: var(--cust-text-secondary);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-card-action:hover {
+      background: #F4EFEA;
+      border-color: #CBD5E1;
+      color: var(--cust-text);
+    }
+
+    .btn-card-action.btn-wa {
+      background: #ECFDF5;
+      border-color: #A7F3D0;
+      color: #059669;
+    }
+
+    .btn-card-action.btn-wa:hover {
+      background: #059669;
+      color: #FFFFFF;
+      border-color: #059669;
+    }
+
+    .btn-card-action.btn-del {
+      flex: 0 0 32px;
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #DC2626;
+    }
+
+    .btn-card-action.btn-del:hover {
+      background: #DC2626;
+      color: #FFFFFF;
+      border-color: #DC2626;
+    }
+
+    /* ─── View 2: Customer Table Surface ────────────────────────── */
+    .table-container-surface {
+      background: var(--cust-surface);
+      border: 1px solid var(--cust-border);
+      border-radius: var(--cust-radius);
+      overflow: hidden;
+      box-shadow: var(--cust-shadow);
+    }
+
+    .cust-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .cust-table thead th {
+      padding: 12px 18px;
+      background: #F8F6F2;
+      color: var(--cust-text-muted);
+      font-weight: 800;
+      font-size: 11.5px;
+      border-bottom: 1px solid var(--cust-border);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .cust-table thead th:last-child {
+      text-align: center;
+    }
+
+    .cust-table tbody td {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--cust-border-subtle);
+      color: var(--cust-text);
+      vertical-align: middle;
+      height: 52px;
+    }
+
+    .cust-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .cust-table tbody tr:hover td {
+      background: #FDFBF8;
+    }
+
+    .balance-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .balance-badge.debt {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+    }
+
+    .balance-badge.credit {
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+    }
+
+    .balance-badge.neutral {
+      background: #F4EFEA;
+      color: var(--cust-text-secondary);
+      border: 1px solid var(--cust-border);
+    }
+
+    /* ─── Modal Layout Refinements ──────────────────────────────── */
+    .cust-modal-box {
+      background: #FFFFFF;
+      border-radius: var(--cust-radius);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--cust-border);
+      overflow: hidden;
+    }
+
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid-2col { grid-template-columns: 1fr; }
+    }
+
+    .form-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cust-text);
+    }
+
+    .form-field-group .form-control {
+      height: 40px;
+      padding: 0 12px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--cust-text);
+      background: #FFFFFF;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .form-field-group .form-control:focus {
+      border-color: var(--cust-primary);
+      box-shadow: 0 0 0 2px rgba(255, 91, 34, 0.15);
+    }
+  </style>
+</head>
+<body class="app-layout">
+
+  <!-- ─── 1. Signature FoodAnalytics Clean White Sidebar ────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">القوائم الأساسية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('main-dashboard.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('pos-invoice.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>نقطة البيع (POS)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('tables.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>الصالات والترابيزات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('returns.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>مرتجع طلب</span>
+      </div>
+
+      <div class="sidebar-nav-item active" onclick="navigate('customers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>العملاء</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('whatsapp-chat.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>محادثات واتساب</span>
+        <span class="badge-count" id="sidebarWaBadge" style="display:none; margin-right:auto; background:#10B981; color:#fff;">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section admin-only">
+      <div class="sidebar-section-title">المخزون والمالية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('suppliers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>الموردين والمشتريات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('services.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>المنتجات والأصناف</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('inventory.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+        <span>المخزون والمواد الخام</span>
+        <span id="sidebarInventoryBadge" class="badge-count" style="display:none; margin-right:auto; background:var(--danger); color:#fff;">0</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('finance.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الحسابات والمالية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('hr.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>شئون الموظفين</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">التقارير والإعدادات</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('daily-report.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>التقرير اليومي وإغلاق الوردية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('reports.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>التقارير المحاسبية الشاملة</span>
+      </div>
+
+      <div class="sidebar-nav-item admin-only" onclick="navigate('settings.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>الإعدادات</span>
+      </div>
+    </div>
+
+    <!-- Promo Card -->
+    <div class="sidebar-promo-card">
+      <div class="sidebar-promo-thumb">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      </div>
+      <div class="sidebar-promo-title">كافيه برو الذكي</div>
+      <div class="sidebar-promo-desc">تحليلات وإدارة شاملة لأداء كافيه ومطعمك بدقة واحترافية</div>
+      <button class="sidebar-promo-btn" onclick="navigate('pos-invoice.html')">+ طلب جديد [F1]</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="font-weight:700; color:var(--cust-text-muted); font-size:11px;">CafePro Management System</div>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Workspace ─────────────────────────────────────── -->
+  <main class="main-workspace">
+
+    <!-- Top Command Header -->
+    <header class="cust-header">
+      <div class="header-titles">
+        <h1 class="header-main-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          إدارة العملاء والمديونيات
+        </h1>
+        <div class="header-sub-title">متابعة حسابات العملاء، الديون، المستحقات، وفواتير الطلبات</div>
+      </div>
+
+      <div class="header-actions-group">
+        <!-- View Mode Switcher -->
+        <div class="view-mode-toggle">
+          <button class="view-toggle-btn active" id="btnViewCards" onclick="switchView('cards')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>كروت</span>
+          </button>
+          <button class="view-toggle-btn" id="btnViewTable" onclick="switchView('table')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>جدول</span>
+          </button>
+        </div>
+
+        <button class="btn btn-primary btn-sm" onclick="openCustomerModal()" style="height:36px; padding:0 16px; font-weight:800; font-size:12.5px; background:linear-gradient(135deg, #FF5B22 0%, #FF7844 100%); border:none; box-shadow:0 3px 10px rgba(255,91,34,0.3);">
+          + عميل جديد
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="loadCustomers()" title="تحديث البيانات" style="height:36px; border-radius:10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>تحديث</span>
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="goBack()" style="height:36px; border-radius:10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>الرئيسية</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Workspace -->
+    <div class="cust-content-area">
+
+      <!-- Sleek FoodAnalytics KPI Cards -->
+      <div class="summary-metrics-row">
+        <!-- Card 1: Total Customers -->
+        <div class="cust-kpi-card">
+          <div class="kpi-icon-wrap kpi-icon-orange">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="kpi-details">
+            <span class="kpi-label">إجمالي العملاء المسجلين</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number" id="statTotalCustomers">0</span>
+              <span class="kpi-unit">عميل</span>
+            </div>
+            <span class="kpi-subtitle">قاعدة بيانات العملاء المعتمدين</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Total Debts -->
+        <div class="cust-kpi-card">
+          <div class="kpi-icon-wrap kpi-icon-red">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          </div>
+          <div class="kpi-details">
+            <span class="kpi-label">مديونيات على العملاء (مطلوبة)</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number" style="color:#DC2626;" id="statTotalDebts">0.00</span>
+              <span class="kpi-unit">ج.م</span>
+            </div>
+            <span class="kpi-subtitle">مستحقات آجلة مطلوبة للتحصيل</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Total Credits -->
+        <div class="cust-kpi-card">
+          <div class="kpi-icon-wrap kpi-icon-emerald">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="kpi-details">
+            <span class="kpi-label">أرصدة دائنة (لصالح العملاء)</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number" style="color:#059669;" id="statTotalCredits">0.00</span>
+              <span class="kpi-unit">ج.م</span>
+            </div>
+            <span class="kpi-subtitle">مبالغ ومقدمات مسددة لصالح العملاء</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="cust-toolbar-card">
+        <div class="toolbar-left-side">
+          <!-- Live Search Input -->
+          <div class="cust-search-wrap">
+            <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="customerSearch" class="cust-search-input" placeholder="بحث باسم العميل، رقم الهاتف، أو العنوان..." oninput="renderCustomersView()" />
+          </div>
+
+          <!-- Financial Filter Tabs -->
+          <div class="filter-tabs-group">
+            <button type="button" class="filter-tab-btn active" onclick="setFilter('all', this)">
+              <span>الكل</span>
+              <span class="pill-cnt" id="cntAll">0</span>
+            </button>
+            <button type="button" class="filter-tab-btn" onclick="setFilter('debt', this)">
+              <span>عليهم مديونية</span>
+              <span class="pill-cnt" id="cntDebt" style="background:#FEE2E2; color:#DC2626;">0</span>
+            </button>
+            <button type="button" class="filter-tab-btn" onclick="setFilter('credit', this)">
+              <span>لهم رصيد</span>
+              <span class="pill-cnt" id="cntCredit" style="background:#D1FAE5; color:#059669;">0</span>
+            </button>
+            <button type="button" class="filter-tab-btn" onclick="setFilter('zero', this)">
+              <span>حساب مسدد</span>
+              <span class="pill-cnt" id="cntZero">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <span class="results-count-pill" id="customersCount">0 عميل</span>
+        </div>
+      </div>
+
+      <!-- VIEW 1: Cards Grid View (Default) -->
+      <div id="customersCardsView" class="customers-cards-grid">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- VIEW 2: Table View (Hidden by default or toggled) -->
+      <div id="customersTableView" class="table-container-surface" style="display:none;">
+        <table class="cust-table">
+          <thead>
+            <tr>
+              <th style="width:36px; text-align:center;">#</th>
+              <th>العميل</th>
+              <th style="width:140px;">رقم الهاتف</th>
+              <th>العنوان</th>
+              <th style="width:130px;">الرصيد الافتتاحي</th>
+              <th style="width:140px;">الرصيد الحالي</th>
+              <th style="width:230px; text-align:center;">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="customersBody">
+            <tr><td colspan="7" style="padding:40px; text-align:center; color:#94A3B8;">جاري تحميل بيانات العملاء...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ─── Customer Add/Edit Modal ──────────────────────────────── -->
+  <div class="modal-overlay" id="customerModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div class="cust-modal-box" style="width:520px; max-width:92vw;">
+      <div style="padding:18px 24px; border-bottom:1px solid var(--cust-border); display:flex; justify-content:space-between; align-items:center; background:#FBF9F6;">
+        <div style="font-size:16px; font-weight:800; color:var(--cust-text);" id="customerModalTitle">إضافة عميل جديد</div>
+        <button onclick="closeModal('customerModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--cust-text-muted);">&times;</button>
+      </div>
+
+      <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
+        <input type="hidden" id="custId" />
+
+        <div class="form-field-group">
+          <label for="custName">اسم العميل <span style="color:#DC2626;">*</span></label>
+          <input type="text" id="custName" class="form-control" placeholder="اسم العميل" required />
+        </div>
+
+        <div class="form-grid-2col">
+          <div class="form-field-group">
+            <label for="custPhone">رقم التليفون / واتساب</label>
+            <input type="tel" id="custPhone" class="form-control" placeholder="01xxxxxxxxx" dir="ltr" />
+            
+          </div>
+
+          <div class="form-field-group">
+            <label for="custOpeningBalance">الرصيد الافتتاحي (ج.م)</label>
+            <input type="number" id="custOpeningBalance" class="form-control" value="0" step="0.5" placeholder="0.00" />
+            
+          </div>
+        </div>
+
+        <div class="form-field-group">
+          <label for="custAddress">العنوان / المنطقة</label>
+          <input type="text" id="custAddress" class="form-control" placeholder="العنوان والمنطقة..." />
+        </div>
+      </div>
+
+      <div style="padding:14px 24px; background:#F8F6F2; border-top:1px solid var(--cust-border); display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('customerModal')" style="height:36px; padding:0 16px; border-radius:8px;">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveCustomer()" style="height:36px; padding:0 20px; font-weight:800; border-radius:8px; background:linear-gradient(135deg, #FF5B22 0%, #FF7844 100%); border:none;">حفظ العميل</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Customer Invoices History Modal ─────────────────────── -->
+  <div class="modal-overlay" id="customerInvoicesModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div class="cust-modal-box" style="width:840px; max-width:94vw; max-height:88vh; display:flex; flex-direction:column;">
+      <div style="padding:18px 24px; border-bottom:1px solid var(--cust-border); display:flex; justify-content:space-between; align-items:center; background:#FBF9F6;">
+        <div style="font-size:16px; font-weight:800; color:var(--cust-text);" id="custInvoicesModalTitle">سجل فواتير العميل</div>
+        <button onclick="closeModal('customerInvoicesModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--cust-text-muted);">&times;</button>
+      </div>
+
+      <!-- Quick KPI summary for this customer -->
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; padding:14px 24px; background:#FFFFFF; border-bottom:1px solid var(--cust-border-subtle);">
+        <div style="background:#FBF9F6; border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:11px; font-weight:700; color:var(--cust-text-muted);">عدد الطلبات</div>
+          <div style="font-size:16px; font-weight:900; color:var(--cust-text); margin-top:2px;" id="custInvCount">0</div>
+        </div>
+        <div style="background:#FBF9F6; border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:11px; font-weight:700; color:var(--cust-text-muted);">إجمالي المشتريات</div>
+          <div style="font-size:16px; font-weight:900; color:var(--cust-text); margin-top:2px;"><span id="custInvTotal">0.00</span> <span style="font-size:10px;">ج.م</span></div>
+        </div>
+        <div style="background:#ECFDF5; border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:11px; font-weight:700; color:#059669;">المسدد</div>
+          <div style="font-size:16px; font-weight:900; color:#059669; margin-top:2px;"><span id="custInvPaid">0.00</span> <span style="font-size:10px;">ج.م</span></div>
+        </div>
+        <div style="background:#FEF2F2; border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:11px; font-weight:700; color:#DC2626;">المتبقي (آجل)</div>
+          <div style="font-size:16px; font-weight:900; color:#DC2626; margin-top:2px;"><span id="custInvRemaining">0.00</span> <span style="font-size:10px;">ج.م</span></div>
+        </div>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding:16px 24px;">
+        <table class="cust-table" style="border:1px solid var(--cust-border); border-radius:8px;">
+          <thead>
+            <tr>
+              <th style="width:36px; text-align:center;">#</th>
+              <th>رقم الفاتورة</th>
+              <th>التاريخ</th>
+              <th>الإجمالي</th>
+              <th>المدفوع</th>
+              <th>المتبقي</th>
+              <th style="text-align:center;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="custInvoicesTableBody">
+            <tr><td colspan="7" style="padding:24px; text-align:center; color:#94A3B8;">جاري تحميل الفواتير...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding:14px 24px; background:#F8F6F2; border-top:1px solid var(--cust-border); display:flex; justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('customerInvoicesModal')" style="height:34px; padding:0 18px; border-radius:8px;">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/shared/common.js"></script>
+  <script>
+    let allCustomers = [];
+    let currentFilter = 'all'; // 'all', 'debt', 'credit', 'zero'
+    let currentViewMode = 'cards'; // 'cards' or 'table'
+
+    function switchView(mode) {
+      currentViewMode = mode;
+      document.getElementById('btnViewCards').classList.toggle('active', mode === 'cards');
+      document.getElementById('btnViewTable').classList.toggle('active', mode === 'table');
+      document.getElementById('customersCardsView').style.display = mode === 'cards' ? 'grid' : 'none';
+      document.getElementById('customersTableView').style.display = mode === 'table' ? 'block' : 'none';
+      renderCustomersView();
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderCustomersView();
+    }
+
+    function fmt(n) {
+      return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ─── Load & Render Customers ───────────────────────────────────────────────
+    async function loadCustomers() {
+      try {
+        const res = await window.db.query('SELECT * FROM customers ORDER BY id DESC', []);
+        if (res && res.success) {
+          allCustomers = res.data || [];
+        } else {
+          allCustomers = [];
+        }
+      } catch (err) {
+        console.warn('Fallback customers query:', err);
+        allCustomers = [];
+      }
+
+      // Update summary metrics
+      let totalDebts = 0;
+      let totalCredits = 0;
+      let cntDebt = 0;
+      let cntCredit = 0;
+      let cntZero = 0;
+
+      allCustomers.forEach(c => {
+        const bal = Number(c.current_balance || 0);
+        if (bal > 0) {
+          totalDebts += bal;
+          cntDebt++;
+        } else if (bal < 0) {
+          totalCredits += Math.abs(bal);
+          cntCredit++;
+        } else {
+          cntZero++;
+        }
+      });
+
+      document.getElementById('statTotalCustomers').textContent = allCustomers.length;
+      document.getElementById('statTotalDebts').textContent = fmt(totalDebts);
+      document.getElementById('statTotalCredits').textContent = fmt(totalCredits);
+
+      document.getElementById('cntAll').textContent = allCustomers.length;
+      document.getElementById('cntDebt').textContent = cntDebt;
+      document.getElementById('cntCredit').textContent = cntCredit;
+      document.getElementById('cntZero').textContent = cntZero;
+
+      renderCustomersView();
+    }
+
+    function getFilteredCustomers() {
+      const query = (document.getElementById('customerSearch').value || '').trim().toLowerCase();
+      let filtered = allCustomers;
+
+      // 1. Balance filter
+      if (currentFilter === 'debt') {
+        filtered = filtered.filter(c => Number(c.current_balance || 0) > 0);
+      } else if (currentFilter === 'credit') {
+        filtered = filtered.filter(c => Number(c.current_balance || 0) < 0);
+      } else if (currentFilter === 'zero') {
+        filtered = filtered.filter(c => Number(c.current_balance || 0) === 0);
+      }
+
+      // 2. Search query filter
+      if (query) {
+        filtered = filtered.filter(c => 
+          (c.name && c.name.toLowerCase().includes(query)) || 
+          (c.phone && c.phone.toLowerCase().includes(query)) ||
+          (c.address && c.address.toLowerCase().includes(query))
+        );
+      }
+
+      return filtered;
+    }
+
+    function renderCustomersView() {
+      const filtered = getFilteredCustomers();
+      document.getElementById('customersCount').textContent = `${filtered.length} من ${allCustomers.length} عميل`;
+
+      if (currentViewMode === 'cards') {
+        renderCardsView(filtered);
+      } else {
+        renderTableView(filtered);
+      }
+    }
+
+    // Render Cards Grid
+    function renderCardsView(filtered) {
+      const container = document.getElementById('customersCardsView');
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div style="grid-column:1/-1; background:#FFFFFF; border:1px solid var(--cust-border); border-radius:var(--cust-radius); padding:48px 24px; text-align:center;">
+            <div style="width:48px; height:48px; border-radius:12px; background:#FFF4ED; color:#FF5B22; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:var(--cust-text); margin-bottom:4px;">${allCustomers.length === 0 ? 'لا يوجد عملاء مسجلين بعد' : 'لا توجد نتائج مطابقة لبحثك'}</div>
+            <div style="font-size:12px; color:var(--cust-text-muted); margin-bottom:14px;">${allCustomers.length === 0 ? 'ابدأ بإضافة أول عميل لتسجيل طلباته وإدارة رصيده.' : 'جرّب كتابة اسم العميل، الهاتف، أو إلغاء فلاتر التصفية.'}</div>
+            ${allCustomers.length === 0 
+              ? `<button class="btn btn-primary btn-sm" onclick="openCustomerModal()" style="font-weight:800; padding:6px 18px; border-radius:8px; background:linear-gradient(135deg, #FF5B22 0%, #FF7844 100%); border:none;">+ إضافة أول عميل</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="document.getElementById('customerSearch').value=''; setFilter('all');" style="padding:6px 18px; border-radius:8px;">إعادة تعيين البحث</button>`}
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map((c, i) => {
+        const bal = Number(c.current_balance || 0);
+        const balClass = bal > 0 ? 'val-debt' : bal < 0 ? 'val-credit' : 'val-zero';
+        const balBadgeClass = bal > 0 ? 'debt' : bal < 0 ? 'credit' : 'neutral';
+        const balLabel = bal > 0 ? `${fmt(bal)} ج.م (مطلوب منه)` : bal < 0 ? `${fmt(Math.abs(bal))} ج.م (رصيد دائن)` : `0.00 ج.م (مسدد)`;
+        const initial = (c.name || 'ع').trim().charAt(0);
+
+        return `
+          <div class="cust-card-item">
+            <!-- Header identity -->
+            <div class="card-top-identity">
+              <div class="card-avatar">${initial}</div>
+              <div class="card-name-phone">
+                <span class="card-customer-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+                <span class="card-phone-chip">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  ${c.phone ? escapeHtml(c.phone) : 'بدون هاتف'}
+                </span>
+              </div>
+            </div>
+
+            <!-- Balance strip -->
+            <div class="card-balance-box">
+              <span class="card-balance-lbl">الرصيد الحالي:</span>
+              <span class="card-balance-val ${balClass}">
+                <span class="balance-badge ${balBadgeClass}">${balLabel}</span>
+              </span>
+            </div>
+
+            <!-- Address note -->
+            <div class="card-address-row" title="${escapeHtml(c.address || '')}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>${c.address ? escapeHtml(c.address) : 'لم يتم تسجيل عنوان'}</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="card-actions-row">
+              <button class="btn-card-action" onclick="viewCustomerInvoicesModal(${c.id}, '${escapeHtml(c.name).replace(/'/g, "\\'")}')" title="عرض فواتير العميل">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>فواتير</span>
+              </button>
+              <button class="btn-card-action" onclick="editCustomer(${c.id})" title="تعديل بيانات العميل">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span>تعديل</span>
+              </button>
+              <button class="btn-card-action btn-wa" onclick="openWhatsApp('${c.phone || ''}')" title="محادثة واتساب">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                <span>واتساب</span>
+              </button>
+              <button class="btn-card-action btn-del" onclick="deleteCustomer(${c.id})" title="حذف العميل">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Table View
+    function renderTableView(filtered) {
+      const tbody = document.getElementById('customersBody');
+      if (!filtered.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="padding:48px 16px; text-align:center;">
+              <div style="font-size:14px; font-weight:800; color:var(--cust-text); margin-bottom:4px;">لا توجد نتائج مطابقة</div>
+              <div style="font-size:12px; color:var(--cust-text-muted); margin-bottom:12px;">جرّب البحث باسم العميل أو رقم الهاتف أو قم بإلغاء التصفية.</div>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('customerSearch').value=''; setFilter('all');">مسح البحث والتصفية</button>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((c, i) => {
+        const bal = Number(c.current_balance || 0);
+        const balClass = bal > 0 ? 'debt' : bal < 0 ? 'credit' : 'neutral';
+        const balLabel = bal > 0 ? `${fmt(bal)} ج.م (مدين)` : bal < 0 ? `${fmt(Math.abs(bal))} ج.م (دائن)` : `0.00 (مسدد)`;
+        const initial = (c.name || 'ع').trim().charAt(0);
+
+        return `
+          <tr>
+            <td style="color:var(--cust-text-muted); font-size:11.5px; text-align:center;">${i + 1}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:32px; height:32px; border-radius:8px; background:#FFF3EB; color:#FF5B22; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${initial}</div>
+                <span style="font-weight:800; color:var(--cust-text);">${escapeHtml(c.name)}</span>
+              </div>
+            </td>
+            <td>
+              <span style="font-variant-numeric:tabular-nums; direction:ltr; display:inline-block; font-weight:700; color:var(--cust-text-secondary);">${c.phone ? escapeHtml(c.phone) : '—'}</span>
+            </td>
+            <td style="color:var(--cust-text-secondary); font-size:12px;">${c.address ? escapeHtml(c.address) : '—'}</td>
+            <td style="color:var(--cust-text-muted); font-variant-numeric:tabular-nums;">${fmt(c.opening_balance)}</td>
+            <td>
+              <span class="balance-badge ${balClass}">${balLabel}</span>
+            </td>
+            <td style="text-align:center;">
+              <div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">
+                <button class="btn-card-action" style="height:28px;" onclick="viewCustomerInvoicesModal(${c.id}, '${escapeHtml(c.name).replace(/'/g, "\\'")}')">فواتير</button>
+                <button class="btn-card-action" style="height:28px;" onclick="editCustomer(${c.id})">تعديل</button>
+                <button class="btn-card-action btn-wa" style="height:28px;" onclick="openWhatsApp('${c.phone || ''}')">واتساب</button>
+                <button class="btn-card-action btn-del" style="height:28px; width:28px; padding:0; display:inline-flex; align-items:center; justify-content:center;" onclick="deleteCustomer(${c.id})" title="حذف العميل">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ─── Customer Modal Operations ─────────────────────────────────────────────
+    function openCustomerModal() {
+      document.getElementById('customerModalTitle').textContent = 'إضافة عميل جديد';
+      document.getElementById('custId').value = '';
+      document.getElementById('custName').value = '';
+      document.getElementById('custPhone').value = '';
+      document.getElementById('custAddress').value = '';
+      document.getElementById('custOpeningBalance').value = '0';
+      document.getElementById('custOpeningBalance').disabled = false;
+      openModal('customerModal');
+    }
+
+    function editCustomer(id) {
+      const c = allCustomers.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('customerModalTitle').textContent = 'تعديل بيانات العميل';
+      document.getElementById('custId').value = c.id;
+      document.getElementById('custName').value = c.name;
+      document.getElementById('custPhone').value = c.phone || '';
+      document.getElementById('custAddress').value = c.address || '';
+      document.getElementById('custOpeningBalance').value = c.opening_balance || 0;
+      openModal('customerModal');
+    }
+
+    async function saveCustomer() {
+      const id = document.getElementById('custId').value;
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim() || null;
+      const address = document.getElementById('custAddress').value.trim() || null;
+      const openingBalance = parseFloat(document.getElementById('custOpeningBalance').value) || 0;
+      
+      if (!name) {
+        showToast('يرجى إدخال اسم العميل', 'error');
+        return;
+      }
+
+      // Check phone uniqueness
+      if (phone) {
+        const checkPhone = await window.db.queryOne(
+          `SELECT id, name FROM customers WHERE phone=? AND id != ? LIMIT 1`,
+          [phone, id || 0]
+        );
+        if (checkPhone && checkPhone.success && checkPhone.data) {
+          showToast(`رقم التليفون "${phone}" مسجل مسبقاً للعميل: ${checkPhone.data.name}`, 'error');
+          return;
+        }
+      }
+      
+      let res;
+      if (id) {
+        const oldRes = await window.db.queryOne('SELECT opening_balance, current_balance FROM customers WHERE id=?', [id]);
+        if (oldRes && oldRes.success && oldRes.data) {
+          const oldOpening = Number(oldRes.data.opening_balance || 0);
+          const oldCurrent = Number(oldRes.data.current_balance || 0);
+          const difference = openingBalance - oldOpening;
+          const newCurrent = oldCurrent + difference;
+          
+          res = await window.db.run(
+            'UPDATE customers SET name=?, phone=?, address=?, opening_balance=?, current_balance=? WHERE id=?',
+            [name, phone, address, openingBalance, newCurrent, id]
+          );
+        } else {
+          showToast('خطأ في استرجاع بيانات العميل القديمة', 'error');
+          return;
+        }
+      } else {
+        res = await window.db.run(
+          'INSERT INTO customers (name, phone, address, opening_balance, current_balance) VALUES (?,?,?,?,?)',
+          [name, phone, address, openingBalance, openingBalance]
+        );
+      }
+      
+      if (res && res.success) {
+        showToast('تم حفظ بيانات العميل بنجاح ✓', 'success');
+        closeModal('customerModal');
+        await loadCustomers();
+      } else {
+        showToast('خطأ أثناء الحفظ: ' + (res?.error || 'فشلت العملية'), 'error');
+      }
+    }
+
+    async function deleteCustomer(id) {
+      const result = await Swal.fire({
+        title: 'تأكيد حذف العميل',
+        text: 'هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع عن هذا الإجراء.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#94A3B8',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+      });
+      if (!result.isConfirmed) return;
+      
+      const checkRes = await window.db.queryOne('SELECT COUNT(*) as count FROM invoices WHERE customer_id=?', [id]);
+      if (checkRes && checkRes.success && checkRes.data && checkRes.data.count > 0) {
+        Swal.fire('غير مسموح بالحذف', 'لا يمكن حذف هذا العميل لوجود فواتير مسجلة باسمه في النظام. يمكنك تعديل بياناته بدلاً من الحذف.', 'error');
+        return;
+      }
+      
+      const res = await window.db.run('DELETE FROM customers WHERE id=?', [id]);
+      if (res && res.success) {
+        showToast('تم حذف العميل بنجاح', 'success');
+        await loadCustomers();
+      } else {
+        showToast('حدث خطأ أثناء الحذف: ' + (res?.error || ''), 'error');
+      }
+    }
+
+    function openWhatsApp(phone) {
+      if (!phone || phone === 'null' || phone.trim() === '') {
+        showToast('رقم التليفون غير مسجل لهذا العميل', 'info');
+        return;
+      }
+      let waPhone = phone.replace(/\s+/g, '');
+      if (waPhone.startsWith('01')) waPhone = '2' + waPhone;
+      else if (!waPhone.startsWith('+2') && !waPhone.startsWith('20')) waPhone = '2' + waPhone;
+      
+      if (window.electron && typeof window.electron.openExternal === 'function') {
+        window.electron.openExternal(`https://api.whatsapp.com/send?phone=${waPhone}`);
+      } else {
+        window.open(`https://api.whatsapp.com/send?phone=${waPhone}`, '_blank');
+      }
+    }
+
+    async function viewCustomerInvoicesModal(customerId, customerName) {
+      document.getElementById('custInvoicesModalTitle').textContent = `فواتير العميل: ${customerName || ''}`;
+      const tbody = document.getElementById('custInvoicesTableBody');
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center; color:#94A3B8;">جاري تحميل الفواتير...</td></tr>';
+      openModal('customerInvoicesModal');
+
+      try {
+        const res = await window.db.query(
+          'SELECT * FROM invoices WHERE customer_id = ? ORDER BY id DESC',
+          [customerId]
+        );
+
+        if (!res || !res.success || !res.data || res.data.length === 0) {
+          document.getElementById('custInvCount').textContent = '0';
+          document.getElementById('custInvTotal').textContent = '0.00';
+          document.getElementById('custInvPaid').textContent = '0.00';
+          document.getElementById('custInvRemaining').textContent = '0.00';
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:28px; text-align:center; color:#94A3B8;">لا توجد فواتير مسجلة لهذا العميل حتى الآن</td></tr>';
+          return;
+        }
+
+        const invoices = res.data;
+        const totalSales = invoices.reduce((sum, inv) => sum + Number(inv.net_total || 0), 0);
+        const totalPaid = invoices.reduce((sum, inv) => sum + Number(inv.amount_paid || 0), 0);
+        const totalRem = invoices.reduce((sum, inv) => sum + Number(inv.remaining || 0), 0);
+
+        document.getElementById('custInvCount').textContent = invoices.length;
+        document.getElementById('custInvTotal').textContent = fmt(totalSales);
+        document.getElementById('custInvPaid').textContent = fmt(totalPaid);
+        document.getElementById('custInvRemaining').textContent = fmt(totalRem);
+
+        tbody.innerHTML = invoices.map((inv, idx) => `
+          <tr>
+            <td style="color:var(--cust-text-muted); text-align:center; font-size:11px;">${idx + 1}</td>
+            <td style="font-weight:800; font-family:monospace; color:var(--cust-primary);">${escapeHtml(inv.invoice_number || '—')}</td>
+            <td style="color:var(--cust-text-secondary); font-size:12px;">${escapeHtml(inv.invoice_date || '—')}</td>
+            <td style="font-weight:800; font-variant-numeric:tabular-nums;">${fmt(inv.net_total)}</td>
+            <td style="color:var(--cust-emerald); font-weight:700; font-variant-numeric:tabular-nums;">${fmt(inv.amount_paid)}</td>
+            <td style="font-weight:800; font-variant-numeric:tabular-nums; color:${Number(inv.remaining) > 0 ? '#DC2626' : 'var(--cust-text)'};">${fmt(inv.remaining)}</td>
+            <td style="text-align:center;">
+              <span class="badge ${inv.status === 'تم التسليم' || inv.status === 'مدفوعة' ? 'badge-success' : inv.status === 'جاهز' ? 'badge-info' : 'badge-warning'}">
+                ${escapeHtml(inv.status || 'مدفوعة')}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#DC2626; padding:20px; text-align:center;">خطأ في تحميل الفواتير: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      await loadCustomers();
+
+      const targetPhone = sessionStorage.getItem('targetCustomerPhone');
+      if (targetPhone) {
+        sessionStorage.removeItem('targetCustomerPhone');
+        const cleanDigits = String(targetPhone).replace(/\D/g, '').slice(-9);
+        const searchInput = document.getElementById('customerSearch');
+        if (searchInput) {
+          searchInput.value = cleanDigits;
+          renderCustomersView();
+          const matched = allCustomers.find(c => c.phone && c.phone.replace(/\D/g, '').includes(cleanDigits));
+          if (matched) {
+            showToast(`تم تحديد العميل: ${matched.name}`, 'info');
+            viewCustomerInvoicesModal(matched.id, matched.name);
+          }
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

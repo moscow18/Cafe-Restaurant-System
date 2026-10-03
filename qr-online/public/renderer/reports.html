@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام كافيه برو — التقارير المحاسبية والتحليلات الشاملة</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="vendor/sweetalert2.all.min.js"></script>
+  <style>
+    /* ══════════════════════════════════════════════════════════════════════════
+       CAFEPRO SYSTEM REPORTS — CLEAN AUTHENTIC DESIGN
+    ══════════════════════════════════════════════════════════════════════════ */
+    :root {
+      --rpt-bg: #F8F9FA;
+      --rpt-surface: #FFFFFF;
+      --rpt-border: #E2E8F0;
+      --rpt-border-subtle: #EDF2F7;
+      --rpt-text: #0F172A;
+      --rpt-text-secondary: #475569;
+      --rpt-text-muted: #94A3B8;
+      --rpt-primary: #FF5B22;
+      --rpt-primary-hover: #E64A19;
+      --rpt-emerald: #10B981;
+      --rpt-amber: #F59E0B;
+      --rpt-red: #EF4444;
+      --rpt-radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body.app-layout {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--rpt-bg);
+      color: var(--rpt-text);
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+      direction: rtl;
+    }
+
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      min-width: 0;
+      background: var(--rpt-bg);
+    }
+
+    /* ─── Top Command Header ─────────────────────────────────────── */
+    .rpt-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--rpt-border);
+      height: 62px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 16px;
+      z-index: 30;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .rpt-header-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .rpt-header-title {
+      font-size: 17px;
+      font-weight: 850;
+      color: var(--rpt-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rpt-header-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--rpt-text-muted);
+    }
+
+    .rpt-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ─── Horizontal Tabs Navigation ─────────────────────────────── */
+    .rpt-tabs {
+      display: flex;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--rpt-border);
+      padding: 6px 20px;
+      gap: 6px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+
+    .rpt-tabs::-webkit-scrollbar { display: none; }
+
+    .rpt-tab {
+      padding: 9px 16px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--rpt-text-secondary);
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+      user-select: none;
+      border: 1px solid transparent;
+      background: transparent;
+    }
+
+    .rpt-tab:hover {
+      color: var(--rpt-text);
+      background: #F1F5F9;
+    }
+
+    .rpt-tab.active {
+      color: #FFFFFF;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.3);
+      border-color: transparent;
+    }
+
+    /* ─── Scrollable Content Area ────────────────────────────────── */
+    .rpt-content {
+      flex: 1;
+      padding: 20px 24px 40px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .rpt-section {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rpt-section.active {
+      display: flex;
+    }
+
+    /* ─── Filter Bar ─────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      background: #FFFFFF;
+      padding: 14px 18px;
+      border-radius: var(--rpt-radius);
+      border: 1px solid var(--rpt-border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      align-items: flex-end;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-bar .form-label {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--rpt-text-secondary);
+    }
+
+    .filter-bar .form-control {
+      height: 38px;
+      border: 1px solid var(--rpt-border);
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--rpt-text);
+      background: #FFFFFF;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .filter-bar .form-control:focus {
+      border-color: var(--rpt-primary);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.12);
+    }
+
+    /* ─── Signature CafePro KPI Cards (100% Free of AI Stripes & Edge Lines) ─── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .summary-card {
+      background: #FFFFFF;
+      border: 1px solid var(--rpt-border) !important;
+      border-right: 1px solid var(--rpt-border) !important;
+      border-left: 1px solid var(--rpt-border) !important;
+      border-top: 1px solid var(--rpt-border) !important;
+      border-bottom: 1px solid var(--rpt-border) !important;
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 104px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .summary-card::before,
+    .summary-card::after {
+      display: none !important;
+      content: none !important;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+      border-color: #CBD5E1 !important;
+    }
+
+    .summary-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .summary-lbl {
+      font-size: 12px;
+      color: var(--rpt-text-secondary);
+      font-weight: 750;
+      line-height: 1.3;
+    }
+
+    .summary-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .icon-orange  { background: #FFF3EB; color: #FF5B22; }
+    .icon-emerald { background: #ECFDF5; color: #10B981; }
+    .icon-blue    { background: #EFF6FF; color: #2563EB; }
+    .icon-amber   { background: #FFFBEB; color: #D97706; }
+    .icon-red     { background: #FEF2F2; color: #EF4444; }
+    .icon-purple  { background: #F5F3FF; color: #8B5CF6; }
+
+    .summary-card-body {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .summary-val {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--rpt-text);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-card.success .summary-val { color: var(--rpt-emerald); }
+    .summary-card.danger .summary-val  { color: var(--rpt-red); }
+    .summary-card.accent .summary-val  { color: var(--rpt-amber); }
+    .summary-card.primary .summary-val { color: var(--rpt-primary); }
+
+    .summary-unit {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--rpt-text-muted);
+    }
+
+    /* ─── Tables ─────────────────────────────────────────────────── */
+    .table-container {
+      background: #FFFFFF;
+      border: 1px solid var(--rpt-border);
+      border-radius: var(--rpt-radius);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    .table-container table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: right;
+    }
+
+    .table-container thead th {
+      background: #F8FAFC;
+      color: var(--rpt-text-secondary);
+      padding: 12px 16px;
+      font-weight: 800;
+      font-size: 11.5px;
+      border-bottom: 1px solid var(--rpt-border);
+      white-space: nowrap;
+    }
+
+    .table-container tbody td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--rpt-border-subtle);
+      color: var(--rpt-text);
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-container tbody tr:hover td {
+      background: #F8FAFC;
+    }
+
+    .table-container tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--rpt-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Clean Reports Table Badges & Action Buttons */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .badge-success {
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+    }
+    .badge-warning {
+      background: #FFFBEB;
+      color: #D97706;
+      border: 1px solid #FDE68A;
+    }
+    .badge-danger {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+    }
+    .badge-primary {
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #BFDBFE;
+    }
+    .badge-cash {
+      background: #F8FAFC;
+      color: #334155;
+      border: 1px solid #CBD5E1;
+    }
+    .badge-visa {
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #BFDBFE;
+    }
+    .badge-instapay {
+      background: #FAF5FF;
+      color: #7E22CE;
+      border: 1px solid #E9D5FF;
+    }
+    .badge-vodafone {
+      background: #FFF1F2;
+      color: #BE123C;
+      border: 1px solid #FECDD3;
+    }
+
+    .btn-action-view {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      height: 30px;
+      font-size: 11.5px;
+      font-weight: 800;
+      border-radius: 7px;
+      background: #FF5B22;
+      color: #FFFFFF;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(255, 91, 34, 0.25);
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-action-view:hover {
+      background: #E64A19;
+      transform: translateY(-1px);
+    }
+    .btn-action-print {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      height: 30px;
+      font-size: 11.5px;
+      font-weight: 800;
+      border-radius: 7px;
+      background: #FFFFFF;
+      color: #334155;
+      border: 1px solid #CBD5E1;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-action-print:hover {
+      border-color: #94A3B8;
+      background: #F8FAFC;
+      color: #0F172A;
+    }
+
+    /* Print Styles */
+    .receipt-print { display: none; }
+    @media print {
+      .sidebar, .rpt-header, .rpt-tabs, .filter-bar, .header-actions { display: none !important; }
+      body.app-layout { background: #fff !important; display: block !important; height: auto !important; }
+      .main-workspace { height: auto !important; overflow: visible !important; }
+      .rpt-content { padding: 0 !important; overflow: visible !important; }
+      .summary-card { border: 1px solid #ccc !important; box-shadow: none !important; }
+      .table-container { border: 1px solid #ccc !important; box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="app-layout">
+
+  <!-- ─── 1. Signature FoodAnalytics Navigation Sidebar ────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <!-- Group 1: الأساسية -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">القوائم الأساسية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('main-dashboard.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('pos-invoice.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>نقطة البيع (POS)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('tables.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>الصالات والترابيزات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('returns.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>مرتجع طلب</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('customers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>العملاء</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('whatsapp-chat.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>محادثات واتساب</span>
+      </div>
+    </div>
+
+    <!-- Group 2: المخزون والمالية -->
+    <div class="sidebar-section admin-only">
+      <div class="sidebar-section-title">المخزون والمالية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('suppliers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>الموردين والمشتريات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('services.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>المنتجات والأصناف</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('inventory.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+        <span>المخزون والمواد الخام</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('finance.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الحسابات والمالية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('hr.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>شئون الموظفين</span>
+      </div>
+    </div>
+
+    <!-- Group 3: التقارير والإعدادات -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">التقارير والإعدادات</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('daily-report.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>التقرير اليومي الشامل</span>
+      </div>
+
+      <div class="sidebar-nav-item active" onclick="navigate('reports.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>التقارير المحاسبية الشاملة</span>
+      </div>
+
+      <div class="sidebar-nav-item admin-only" onclick="navigate('settings.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>الإعدادات</span>
+      </div>
+    </div>
+
+    <!-- Promo Card -->
+    <div class="sidebar-promo-card">
+      <div class="sidebar-promo-thumb">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+      </div>
+      <div class="sidebar-promo-title">كافيه برو الذكي</div>
+      <div class="sidebar-promo-desc">تحليلات وإدارة شاملة لأداء كافيه ومطعمك بدقة واحترافية</div>
+      <button type="button" class="sidebar-promo-btn" onclick="navigate('pos-invoice.html')">+ طلب جديد [F1]</button>
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user-pill">
+        <div class="sidebar-user-avatar">م</div>
+        <div class="sidebar-user-meta">
+          <div class="sidebar-user-name" id="sidebarUserName">المدير العام</div>
+          <div class="sidebar-user-role" id="sidebarUserRole">مسؤول النظام</div>
+        </div>
+      </div>
+      <button type="button" class="sidebar-logout-btn" onclick="logout()" title="تسجيل الخروج">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Workspace ────────────────────────────────────────── -->
+  <main class="main-workspace">
+
+    <!-- Header -->
+    <header class="rpt-header">
+      <div class="rpt-header-titles">
+        <div class="rpt-header-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--rpt-primary)" stroke-width="2.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>التقارير المحاسبية والتحليلات الشاملة</span>
+        </div>
+        <div class="rpt-header-subtitle">تقارير المبيعات، الأرباح، المشتريات، حركة الشيفتات، وقائمة الدخل</div>
+      </div>
+      <div class="rpt-header-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="navigate('daily-report.html')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          التقرير اليومي وإغلاق الوردية
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="goBack()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+          رجوع للرئيسية
+        </button>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="rpt-tabs">
+      <div class="rpt-tab active" onclick="switchTab('sales', this)">المبيعات والأرباح</div>
+      <div class="rpt-tab" id="deliveryTab" onclick="switchTab('delivery', this)">أداء الدليفري والتوصيل</div>
+      <div class="rpt-tab" id="rawMaterialsTab" onclick="switchTab('raw_inventory', this)">المواد الخام والهالك</div>
+      <div class="rpt-tab" onclick="switchTab('purchases', this)">المشتريات والموردين</div>
+      <div class="rpt-tab" onclick="switchTab('shifts', this)">تقارير الشيفتات والورديات</div>
+      <div class="rpt-tab" onclick="switchTab('income', this)">قائمة الدخل والمركز المالي</div>
+      <div class="rpt-tab" onclick="navigate('inventory-report.html')">تقرير المخزون الحي (A4)</div>
+      <div class="rpt-tab" id="cleanupTab" onclick="switchTab('cleanup', this)" style="color:var(--rpt-red); margin-right:auto;">تصفير وتنظيف البيانات</div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="rpt-content">
+      
+      <!-- ── Sales & Profits ──────────────────────────────────────────────── -->
+      <div class="rpt-section active" id="sec-sales">
+        
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" id="salesFrom" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" id="salesTo" class="form-control" />
+          </div>
+          <div class="form-group" style="width:230px;">
+            <label class="form-label">بحث برقم الفاتورة / العميل</label>
+            <input type="text" id="salesSearch" class="form-control" placeholder="بحث في كل الفواتير..." oninput="onSalesSearchInput()" />
+          </div>
+          <div class="form-group" style="width:160px;">
+            <label class="form-label">حالة الفاتورة</label>
+            <select id="salesStatusFilter" class="form-control" onchange="loadSalesReport()">
+              <option value="">الكل</option>
+              <option value="مفتوحة">مفتوحة</option>
+              <option value="مرسلة للمطبخ">مرسلة للمطبخ</option>
+              <option value="محاسَبة">محاسَبة</option>
+              <option value="مرتجع">مرتجع</option>
+              <option value="غير مسددة">غير مسددة (مديونية)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="loadSalesReport()">تحديث التقرير</button>
+          <button class="btn btn-outline" onclick="window.electron.print()">طباعة</button>
+        </div>
+
+        <!-- 6 Signature Modern Summary Cards (100% Free of AI Stripes — Interactive Clickable) -->
+        <div class="summary-row">
+          <div class="summary-card" onclick="filterSalesByStatus('')" title="عرض جميع الفواتير">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي المبيعات (الصافي)</span>
+              <div class="summary-icon icon-orange">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesTotal">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card success" onclick="filterSalesByStatus('محاسَبة')" title="عرض الفواتير المحصلة / المحاسبة">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي المحصل</span>
+              <div class="summary-icon icon-emerald">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesPaid">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card accent" onclick="filterSalesByStatus('محاسَبة')" title="عرض الفواتير المحاسبة">
+            <div class="summary-card-header">
+              <span class="summary-lbl">فواتير محاسَبة</span>
+              <div class="summary-icon icon-blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesDelivered">0</div>
+              <span class="summary-unit">فاتورة</span>
+            </div>
+          </div>
+
+          <div class="summary-card" onclick="filterSalesByStatus('مفتوحة')" title="عرض الفواتير المفتوحة فقط">
+            <div class="summary-card-header">
+              <span class="summary-lbl">مفتوحة</span>
+              <div class="summary-icon icon-amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesInProgress">0</div>
+              <span class="summary-unit">فاتورة</span>
+            </div>
+          </div>
+
+          <div class="summary-card" onclick="filterSalesByStatus('مرسلة للمطبخ')" title="عرض الفواتير المرسلة للمطبخ">
+            <div class="summary-card-header">
+              <span class="summary-lbl">مرسلة للمطبخ</span>
+              <div class="summary-icon icon-purple">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesAwaiting">0</div>
+              <span class="summary-unit">طلب</span>
+            </div>
+          </div>
+
+          <div class="summary-card danger" onclick="filterSalesByStatus('غير مسددة')" title="عرض مديونيات الفواتير غير المسددة">
+            <div class="summary-card-header">
+              <span class="summary-lbl">مديونيات الفواتير</span>
+              <div class="summary-icon icon-red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val tnum" id="salesUnpaidAmount">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>رقم الفاتورة</th>
+                  <th>التاريخ</th>
+                  <th>العميل</th>
+                  <th>الكاشير/البائع</th>
+                  <th>الحالة</th>
+                  <th>نوع الدفع</th>
+                  <th>الإجمالي</th>
+                  <th>الخصم</th>
+                  <th>الصافي</th>
+                  <th>المدفوع</th>
+                  <th>الباقي</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="salesTableBody">
+                <tr><td colspan="12" class="table-empty">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="salesPagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; font-size:13px; color:var(--text-muted); border-top:1px solid var(--rpt-border);">
+            <span id="salesCountInfo">—</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm btn-outline" id="salesPrevBtn" onclick="changeSalesPage(-1)" disabled>السابق</button>
+              <span id="salesPageNum" style="display:flex; align-items:center; font-weight:700; color:var(--rpt-text); padding:0 8px;">صفحة 1</span>
+              <button class="btn btn-sm btn-outline" id="salesNextBtn" onclick="changeSalesPage(1)" disabled>التالي</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Delivery Performance ─────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-delivery">
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" id="delFrom" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" id="delTo" class="form-control" />
+          </div>
+          <button class="btn btn-primary" onclick="loadDeliveryReport()">تحديث تقرير الدليفري</button>
+          <button class="btn btn-outline" onclick="window.electron.print()">طباعة</button>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card" onclick="filterDeliveryInvoicesByStatus('')" title="عرض جميع فواتير الدليفري" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي طلبات الدليفري</span>
+              <div class="summary-icon icon-blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="delOrdersCount">0</div>
+              <span class="summary-unit">طلب</span>
+            </div>
+          </div>
+
+          <div class="summary-card success" onclick="filterDeliveryInvoicesByStatus('تم التسليم')" title="عرض الفواتير المسلمة" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">رسوم التوصيل المحصلة</span>
+              <div class="summary-icon icon-emerald">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="delTotalFees">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card accent" onclick="document.getElementById('deliveryDriversTableBody')?.scrollIntoView({behavior:'smooth'})" title="الانتقال إلى كشف حساب الطيارين" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي مستحقات الطيارين</span>
+              <div class="summary-icon icon-amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="delDriverEarnings">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card danger" onclick="filterDeliveryInvoicesByStatus('مرتجع')" title="عرض الطلبات المرتجعة" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">طلبات مرتجعة / لم تسلم</span>
+              <div class="summary-icon icon-red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="delReturnedCount">0</div>
+              <span class="summary-unit">طلب</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container" style="margin-bottom:16px;">
+          <div style="padding:14px 18px; font-weight:800; font-size:14px; background:#F8FAFC; border-bottom:1px solid var(--rpt-border);">
+            ملخص أداء ومستحقات الطيارين (كشف حساب الدليفري)
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>اسم الطيار</th>
+                  <th>رقم الهاتف</th>
+                  <th>نظام الأجر</th>
+                  <th>قيمة الأجر</th>
+                  <th>الطلبات المسلمة</th>
+                  <th>المرتجعات</th>
+                  <th>رسوم التوصيل المحصلة</th>
+                  <th>مستحقات الطيار</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryDriversTableBody">
+                <tr><td colspan="8" class="table-empty">اضغط "تحديث تقرير الدليفري" لعرض البيانات</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div style="padding:14px 18px; font-weight:800; font-size:14px; background:#F8FAFC; border-bottom:1px solid var(--rpt-border);">
+            سجل فواتير التوصيل المفصلة
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>رقم الفاتورة</th>
+                  <th>التاريخ</th>
+                  <th>العميل</th>
+                  <th>الطيار</th>
+                  <th>حالة التوصيل</th>
+                  <th>رسوم التوصيل</th>
+                  <th>عمولة الطيار</th>
+                  <th>إجمالي الفاتورة</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryInvoicesTableBody">
+                <tr><td colspan="8" class="table-empty">اضغط "تحديث تقرير الدليفري" لعرض الفواتير</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Raw Materials & Waste ────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-raw_inventory">
+        <div class="filter-bar">
+          <div class="form-group" style="width:240px;">
+            <label class="form-label">بحث في المواد الخام</label>
+            <input type="text" id="rawSearchInput" class="form-control" placeholder="اسم المادة الخام..." oninput="filterRawInventoryTable()" />
+          </div>
+          <div class="form-group" style="width:160px;">
+            <label class="form-label">حالة الرصيد</label>
+            <select id="rawStockFilter" class="form-control" onchange="filterRawInventoryTable()">
+              <option value="">الكل</option>
+              <option value="low">منخفض / قارب على النفاد</option>
+              <option value="ok">رصيد آمن</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="loadRawInventoryReport()">تحديث المخزون</button>
+          <button class="btn btn-outline" onclick="window.electron.print()">طباعة</button>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card" onclick="setRawStockFilter('')" title="عرض جميع أصناف المواد الخام" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي أصناف المواد الخام</span>
+              <div class="summary-icon icon-blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="rawTotalCount">0</div>
+              <span class="summary-unit">صنف</span>
+            </div>
+          </div>
+
+          <div class="summary-card danger" onclick="setRawStockFilter('low')" title="تصفية الخامات التي أوشكت على النفاد" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">خامات أوشكت على النفاد</span>
+              <div class="summary-icon icon-red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="rawLowStockCount">0</div>
+              <span class="summary-unit">صنف</span>
+            </div>
+          </div>
+
+          <div class="summary-card success" onclick="setRawStockFilter('')" title="عرض جميع الخامات وقيمتها" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">القيمة التقديرية للمخزون</span>
+              <div class="summary-icon icon-emerald">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="rawTotalValuation">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card accent" onclick="document.getElementById('rawWasteTableBody')?.scrollIntoView({behavior:'smooth'})" title="الانتقال لسجل الهالك والتسويات" style="cursor:pointer;">
+            <div class="summary-card-header">
+              <span class="summary-lbl">حركات الهالك والتسوية</span>
+              <div class="summary-icon icon-amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="rawWasteCount">0</div>
+              <span class="summary-unit">حركة</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container" style="margin-bottom:16px;">
+          <div style="padding:14px 18px; font-weight:800; font-size:14px; background:#F8FAFC; border-bottom:1px solid var(--rpt-border);">
+            أرصدة المواد الخام ومستويات إعادة الطلب
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>المادة الخام</th>
+                  <th>الوحدة</th>
+                  <th>الرصيد الحالي</th>
+                  <th>حد التنبيه (النقص)</th>
+                  <th>سعر التكلفة للوحدة</th>
+                  <th>إجمالي قيمة المخزون</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="rawInventoryTableBody">
+                <tr><td colspan="7" class="table-empty">اضغط "تحديث المخزون" لعرض البيانات</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div style="padding:14px 18px; font-weight:800; font-size:14px; background:#F8FAFC; border-bottom:1px solid var(--rpt-border);">
+            سجل الهالك والتسويات اليدوية (Waste Tracking)
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ والوقت</th>
+                  <th>نوع الحركة</th>
+                  <th>المادة / الصنف</th>
+                  <th>الكمية</th>
+                  <th>السبب / البيان</th>
+                </tr>
+              </thead>
+              <tbody id="rawWasteTableBody">
+                <tr><td colspan="5" class="table-empty">لا توجد حركات هالك مسجلة</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Purchases ────────────────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-purchases">
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" id="purFrom" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" id="purTo" class="form-control" />
+          </div>
+          <button class="btn btn-primary" onclick="loadPurchasesReport()">تحديث التقرير</button>
+          <button class="btn btn-outline" onclick="window.electron.print()">طباعة</button>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي المشتريات</span>
+              <div class="summary-icon icon-orange">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="purTotal">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card success">
+            <div class="summary-card-header">
+              <span class="summary-lbl">إجمالي المدفوع للموردين</span>
+              <div class="summary-icon icon-emerald">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="purPaid">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+
+          <div class="summary-card danger">
+            <div class="summary-card-header">
+              <span class="summary-lbl">المتبقي للموردين</span>
+              <div class="summary-icon icon-red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+            </div>
+            <div class="summary-card-body">
+              <div class="summary-val" id="purRemaining">0.00</div>
+              <span class="summary-unit">ج.م</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>المورد</th>
+                  <th>الإجمالي</th>
+                  <th>المدفوع</th>
+                  <th>الباقي</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="purchasesTableBody">
+                <tr><td colspan="6" class="table-empty">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Shifts ───────────────────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-shifts">
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" id="shiftFrom" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" id="shiftTo" class="form-control" />
+          </div>
+          <button class="btn btn-primary" onclick="loadShiftsReport()">تحديث التقرير</button>
+        </div>
+
+        <div class="table-container">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>رقم الشيفت</th>
+                  <th>التاريخ</th>
+                  <th>الموظف (الكاشير)</th>
+                  <th>بداية الشيفت</th>
+                  <th>نهاية الشيفت</th>
+                  <th>مبيعات الشيفت</th>
+                  <th>مصروفات الشيفت</th>
+                </tr>
+              </thead>
+              <tbody id="shiftsTableBody">
+                <tr><td colspan="7" class="table-empty">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Income Statement ─────────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-income">
+        <div class="filter-bar">
+          <div class="form-group">
+            <label class="form-label">الشهر</label>
+            <input type="month" id="incomeMonth" class="form-control" />
+          </div>
+          <button class="btn btn-primary" onclick="loadIncomeStatement()">إنشاء القائمة</button>
+        </div>
+
+        <div class="table-container" style="max-width:800px; margin:0 auto; width:100%; padding:20px;">
+          <div style="font-size:16px; font-weight:800; color:var(--rpt-text); margin-bottom:14px; border-bottom:1px solid var(--rpt-border); padding-bottom:8px;">
+            قائمة الدخل المبسطة
+          </div>
+          
+          <div style="font-size:15px; font-weight:800; color:var(--rpt-emerald); margin-bottom:8px;">الإيرادات</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>إجمالي المبيعات</span><span id="inc_sales" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>إيرادات أخرى</span><span id="inc_other_rev" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px; padding:10px 12px; background:#F8FAFC; border-radius:8px; font-weight:800;"><span>إجمالي الإيرادات (A)</span><span id="inc_total_rev" style="color:var(--rpt-emerald);">0.00</span></div>
+
+          <div style="font-size:15px; font-weight:800; color:var(--rpt-red); margin-bottom:8px;">المصروفات وتكلفة المبيعات</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>تكلفة المبيعات (الخامات)</span><span id="inc_cogs" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>المرتجعات</span><span id="inc_returns" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>مصروفات التشغيل</span><span id="inc_expenses" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding:0 8px;"><span>رواتب الموظفين (المصروفة)</span><span id="inc_salaries" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px; padding:10px 12px; background:#F8FAFC; border-radius:8px; font-weight:800;"><span>إجمالي المصروفات والتكاليف (B)</span><span id="inc_total_exp" style="color:var(--rpt-red);">0.00</span></div>
+
+          <div style="border-top:2px solid var(--rpt-border); margin:16px 0;"></div>
+          
+          <div style="display:flex; justify-content:space-between; padding:12px; font-size:18px; font-weight:900; background:#F1F5F9; border-radius:8px;">
+            <span>صافي الدخل (A - B)</span>
+            <span id="inc_net_income">0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Cleanup ──────────────────────────────────────────────────────── -->
+      <div class="rpt-section" id="sec-cleanup">
+        <div class="table-container" style="border-color:var(--rpt-red); max-width:620px; margin:0 auto; width:100%; padding:20px;">
+          <div style="font-size:16px; font-weight:850; color:var(--rpt-red); margin-bottom:10px;">منطقة الخطر - حذف البيانات</div>
+          <p style="font-size:12.5px; color:var(--rpt-text-secondary); margin-bottom:20px; line-height:1.6;">
+            استخدم هذه الخيارات بحذر شديد. سيتم حذف البيانات نهائياً ولا يمكن التراجع عن هذه الخطوة. 
+            يُنصح بعمل نسخة احتياطية (Backup) من الإعدادات قبل الحذف.
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--rpt-border); border-radius:8px;">
+              <div>
+                <div style="font-weight:800; font-size:13.5px;">حذف جميع الفواتير والمرتجعات</div>
+                <div style="font-size:11px; color:var(--rpt-text-muted);">حذف سجل المبيعات بالكامل وتصفير عداد الفواتير.</div>
+              </div>
+              <button class="btn btn-danger" onclick="truncateInvoices()">حذف الفواتير</button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid var(--rpt-border); border-radius:8px;">
+              <div>
+                <div style="font-weight:800; font-size:13.5px;">حذف المصروفات والإيرادات</div>
+                <div style="font-size:11px; color:var(--rpt-text-muted);">مسح سجل الخزينة، المصروفات، والرواتب.</div>
+              </div>
+              <button class="btn btn-danger" onclick="truncateFinance()">حذف المالية</button>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid #FECACA; background:#FEF2F2; border-radius:8px;">
+              <div>
+                <div style="font-weight:800; font-size:13.5px; color:var(--rpt-red);">ضبط مصنع (حذف كل شيء)</div>
+                <div style="font-size:11px; color:var(--rpt-red);">حذف العملاء، الخدمات، الفواتير، وكل شيء ماعدا الإعدادات.</div>
+              </div>
+              <button class="btn btn-danger" onclick="factoryReset()">ضبط مصنع</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ─── MODAL: REPORT INVOICE DETAILS VIEWER (THERMAL RECEIPT PREVIEW) ─── -->
+  <div class="modal-overlay" id="reportInvoiceThermalModal" style="z-index:9999; backdrop-filter:blur(4px);">
+    <div class="modal" style="max-width:440px; width:95%; border-radius:16px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); background:#F8FAFC; border:1px solid #E2E8F0;">
+      <div class="modal-header" style="background:#FFFFFF; border-bottom:1px solid #E2E8F0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#FFF4ED; color:#FF5B22; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <div>
+            <div class="modal-title" style="color:#0F172A; font-size:15px; font-weight:800;" id="reportViewInvoiceNumber">معاينة الإيصال الحراري</div>
+            <div style="font-size:11px; color:#64748B; margin-top:2px;" id="reportViewInvoiceSubtitle">مطابق تماماً لما يُطبع على الطابعة الحرارية</div>
+          </div>
+        </div>
+        <button class="modal-close" style="color:#64748B; background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeModal('reportInvoiceThermalModal')">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:16px; max-height:75vh; overflow-y:auto; background:#F1F5F9; display:flex; justify-content:center;">
+        <!-- Real Thermal Paper Card -->
+        <div id="reportThermalReceiptContainer" style="background:#FFFFFF; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.08); padding:16px 14px; width:100%; max-width:320px; font-family:'Cairo',Arial,sans-serif; color:#000;">
+          <!-- Populated by viewReportInvoice(invId) -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:14px 20px; background:#FFFFFF; border-top:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('reportInvoiceThermalModal')" style="font-weight:700;">إغلاق</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-action-print" onclick="printInvoiceFromReportView()" style="font-weight:800;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span>طباعة الإيصال</span>
+          </button>
+          <button class="btn btn-success btn-sm" onclick="sendWhatsAppFromReportView()" style="font-weight:800; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 14px; border-radius:7px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>إرسال واتساب</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="receipt-print" id="receiptPrint" style="display:none;"></div>
+
+  <script src="js/shared/common.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

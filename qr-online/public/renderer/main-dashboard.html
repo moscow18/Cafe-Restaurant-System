@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام كافيه برو — تحليلات ولوحة التحكم</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="vendor/sweetalert2.all.min.js"></script>
+  <style>
+    /* ─── Modern Food Analytics UI (Inspired by Reference Design) ─── */
+    :root {
+      --dash-bg: #FBF9F6;
+      --dash-surface: #FFFFFF;
+      --dash-border: #EFE9E2;
+      --dash-border-subtle: #F7F3EE;
+      --dash-text: #1E1B18;
+      --dash-text-secondary: #585049;
+      --dash-text-muted: #8E847C;
+      --dash-primary: #FF5B22;
+      --dash-primary-hover: #E64A19;
+      --dash-primary-light: #FFF5F0;
+      --dash-emerald: #10B981;
+      --dash-amber: #F59E0B;
+      --dash-red: #EF4444;
+      --dash-radius: 16px;
+      --dash-shadow: 0 4px 20px -2px rgba(45, 20, 10, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+      --dash-shadow-hover: 0 8px 30px -4px rgba(45, 20, 10, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--dash-bg);
+      color: var(--dash-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+    }
+
+    .app-layout {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--dash-bg);
+    }
+
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--dash-bg);
+      min-width: 0;
+    }
+
+    /* Ensure inactive modal overlays never intercept scroll or pointer events */
+    .modal-overlay:not(.open) {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+
+    /* ─── Top Command Header ─────────────────────────────────────── */
+    .dashboard-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--dash-border);
+      height: 64px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 25;
+      gap: 16px;
+    }
+
+    .header-left-search {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .header-search-pill {
+      position: relative;
+      width: 100%;
+    }
+
+    .header-search-pill input {
+      width: 100%;
+      height: 38px;
+      background: #F6F4F0;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      padding: 0 38px 0 16px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--dash-text);
+      transition: all 0.18s ease;
+    }
+
+    .header-search-pill input:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: var(--dash-primary);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.15);
+    }
+
+    .header-search-pill .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--dash-text-muted);
+      pointer-events: none;
+    }
+
+    .header-context-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: nowrap;
+    }
+
+    .header-user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 12px 4px 6px;
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .header-user-chip:hover {
+      border-color: var(--dash-primary);
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.12);
+    }
+
+    .header-user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.3);
+    }
+
+    .header-user-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dash-text);
+      line-height: 1.2;
+    }
+
+    .header-user-role {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+      display: block;
+    }
+
+    .header-round-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--dash-border);
+      background: #FFFFFF;
+      color: var(--dash-text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .header-round-btn:hover {
+      border-color: var(--dash-primary);
+      color: var(--dash-primary);
+      background: var(--dash-primary-light);
+    }
+
+    .header-round-btn .btn-badge-dot {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 8px;
+      height: 8px;
+      background: #EF4444;
+      border-radius: 50%;
+      border: 1.5px solid #FFFFFF;
+    }
+
+    /* ─── Scroll Area & Main Container ──────────────────────────── */
+    .dashboard-scroll-area {
+      flex: 1;
+      height: calc(100vh - 64px);
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 24px 28px 48px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .dashboard-layout-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ─── Greeting Hero Banner (FoodAnalytics Signature Top) ───── */
+    .dashboard-greeting-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .greeting-text-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .greeting-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--dash-text);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .greeting-subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dash-text-muted);
+    }
+
+    .greeting-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .date-filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dash-text-secondary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 91, 34, 0.30);
+      transition: all 0.15s ease;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(255, 91, 34, 0.40);
+    }
+
+    .btn-hero-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      background: #FFFFFF;
+      color: var(--dash-text);
+      border: 1px solid var(--dash-border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .btn-hero-outline:hover {
+      border-color: var(--dash-primary);
+      color: var(--dash-primary);
+      background: var(--dash-primary-light);
+    }
+
+    /* ─── 4 Top KPI Stat Cards (Matching Image) ─────────────────── */
+    .kpi-row-analytics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    @media (max-width: 1200px) {
+      .kpi-row-analytics { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .kpi-row-analytics { grid-template-columns: 1fr; }
+    }
+
+    .analytics-stat-card {
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: var(--dash-radius);
+      padding: 18px 20px;
+      box-shadow: var(--dash-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .analytics-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--dash-shadow-hover);
+      border-color: #E2D9CE;
+    }
+
+    .stat-card-top-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .stat-badge-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .icon-orange { background: #FFF4ED; color: #FF5B22; }
+    .icon-green  { background: #ECFDF5; color: #10B981; }
+    .icon-amber  { background: #FFFBEB; color: #D97706; }
+    .icon-blue   { background: #EFF6FF; color: #2563EB; }
+
+    .stat-label-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--dash-text-secondary);
+    }
+
+    .stat-card-mid-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .stat-big-value {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--dash-text);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-unit {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+      margin-right: 4px;
+    }
+
+    .sparkline-box {
+      width: 80px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .stat-trend-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .trend-pill-up {
+      color: #10B981;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .trend-sub-note {
+      color: var(--dash-text-muted);
+      font-weight: 500;
+    }
+
+    /* ─── Middle Charts Grid (Revenue Trend + Category Donut) ──── */
+    .analytics-middle-grid {
+      display: grid;
+      grid-template-columns: 7fr 5fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 1080px) {
+      .analytics-middle-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-panel-card {
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: var(--dash-radius);
+      padding: 22px 24px;
+      box-shadow: var(--dash-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .chart-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chart-title-text {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--dash-text);
+    }
+
+    .chart-filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-tabs-small {
+      display: flex;
+      background: #F6F4F0;
+      padding: 2px;
+      border-radius: 8px;
+      gap: 2px;
+    }
+
+    .pill-tab-btn {
+      border: none;
+      background: transparent;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .pill-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--dash-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .chart-dropdown-pill {
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--dash-border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--dash-text-secondary);
+      background: #FFFFFF;
+      font-family: inherit;
+    }
+
+    .chart-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--dash-text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend-revenue { background: #FF5B22; }
+    .legend-orders  { background: #10B981; }
+
+    /* SVG Curve Chart Area */
+    .trend-svg-container {
+      width: 100%;
+      height: 205px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .trend-svg-container svg {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow: visible;
+    }
+
+    .chart-footer-kpi-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding-top: 14px;
+      margin-top: 10px;
+      border-top: 1px solid var(--dash-border-subtle);
+      text-align: right;
+    }
+
+    .footer-kpi-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .footer-kpi-label {
+      font-size: 11px;
+      color: var(--dash-text-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .footer-kpi-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--dash-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Category Donut Styles ─────────────────────────────────── */
+    .donut-layout-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 20px;
+      margin: 10px 0 16px;
+    }
+
+    .donut-visual-wrap {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      flex-shrink: 0;
+    }
+
+    .donut-center-info {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .donut-center-num {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--dash-text);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .donut-center-sub {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+
+    .category-legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .category-legend-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .cat-entry-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-color-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-name-text {
+      font-weight: 700;
+      color: var(--dash-text);
+    }
+
+    .cat-orders-count {
+      font-size: 11px;
+      color: var(--dash-text-muted);
+    }
+
+    .cat-percent-badge {
+      font-weight: 800;
+      color: var(--dash-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .category-highlight-callout {
+      background: linear-gradient(135deg, #FFF6F0 0%, #FFE9DE 100%);
+      border: 1px solid #FFD8C4;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .callout-crown-icon {
+      font-size: 18px;
+      color: #FF5B22;
+      flex-shrink: 0;
+    }
+
+    .callout-text-main {
+      font-weight: 800;
+      color: #C2410C;
+    }
+
+    .callout-text-sub {
+      color: #7C2D12;
+      font-weight: 600;
+    }
+
+    /* ─── Bottom 3 Cards Row ────────────────────────────────────── */
+    .analytics-bottom-grid {
+      display: grid;
+      grid-template-columns: 4fr 4fr 4fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 1100px) {
+      .analytics-bottom-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Top Selling Dishes */
+    .top-dishes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .dish-rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      transition: background 0.15s ease;
+    }
+
+    .dish-rank-item:hover {
+      background: #FBF9F6;
+    }
+
+    .dish-info-side {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .dish-rank-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: #F4EFEA;
+      color: var(--dash-text-secondary);
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dish-thumb-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #FFF4ED;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .dish-text-wrap {
+      min-width: 0;
+    }
+
+    .dish-name-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dash-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dish-orders-sub {
+      font-size: 11px;
+      color: var(--dash-text-muted);
+      font-weight: 600;
+    }
+
+    .dish-price-side {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dash-text);
+      font-variant-numeric: tabular-nums;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    /* Speedometer Order Status */
+    .speedometer-gauge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0 16px;
+    }
+
+    .gauge-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .gauge-pill-stat {
+      background: #F8F6F2;
+      border-radius: 8px;
+      padding: 8px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .gauge-pct {
+      font-size: 13px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gauge-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+    }
+
+    /* Business Insights 4-grid */
+    .insights-grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .insight-card-item {
+      background: #FBF9F6;
+      border: 1px solid var(--dash-border-subtle);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .insight-item-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--dash-text-muted);
+    }
+
+    .insight-item-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dash-text);
+      line-height: 1.25;
+    }
+
+    .insight-motivational-banner {
+      background: #FFF9F2;
+      border: 1px solid #FFE7CC;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 14px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #9A3412;
+    }
+
+    /* ─── Operational Activity & Invoices Table Section ─────────── */
+    .operational-feed-grid {
+      display: grid;
+      grid-template-columns: 7fr 5fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 1080px) {
+      .operational-feed-grid { grid-template-columns: 1fr; }
+    }
+
+    .invoices-feed-card {
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: var(--dash-radius);
+      padding: 20px 22px;
+      box-shadow: var(--dash-shadow);
+    }
+
+    .order-status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .order-status-pill.badge-settled {
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+    }
+    .order-status-pill.badge-open {
+      background: #FFFBEB;
+      color: #D97706;
+      border: 1px solid #FDE68A;
+    }
+    .order-status-pill.badge-returned {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+    }
+
+    .quick-tiles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-tile-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--dash-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--dash-text);
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .action-tile-btn:hover {
+      background: var(--dash-primary-light);
+      border-color: var(--dash-primary);
+      color: var(--dash-primary);
+      transform: translateY(-1px);
+    }
+
+    .action-tile-btn .tile-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .action-tile-btn .tile-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #F4EFEA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--dash-primary);
+      flex-shrink: 0;
+    }
+
+    .action-tile-btn .tile-title {
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .kbd-pill {
+      font-size: 10px;
+      font-family: monospace;
+      font-weight: 800;
+      color: var(--dash-text-muted);
+      background: #F4EFEA;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ─── 1. Signature FoodAnalytics Sidebar ───────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">القوائم الأساسية</div>
+
+      <div class="sidebar-nav-item active" onclick="navigate('main-dashboard.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('pos-invoice.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>نقطة البيع (POS)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('tables.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>الصالات والترابيزات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('returns.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>مرتجع طلب</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('customers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>العملاء</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('whatsapp-chat.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>محادثات واتساب</span>
+        <span class="badge-count" id="sidebarWaBadge" style="display:none; margin-right:auto; background:#10B981; color:#fff;">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section admin-only">
+      <div class="sidebar-section-title">المخزون والمالية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('suppliers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>الموردين والمشتريات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('services.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>المنتجات والأصناف</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('inventory.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+        <span>المخزون والمواد الخام</span>
+        <span id="sidebarInventoryBadge" class="badge-count" style="display:none; margin-right:auto; background:var(--danger); color:#fff;">0</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('finance.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الحسابات والمالية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('hr.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>شئون الموظفين</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">التقارير والإعدادات</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('daily-report.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>التقرير اليومي وإغلاق الوردية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('reports.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>التقارير المحاسبية الشاملة</span>
+      </div>
+
+      <div class="sidebar-nav-item admin-only" onclick="navigate('settings.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>الإعدادات</span>
+      </div>
+    </div>
+
+    <!-- Promo Card (Inspired by "Upgrade to Pro" card in reference image) -->
+    <div class="sidebar-promo-card">
+      <div class="sidebar-promo-thumb">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      </div>
+      <div class="sidebar-promo-title">كافيه برو الذكي</div>
+      <div class="sidebar-promo-desc">تحليلات وإدارة شاملة لأداء كافيه ومطعمك بدقة واحترافية</div>
+      <button class="sidebar-promo-btn" onclick="navigate('pos-invoice.html')">+ طلب جديد [F1]</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="font-weight:700; color:var(--dash-text-muted); font-size:11px;">CafePro Management System</div>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Workspace ─────────────────────────────────────── -->
+  <div class="main-workspace">
+
+    <!-- Top Command Header -->
+    <header class="dashboard-header">
+      <!-- Search Bar Pill (Matching Tablet Header) -->
+      <div class="header-left-search">
+        <div class="header-search-pill">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="بحث في الأصناف، الطلبات، العملاء..." onkeydown="if(event.key==='Enter') navigate('services.html')" />
+        </div>
+      </div>
+
+      <!-- Controls & User Profile -->
+      <div class="header-context-controls">
+        <!-- Notification Bell with Dynamic Dropdown -->
+        <div class="header-notification-wrapper" style="position:relative;">
+          <button class="header-round-btn" id="headerNotificationBtn" onclick="toggleNotificationsMenu(event)" title="التنبيهات والإشعارات">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="btn-badge-dot" id="headerNotificationDot" style="display:none;"></span>
+          </button>
+
+          <!-- Notification Dropdown Panel -->
+          <div class="notifications-dropdown" id="notificationsDropdown" style="display:none; position:absolute; top:calc(100% + 10px); left:0; width:330px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:16px; box-shadow:0 12px 32px rgba(0,0,0,0.12); z-index:9999; padding:0; overflow:hidden;">
+            <div style="padding:14px 16px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-weight:800; font-size:13px; color:#1E293B;">مركز التنبيهات والإشعارات</span>
+              <span id="notificationsCountBadge" style="background:#FF5B22; color:#FFFFFF; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; display:none;">0</span>
+            </div>
+            <div id="notificationsList" style="max-height:280px; overflow-y:auto; padding:6px 0;">
+              <!-- Dynamic alert items -->
+            </div>
+            <div style="padding:10px 14px; background:#FAFBFD; border-top:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+              <button type="button" class="btn btn-sm btn-outline" onclick="navigate('whatsapp-chat.html')" style="font-size:11px; padding:4px 10px;">محادثات الواتساب</button>
+              <button type="button" class="btn btn-sm btn-outline" onclick="navigate('inventory-report.html')" style="font-size:11px; padding:4px 10px;">تقرير النواقص</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Icon -->
+        <button class="header-round-btn admin-only" onclick="navigate('settings.html')" title="إعدادات النظام">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <!-- Refresh Button -->
+        <button class="header-round-btn" onclick="loadStats(); updateLowStockBadge();" title="تحديث البيانات">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+
+        <!-- User Profile Avatar Chip -->
+        <div class="header-user-chip" onclick="openAdminProfileModal()" title="الملف الشخصي للمدير">
+          <div class="header-user-avatar" id="userAvatarContainer" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <span id="userAvatarLetter">م</span>
+            <img id="userAvatarImg" src="" alt="avatar" style="display:none; width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+          </div>
+          <div>
+            <span class="header-user-name" id="currentUserName">المدير</span>
+            <span class="header-user-role" id="userRoleBadge">المدير</span>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <button class="header-round-btn" onclick="handleLogout()" title="تسجيل الخروج والعودة لشاشة الدخول" style="color:#DC2626;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Workspace Body -->
+    <div class="dashboard-scroll-area">
+      <div class="dashboard-layout-container">
+
+        <!-- Trial Banner Alert (if applicable) -->
+        <div id="trialBanner" style="display:none; align-items:center; justify-content:space-between; padding:12px 18px; background:#FEF2F2; border:1px solid #FCA5A5; border-radius:12px; font-size:13px; font-weight:700; color:#B91C1C;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="trialBannerText">تنبيه فترة التجربة</span>
+          </div>
+          <button class="btn btn-sm" onclick="window.electron.navigate('activation.html')" style="background:#FF5B22; color:#fff; border:none; padding:4px 14px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:800;">تفعيل الآن</button>
+        </div>
+
+        <!-- ─── 3. Greeting Hero Section ─── -->
+        <div class="dashboard-greeting-hero">
+          <div class="greeting-text-group">
+            <h1 class="greeting-title" id="greetingHeader">صباح الخير، أهلاً بك!</h1>
+            <div class="greeting-subtitle">إليك ملخص ما يحدث في كافيه ومطعمك اليوم.</div>
+          </div>
+
+          <div class="greeting-actions-group">
+            <!-- Live Date & Clock Pill -->
+            <div class="date-filter-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="dateDisplay">&mdash;</span>
+              <span style="color:#CBD5E1;">•</span>
+              <span id="clockDisplay" style="font-weight:800; color:var(--dash-text);">00:00:00</span>
+            </div>
+
+            <!-- Download Report Button -->
+            <button class="btn-hero-primary" onclick="navigate('daily-report.html')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>تحميل التقرير</span>
+            </button>
+
+            <!-- Add Item / New Order Button -->
+            <button class="btn-hero-outline" onclick="navigate('pos-invoice.html')">
+              <span style="font-size:16px; font-weight:900; color:var(--dash-primary); line-height:1;">+</span>
+              <span>طلب جديد [F1]</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ─── 4. Top 4 Metric KPI Cards (Matching Tablet View) ─── -->
+        <div class="kpi-row-analytics">
+          <!-- KPI 1: Total Revenue -->
+          <div class="analytics-stat-card">
+            <div class="stat-card-top-row">
+              <div class="stat-badge-icon icon-orange">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <span class="stat-label-text">إجمالي المبيعات</span>
+            </div>
+            <div class="stat-card-mid-row">
+              <div>
+                <span class="stat-big-value" id="todaySales">0</span>
+                <span class="stat-unit">ج.م</span>
+              </div>
+              <div class="sparkline-box">
+                <!-- Smooth Mini Curve SVG (flatline when 0) -->
+                <svg viewBox="0 0 80 32" fill="none" id="sparklineSales">
+                  <path id="sparklineSalesPath" d="M0 28 L80 28" stroke="#FF5B22" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-trend-footer" id="salesTrendFooter">
+              <span class="trend-sub-note" style="color:#94A3B8;">— لا توجد مبيعات بعد</span>
+            </div>
+          </div>
+
+          <!-- KPI 2: Total Orders -->
+          <div class="analytics-stat-card">
+            <div class="stat-card-top-row">
+              <div class="stat-badge-icon icon-orange">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <span class="stat-label-text">إجمالي الطلبات</span>
+            </div>
+            <div class="stat-card-mid-row">
+              <div>
+                <span class="stat-big-value" id="todayOrdersCount">0</span>
+                <span class="stat-unit">طلب</span>
+              </div>
+              <div class="sparkline-box">
+                <svg viewBox="0 0 80 32" fill="none" id="sparklineOrders">
+                  <path id="sparklineOrdersPath" d="M0 28 L80 28" stroke="#FF5B22" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-trend-footer" id="ordersTrendFooter">
+              <span class="trend-sub-note" style="color:#94A3B8;">— بانتظار أول طلب</span>
+            </div>
+          </div>
+
+          <!-- KPI 3: New Customers -->
+          <div class="analytics-stat-card">
+            <div class="stat-card-top-row">
+              <div class="stat-badge-icon icon-green">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <span class="stat-label-text">العملاء والرواد</span>
+            </div>
+            <div class="stat-card-mid-row">
+              <div>
+                <span class="stat-big-value" id="totalCustomersCount">0</span>
+                <span class="stat-unit">عميل</span>
+              </div>
+              <div class="sparkline-box">
+                <svg viewBox="0 0 80 32" fill="none" id="sparklineCustomers">
+                  <path id="sparklineCustomersPath" d="M0 28 L80 28" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-trend-footer" id="customersTrendFooter">
+              <span class="trend-sub-note" style="color:#94A3B8;">— لا يوجد عملاء بعد</span>
+            </div>
+          </div>
+
+          <!-- KPI 4: Average Order Value / Drawer Cash -->
+          <div class="analytics-stat-card">
+            <div class="stat-card-top-row">
+              <div class="stat-badge-icon icon-amber">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </div>
+              <span class="stat-label-text">متوسط قيمة الطلب</span>
+            </div>
+            <div class="stat-card-mid-row">
+              <div>
+                <span class="stat-big-value" id="avgOrderValue">0</span>
+                <span class="stat-unit">ج.م</span>
+              </div>
+              <div class="sparkline-box">
+                <svg viewBox="0 0 80 32" fill="none" id="sparklineAvg">
+                  <path id="sparklineAvgPath" d="M0 28 L80 28" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-trend-footer" id="avgTrendFooter">
+              <span class="trend-sub-note" style="color:#94A3B8;">— عند تسجيل الطلبات</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── 5. Middle Analytics Row (Revenue Trend + Category Donut) ─ -->
+        <div class="analytics-middle-grid">
+
+          <!-- Card 1: Revenue & Orders Trend (Dual Smooth Curve Chart) -->
+          <div class="chart-panel-card">
+            <div>
+              <div class="chart-panel-header">
+                <div class="chart-title-text">اتجاه المبيعات والطلبات</div>
+                <div class="chart-filter-controls">
+                  <div class="pill-tabs-small">
+                    <button class="pill-tab-btn active" onclick="switchTrendPeriod('today', this)">اليوم</button>
+                    <button class="pill-tab-btn" onclick="switchTrendPeriod('week', this)">هذا الأسبوع</button>
+                    <button class="pill-tab-btn" onclick="switchTrendPeriod('month', this)">هذا الشهر</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="chart-legend-row">
+                <div class="legend-item">
+                  <span class="legend-dot legend-revenue"></span>
+                  <span>المبيعات (ج.م)</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot legend-orders"></span>
+                  <span>الطلبات</span>
+                </div>
+              </div>
+
+              <!-- Interactive Curved Dual Area SVG (Dynamically Rendered) -->
+              <div class="trend-svg-container" id="trendChartContainer">
+                <!-- Injected dynamically by loadSalesTrendChart() based on actual database records -->
+              </div>
+            </div>
+
+            <!-- Bottom KPI Strip inside Card -->
+            <div class="chart-footer-kpi-bar">
+              <div class="footer-kpi-item">
+                <span class="footer-kpi-label">مبيعات اليوم</span>
+                <span class="footer-kpi-val" id="chartTodayRevenue">0 ج.م</span>
+              </div>
+              <div class="footer-kpi-item">
+                <span class="footer-kpi-label">طلبات اليوم</span>
+                <span class="footer-kpi-val" id="chartTodayOrders">0 طلب</span>
+              </div>
+              <div class="footer-kpi-item">
+                <span class="footer-kpi-label">ذروة الإيراد</span>
+                <span class="footer-kpi-val" id="chartPeakRevenue">0 ج.م | &mdash;</span>
+              </div>
+              <div class="footer-kpi-item">
+                <span class="footer-kpi-label">ذروة الطلبات</span>
+                <span class="footer-kpi-val" id="chartPeakOrders">0 طلب | &mdash;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Orders by Category (Dynamic Donut + Breakdown) -->
+          <div class="chart-panel-card">
+            <div>
+              <div class="chart-panel-header">
+                <div class="chart-title-text">الطلبات حسب الفئات</div>
+                <div style="font-size:11px; font-weight:700; color:var(--dash-text-muted);" id="categoryFilterLabel">مبيعات اليوم والنشاط الفعلي</div>
+              </div>
+
+              <!-- Donut Visual + Legend Row -->
+              <div class="donut-layout-body">
+                <div class="donut-visual-wrap">
+                  <svg viewBox="0 0 160 160" width="100%" height="100%" id="donutSvg">
+                    <circle cx="80" cy="80" r="58" fill="none" stroke="#F4EFEA" stroke-width="20"/>
+                  </svg>
+                  <div class="donut-center-info">
+                    <span class="donut-center-num" id="donutTotalOrders">0</span>
+                    <span class="donut-center-sub">إجمالي الطلبات</span>
+                  </div>
+                </div>
+
+                <!-- Category Breakdown Container -->
+                <div class="category-legend-list" id="categoryLegendList">
+                  <div style="text-align:center; padding:20px; color:#8E847C; font-size:12px;">جاري تحميل الفئات...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Highlight Banner -->
+            <div class="category-highlight-callout" id="categoryHighlightCallout">
+              <span class="callout-crown-icon" style="display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </span>
+              <div>
+                <span class="callout-text-main" id="catHighlightTitle">الفئة الأكثر طلباً: </span>
+                <span class="callout-text-sub" id="catHighlightDesc">ستظهر الفئة الأعلى طلباً بعد تسجيل أول طلبات مبيعات.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ─── 6. Bottom 3 Cards Row (Dishes + Status + Insights) ──── -->
+        <div class="analytics-bottom-grid">
+
+          <!-- Card A: Top Selling Dishes -->
+          <div class="chart-panel-card">
+            <div class="chart-panel-header">
+              <div class="chart-title-text">الأصناف الأكثر مبيعاً</div>
+              <button class="btn btn-ghost btn-sm" onclick="navigate('services.html')" style="font-weight:700; color:var(--dash-primary); font-size:12px;">عرض المنيو &larr;</button>
+            </div>
+
+            <div class="top-dishes-list" id="topDishesList">
+              <div style="text-align:center; padding:30px; color:#8E847C; font-size:12px;">جاري تحميل الأصناف...</div>
+            </div>
+          </div>
+
+          <!-- Card B: Order Status Gauge -->
+          <div class="chart-panel-card">
+            <div class="chart-panel-header">
+              <div class="chart-title-text">حالات الفواتير والطلبات</div>
+              <div style="font-size:11px; font-weight:700; color:var(--dash-text-muted);">اليوم</div>
+            </div>
+
+            <!-- Half-Donut / Speedometer Gauge -->
+            <div class="speedometer-gauge-wrap">
+              <svg viewBox="0 0 200 110" width="190" height="105" id="speedometerSvg">
+                <!-- Background Arc -->
+                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#F4EFEA" stroke-width="16" stroke-linecap="round"/>
+                <!-- Green Segment (Completed) -->
+                <path id="gaugeCompletedArc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#10B981" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 252"/>
+              </svg>
+            </div>
+
+            <!-- Gauge Metric Pills -->
+            <div class="gauge-metrics-row" id="gaugeMetricsRow">
+              <div class="gauge-pill-stat">
+                <span class="gauge-pct" id="gaugeCompletedPct" style="color:#10B981;">0%</span>
+                <span class="gauge-lbl" id="gaugeCompletedLbl">مكتمل (0)</span>
+              </div>
+              <div class="gauge-pill-stat">
+                <span class="gauge-pct" id="gaugePrepPct" style="color:#F59E0B;">0%</span>
+                <span class="gauge-lbl" id="gaugePrepLbl">جزئي (0)</span>
+              </div>
+              <div class="gauge-pill-stat">
+                <span class="gauge-pct" id="gaugePendingPct" style="color:#FF5B22;">0%</span>
+                <span class="gauge-lbl" id="gaugePendingLbl">معلق (0)</span>
+              </div>
+              <div class="gauge-pill-stat">
+                <span class="gauge-pct" id="gaugeCancelledPct" style="color:#EF4444;">0%</span>
+                <span class="gauge-lbl" id="gaugeCancelledLbl">مرتجع (0)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card C: Business Insights -->
+          <div class="chart-panel-card">
+            <div class="chart-panel-header">
+              <div class="chart-title-text" style="display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span>رؤى ومعلومات الأعمال</span>
+              </div>
+            </div>
+
+            <div class="insights-grid-2x2">
+              <div class="insight-card-item">
+                <span class="insight-item-title">معدل نمو المبيعات</span>
+                <span class="insight-item-val" id="insightGrowthVal" style="color:#10B981;">—</span>
+              </div>
+              <div class="insight-card-item">
+                <span class="insight-item-title">الصنف الأعلى إيراداً</span>
+                <span class="insight-item-val" id="insightTopDishVal">—</span>
+              </div>
+              <div class="insight-card-item">
+                <span class="insight-item-title">الأكثر طلباً ومبيعاً</span>
+                <span class="insight-item-val" id="insightTopQtyVal">—</span>
+              </div>
+              <div class="insight-card-item">
+                <span class="insight-item-title">فترة الذروة اليومية</span>
+                <span class="insight-item-val" id="insightPeakHourVal">—</span>
+              </div>
+            </div>
+
+            <!-- Bottom Motivational Banner -->
+            <div class="insight-motivational-banner" id="insightMotivationalBanner">
+              متابعة مباشرة ودقيقة لبيانات الكافيه والمطعم من واقع الفواتير المسجلة.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ─── 7. Operational Activity & Cashier Actions Grid ───────── -->
+        <div class="operational-feed-grid">
+
+          <!-- Recent Invoices Activity Table -->
+          <div class="invoices-feed-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div>
+                <span style="font-size:15px; font-weight:800; color:var(--dash-text);">أحدث الفواتير والطلبات المسجلة</span>
+                <span style="font-size:11px; font-weight:600; color:var(--dash-text-muted); margin-right:8px;">آخر العمليات المسجلة مباشرة</span>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="navigate('reports.html')" style="height:30px; font-size:11px; font-weight:700;">
+                سجل الفواتير الكامل &larr;
+              </button>
+            </div>
+
+            <div class="table-wrapper" style="border:none; box-shadow:none;">
+              <table style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>رقم الفاتورة</th>
+                    <th>العميل والموقع</th>
+                    <th>الوقت</th>
+                    <th style="text-align:left;">الإجمالي</th>
+                    <th style="text-align:center;">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody id="todayInvoicesBody">
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding:24px; color:#94A3B8; font-size:13px;">
+                      جاري تحميل بيانات الفواتير...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Cashier Actions Toolbar & Financial Strip -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <!-- Fast Action Tiles -->
+            <div style="background:#FFFFFF; border:1px solid var(--dash-border); border-radius:var(--dash-radius); padding:18px; box-shadow:var(--dash-shadow);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:14px; font-weight:800; color:var(--dash-text);">العمليات السريعة</span>
+                <span style="font-size:11px; font-weight:600; color:var(--dash-text-muted);">اختصارات لوحة المفاتيح</span>
+              </div>
+
+              <!-- Hero Action: New POS Sale -->
+              <button class="action-tile-btn" onclick="navigate('pos-invoice.html')" style="background:linear-gradient(135deg, #FF5B22 0%, #FF7844 100%); color:#FFFFFF; margin-bottom:10px; border:none; box-shadow:0 4px 12px rgba(255,91,34,0.25);">
+                <div class="tile-left">
+                  <div class="tile-icon" style="background:rgba(255,255,255,0.2); color:#FFFFFF;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  </div>
+                  <div>
+                    <div class="tile-title" style="font-size:13px; color:#FFFFFF;">طلب / فاتورة جديدة للكاشير</div>
+                    <div style="font-size:11px; opacity:0.85;">صالة • طاولة • دليفري • تيك أواي</div>
+                  </div>
+                </div>
+                <span class="kbd-pill" style="background:rgba(255,255,255,0.25); color:#FFFFFF;">F1</span>
+              </button>
+
+              <div class="quick-tiles-grid">
+                <!-- Daily Report [F2] -->
+                <button class="action-tile-btn" onclick="navigate('daily-report.html')">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                    <span class="tile-title">التقرير اليومي</span>
+                  </div>
+                  <span class="kbd-pill">F2</span>
+                </button>
+
+                <!-- Expenses [F3] -->
+                <button class="action-tile-btn" onclick="navigate('finance.html')">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
+                    <span class="tile-title">المصروفات</span>
+                  </div>
+                  <span class="kbd-pill">F3</span>
+                </button>
+
+                <!-- Advance [F4] -->
+                <button class="action-tile-btn" onclick="showAdvanceModal()">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+                    <span class="tile-title">سلفة موظف</span>
+                  </div>
+                  <span class="kbd-pill">F4</span>
+                </button>
+
+                <!-- Customer Modal -->
+                <button class="action-tile-btn" onclick="showNewCustomerModal()">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
+                    <span class="tile-title">عميل جديد</span>
+                  </div>
+                </button>
+
+                <!-- Barcode Labels -->
+                <button class="action-tile-btn" onclick="openPrintBarcodeModal()">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="3" y2="19"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="11" y1="5" x2="11" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg></div>
+                    <span class="tile-title">طباعة الباركود</span>
+                  </div>
+                </button>
+
+                <!-- Supplier Modal -->
+                <button class="action-tile-btn admin-only" onclick="showNewSupplierModal()">
+                  <div class="tile-left">
+                    <div class="tile-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg></div>
+                    <span class="tile-title">إضافة مورد</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Balances & Low Stock Warning -->
+            <div style="background:#FFFFFF; border:1px solid var(--dash-border); border-radius:var(--dash-radius); padding:16px 18px; box-shadow:var(--dash-shadow);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:13px; font-weight:800; color:var(--dash-text);">الأرصدة والعهد النقدية</span>
+                <span style="font-size:10px; font-weight:700; color:#10B981; background:#ECFDF5; padding:2px 8px; border-radius:20px;">مباشر</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--dash-border-subtle); font-size:12px;">
+                <span style="color:var(--dash-text-muted); font-weight:600;">رصيد الخزينة (الدرج):</span>
+                <span style="font-weight:800; color:var(--dash-text);"><span id="dailyNetCash">0</span> ج.م</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--dash-border-subtle); font-size:12px;">
+                <span style="color:var(--dash-text-muted); font-weight:600;">إجمالي مصروفات اليوم:</span>
+                <span style="font-weight:800; color:#EF4444;"><span id="todayExpenses">0</span> ج.م</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:12px;">
+                <span style="color:var(--dash-text-muted); font-weight:600;">نواقص المخزن:</span>
+                <span style="font-weight:800; color:#EF4444;"><span id="dashLowStockCount">0</span> صنف</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div><!-- /.dashboard-layout-container -->
+    </div><!-- /.dashboard-scroll-area -->
+
+  </div><!-- /.main-workspace -->
+</div><!-- /.app-layout -->
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ─── Barcode Print Modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="printBarcodeModal">
+  <div class="modal" style="max-width:560px; border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="3" y2="19"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="11" y1="5" x2="11" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg>
+        <span>طباعة ملصقات الباركود</span>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('printBarcodeModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">بحث عن صنف</label>
+        <div class="search-bar">
+          <input type="text" id="barcodeSearchInput" placeholder="اكتب اسم الصنف أو الباركود..." oninput="searchBarcodeItems()" />
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px;">
+        <span style="color:var(--text-muted); font-weight:600;">الأصناف:</span>
+        <div style="display:flex; gap:10px;">
+          <a href="javascript:void(0)" onclick="selectAllBarcodeItems(true)" style="color:var(--dash-primary); font-weight:700;">تحديد الكل</a>
+          <span style="color:var(--border);">|</span>
+          <a href="javascript:void(0)" onclick="selectAvailableBarcodeItems()" style="color:var(--dash-emerald); font-weight:700;">المتوفر فقط</a>
+          <span style="color:var(--border);">|</span>
+          <a href="javascript:void(0)" onclick="selectAllBarcodeItems(false)" style="color:var(--dash-red); font-weight:700;">إلغاء</a>
+        </div>
+      </div>
+
+      <div id="barcodeItemsList" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; margin-bottom:12px; background:#FFFFFF;"></div>
+
+      <div style="background:#FBF9F6; border:1px solid var(--border); border-radius:10px; padding:12px;">
+        <div id="barcodeSelectedCount" style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px;">لا توجد أصناف محددة</div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-success" onclick="doPrintBarcodeByStock()" style="flex:1.2; min-width:180px; height:38px; font-weight:800;">
+            طباعة بالكمية المتوفرة
+          </button>
+          <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:150px;">
+            <input type="number" id="barcodeCopiesInput" class="form-control" value="1" min="1" max="100" style="width:60px; height:38px; text-align:center; font-weight:800;" />
+            <button class="btn btn-outline" onclick="doPrintBarcodeLabels()" style="height:38px; flex:1; font-weight:700;">
+              طباعة نسخ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── New Customer Modal ───────────────────────────────────────── -->
+<div class="modal-overlay" id="newCustomerModal">
+  <div class="modal modal-sm" style="border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+        <span>إضافة عميل جديد</span>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('newCustomerModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="flex flex-col gap-3">
+        <div class="form-group">
+          <label class="form-label">اسم العميل *</label>
+          <input type="text" id="newCustName" class="form-control" placeholder="اكتب اسم العميل" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف / الواتساب</label>
+          <input type="text" id="newCustPhone" class="form-control" placeholder="01xxxxxxxxx" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">العنوان</label>
+          <input type="text" id="newCustAddress" class="form-control" placeholder="العنوان أو المنطقة" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الرصيد الافتتاحي (جنيه)</label>
+          <input type="number" id="newCustBalance" class="form-control" placeholder="0" value="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveNewCustomer()">حفظ العميل</button>
+      <button class="btn btn-outline" onclick="closeModal('newCustomerModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── New Supplier Modal ───────────────────────────────────────── -->
+<div class="modal-overlay" id="newSupplierModal">
+  <div class="modal modal-sm" style="border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg>
+        <span>إضافة مورد جديد</span>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('newSupplierModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="flex flex-col gap-3">
+        <div class="form-group">
+          <label class="form-label">اسم المورد *</label>
+          <input type="text" id="newSuppName" class="form-control" placeholder="اسم المورد أو الشركة" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف</label>
+          <input type="text" id="newSuppPhone" class="form-control" placeholder="01xxxxxxxxx" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">العنوان</label>
+          <input type="text" id="newSuppAddress" class="form-control" placeholder="العنوان" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الرصيد الافتتاحي (جنيه)</label>
+          <input type="number" id="newSuppBalance" class="form-control" placeholder="0" value="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveNewSupplier()">حفظ المورد</button>
+      <button class="btn btn-outline" onclick="closeModal('newSupplierModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Advance Modal ────────────────────────────────────────────── -->
+<div class="modal-overlay" id="advanceModal">
+  <div class="modal modal-sm" style="border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <span>تسجيل سلفة موظف</span>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('advanceModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="flex flex-col gap-3">
+        <div class="form-group">
+          <label class="form-label">الموظف *</label>
+          <select id="advEmpId" class="form-control">
+            <option value="">اختر الموظف</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">المبلغ (جنيه) *</label>
+          <input type="number" id="advAmount" class="form-control" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">الخزينة *</label>
+          <select id="advTreasury" class="form-control">
+            <option value="الخزينة">الخزينة النقدية (الدرج)</option>
+            <option value="فودافون كاش">فودافون كاش</option>
+            <option value="إنستا باي">إنستا باي / تحويل</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">سبب السلفة</label>
+          <input type="text" id="advNotes" class="form-control" placeholder="ملاحظات..." />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveAdvance()">تأكيد السلفة</button>
+      <button class="btn btn-outline" onclick="closeModal('advanceModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Attendance Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="attendanceModal">
+  <div class="modal modal-sm" style="max-width:400px; border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title" id="attModalTitle">تسجيل حضور / انصراف</div>
+      <button class="modal-close-btn" onclick="closeModal('attendanceModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group mb-2">
+        <label class="form-label">الموظف</label>
+        <select class="form-control" id="attEmpSelect"></select>
+      </div>
+      <div class="form-group mb-2">
+        <label class="form-label">التاريخ</label>
+        <input type="date" class="form-control" id="attDate">
+      </div>
+      <div class="form-group mb-2" id="attTimeInGroup">
+        <label class="form-label">وقت الحضور</label>
+        <input type="time" class="form-control" id="attTimeIn">
+      </div>
+      <div class="form-group mb-2" id="attTimeOutGroup">
+        <label class="form-label">وقت الانصراف</label>
+        <input type="time" class="form-control" id="attTimeOut">
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:center; gap:8px;">
+      <button class="btn btn-primary" id="btnSubmitAttIn" onclick="saveDashboardAttendance()">تسجيل حضور</button>
+      <button class="btn btn-warning" id="btnSubmitAttOut" onclick="saveDashboardCheckout()">تسجيل انصراف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Quit Confirmation Modal ──────────────────────────────────── -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal modal-sm" style="max-width:420px; border-radius:16px;">
+    <div class="modal-header">
+      <div class="modal-title">إغلاق البرنامج</div>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <p style="font-size:14px; font-weight:700; color:var(--dash-text); margin-bottom:6px;">هل تريد عمل نسخة احتياطية قبل الخروج؟</p>
+    </div>
+    <div class="modal-footer" style="justify-content:center; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="sendDailyReportAndQuit()" style="width:100%; margin-bottom:6px;">
+        إرسال التقرير اليومي وخروج
+      </button>
+      <button class="btn btn-success" onclick="window.electron.quitWithBackup()">نسخة وخروج</button>
+      <button class="btn btn-danger" onclick="window.electron.quitWithoutBackup()">خروج</button>
+      <button class="btn btn-outline" onclick="document.getElementById('quitModal').classList.remove('open'); window.electron.cancelQuit();">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Admin Profile & Credentials Modal ──────────────────────── -->
+<div class="modal-overlay" id="adminProfileModal">
+  <div class="modal modal-md" style="max-width:520px; border-radius:16px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="font-size:16px; font-weight:800; color:var(--dash-espresso);">الملف الشخصي للمدير</div>
+        <div style="font-size:12px; color:var(--dash-text-muted); font-weight:600; margin-top:2px;">تعديل بيانات الحساب، الاسم، اسم المستخدم، وكلمة المرور</div>
+      </div>
+      <button class="modal-close" onclick="closeAdminProfileModal()" title="إغلاق">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- Avatar Section -->
+      <div style="display:flex; align-items:center; gap:16px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:14px 16px;">
+        <div style="position:relative; width:68px; height:68px; border-radius:50%; overflow:hidden; background:linear-gradient(135deg, #FF5B22, #FF7844); display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-size:26px; font-weight:800; flex-shrink:0; box-shadow:0 2px 8px rgba(255,91,34,0.25);">
+          <span id="profAvatarLetter">م</span>
+          <img id="profAvatarPreview" src="" alt="avatar" style="display:none; width:100%; height:100%; object-fit:cover;" />
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:800; color:#1E1B18;" id="profDisplayName">المدير</div>
+          <div style="font-size:11px; color:#64748B; margin-bottom:8px;">صورة الحساب الشخصي للمدير</div>
+          <div style="display:flex; gap:8px;">
+            <label class="btn btn-outline btn-sm" style="cursor:pointer; font-size:11px; padding:4px 12px; font-weight:700;">
+              <span>تغيير الصورة</span>
+              <input type="file" id="adminAvatarFile" accept="image/*" style="display:none;" onchange="handleAdminAvatarUpload(event)" />
+            </label>
+            <button class="btn btn-hairline-danger btn-sm" style="font-size:11px; padding:4px 12px; font-weight:700;" onclick="removeAdminAvatar()">إزالة الصورة</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Details -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px; font-weight:700;">اسم المستخدم (تسجيل الدخول) *</label>
+          <input type="text" id="profUsername" class="form-control" placeholder="اسم المستخدم" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px; font-weight:700;">الاسم الكامل *</label>
+          <input type="text" id="profFullName" class="form-control" placeholder="الاسم الكامل للمدير" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700;">رقم الهاتف</label>
+        <input type="text" id="profPhone" class="form-control" placeholder="01xxxxxxxxx" />
+      </div>
+
+      <!-- Password Change Section -->
+      <div style="border-top:1px solid #EAE3DC; padding-top:14px; margin-top:2px;">
+        <div style="font-size:13px; font-weight:800; color:#1E1B18; margin-bottom:4px;">تغيير كلمة المرور</div>
+        <div style="font-size:11px; color:#64748B; margin-bottom:12px;">اترك الحقول فارغة إذا كنت لا ترغب في تغيير كلمة المرور الحالية</div>
+        
+        <div class="form-group mb-2">
+          <label class="form-label" style="font-size:12px; font-weight:700;">كلمة المرور الحالية</label>
+          <input type="password" id="profCurrentPass" class="form-control" placeholder="كلمة المرور الحالية (مطلوبة عند تعيين كلمة مرور جديدة)" autocomplete="current-password" />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:12px; font-weight:700;">كلمة المرور الجديدة</label>
+            <input type="password" id="profNewPass" class="form-control" placeholder="كلمة المرور الجديدة" autocomplete="new-password" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:12px; font-weight:700;">تأكيد كلمة المرور</label>
+            <input type="password" id="profConfirmPass" class="form-control" placeholder="تأكيد كلمة المرور الجديدة" autocomplete="new-password" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#F8FAFC; border-top:1px solid #EAE3DC;">
+      <button class="btn btn-hairline-danger btn-sm" onclick="handleLogout()" style="font-weight:700;">تسجيل الخروج</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="closeAdminProfileModal()">إلغاء</button>
+        <button class="btn btn-primary btn-sm" onclick="saveAdminProfile()" id="btnSaveAdminProfile" style="font-weight:800; padding:6px 18px;">حفظ التعديلات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/shared/common.js"></script>
+<script src="js/main-dashboard.js"></script>
+</body>
+</html>

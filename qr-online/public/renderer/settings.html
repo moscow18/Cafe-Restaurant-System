@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CafePro POS — إعدادات النظام والتهيئة</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    /* ─── Settings Master Styling (FoodAnalytics Theme) ─────────────── */
+    :root {
+      --set-bg: #FBF9F6;
+      --set-surface: #FFFFFF;
+      --set-border: #EAE3DC;
+      --set-border-subtle: #F3ECE5;
+      --set-text: #1E1B18;
+      --set-text-secondary: #585049;
+      --set-text-muted: #8E847C;
+      --set-primary: #FF5B22;
+      --set-primary-hover: #E64A19;
+      --set-primary-light: #FFF5F0;
+      --set-radius: 16px;
+      --set-shadow: 0 2px 10px rgba(45, 20, 10, 0.03);
+    }
+
+    body {
+      background: var(--set-bg);
+      color: var(--set-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      direction: rtl;
+    }
+
+    .app-layout {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--set-bg);
+    }
+
+    /* ─── Sidebar Customization ───────────────────────────────────── */
+    .sidebar {
+      width: 250px;
+      background: #FFFFFF;
+      border-left: 1px solid var(--set-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 20;
+    }
+
+    .sidebar-logo {
+      padding: 18px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--set-border-subtle);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(255, 91, 34, 0.28);
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1E1B18;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .sidebar-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFF5F0;
+      border: 1px solid #FFD9C7;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--set-primary);
+      margin-top: 3px;
+    }
+
+    .sidebar-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--set-primary);
+    }
+
+    .sidebar-section {
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--set-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 12px 4px;
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--set-text-secondary);
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .sidebar-nav-item svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+      color: var(--set-text-muted);
+      transition: all 0.18s ease;
+      flex-shrink: 0;
+    }
+
+    .sidebar-nav-item:hover {
+      background: #FFF5F0;
+      color: var(--set-primary);
+      transform: translateX(-2px);
+    }
+
+    .sidebar-nav-item:hover svg {
+      color: var(--set-primary);
+    }
+
+    .sidebar-nav-item.active {
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%) !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 14px rgba(255, 91, 34, 0.32);
+    }
+
+    .sidebar-nav-item.active svg {
+      color: #FFFFFF !important;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--set-border-subtle);
+      background: #FAF8F5;
+      text-align: center;
+    }
+
+    /* ─── Main Content Workspace ──────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--set-bg);
+      min-width: 0;
+    }
+
+    /* ─── App Header ─────────────────────────────────────────────── */
+    .app-header {
+      height: 64px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--set-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-info-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-badge-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #FFF5F0;
+      border: 1px solid #FFD9C7;
+      color: var(--set-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1E1B18;
+      line-height: 1.2;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--set-text-muted);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-header-save {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+      transition: all 0.18s ease;
+    }
+
+    .btn-header-save:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.38);
+    }
+
+    .btn-header-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #FFFFFF;
+      color: var(--set-text-secondary);
+      border: 1px solid var(--set-border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-header-back:hover {
+      border-color: var(--set-primary);
+      color: var(--set-primary);
+      background: var(--set-primary-light);
+    }
+
+    /* ─── Scrollable Content Area ────────────────────────────────── */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px 40px;
+    }
+
+    /* ─── Settings Cards ─────────────────────────────────────────── */
+    .set-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1050px) {
+      .set-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .set-card {
+      background: #FFFFFF;
+      border: 1px solid var(--set-border);
+      border-radius: var(--set-radius);
+      padding: 22px 24px;
+      box-shadow: var(--set-shadow);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .set-card:hover {
+      border-color: #D9CFC5;
+      box-shadow: 0 6px 20px rgba(45, 20, 10, 0.05);
+    }
+
+    .set-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--set-border-subtle);
+    }
+
+    .set-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #FFF5F0;
+      border: 1px solid #FFD9C7;
+      color: var(--set-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .set-card-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1E1B18;
+    }
+
+    .set-card-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--set-text-muted);
+      margin-top: 2px;
+    }
+
+    /* ─── Form Fields & Inputs ───────────────────────────────────── */
+    .set-field-group {
+      margin-bottom: 18px;
+    }
+
+    .set-field-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .set-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--set-text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .set-control {
+      width: 100%;
+      height: 42px;
+      background: #FAF8F5;
+      border: 1px solid #E2D9CE;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E1B18;
+      transition: all 0.18s ease;
+      box-sizing: border-box;
+    }
+
+    textarea.set-control {
+      height: auto;
+      padding: 10px 14px;
+      resize: vertical;
+    }
+
+    .set-control:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: var(--set-primary);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.14);
+    }
+
+    .set-hint {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--set-text-muted);
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+
+    /* ─── Logo Uploader Box ──────────────────────────────────────── */
+    .logo-upload-box {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px;
+      background: #FAF8F5;
+      border: 1px solid var(--set-border-subtle);
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+
+    .logo-preview-frame {
+      width: 82px;
+      height: 82px;
+      border: 2px dashed #D6C7BC;
+      border-radius: 14px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .logo-preview-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .logo-placeholder-text {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--set-text-muted);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .logo-placeholder-text svg {
+      color: #C0B5AA;
+    }
+
+    .logo-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-logo-upload {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: linear-gradient(135deg, #FF5B22 0%, #FF7844 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.25);
+      transition: all 0.15s ease;
+      width: fit-content;
+    }
+
+    .btn-logo-upload:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 91, 34, 0.35);
+    }
+
+    .btn-logo-remove {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: #FFFFFF;
+      color: #EF4444;
+      border: 1px solid #FCA5A5;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      width: fit-content;
+    }
+
+    .btn-logo-remove:hover {
+      background: #FEE2E2;
+    }
+
+    /* ─── Premium iOS Style Switch ───────────────────────────────── */
+    .set-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      background: #FAF8F5;
+      border: 1px solid var(--set-border-subtle);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .set-toggle-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .set-toggle-row:hover {
+      border-color: #E2D9CE;
+      background: #FFFFFF;
+    }
+
+    .set-toggle-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1E1B18;
+    }
+
+    .set-toggle-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--set-text-muted);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    .switch-ios {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch-ios input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-ios-slider {
+      position: absolute;
+      inset: 0;
+      background-color: #D6C7BC;
+      border-radius: 26px;
+      transition: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .switch-ios-slider::before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      right: 3px;
+      top: 3px;
+      background-color: #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .switch-ios input:checked + .switch-ios-slider {
+      background-color: #10B981;
+    }
+
+    .switch-ios input:checked + .switch-ios-slider::before {
+      transform: translateX(-20px);
+    }
+
+    /* ─── Save Action Buttons in Sections ────────────────────────── */
+    .section-save-bar {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .btn-section-save {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      transition: all 0.18s ease;
+    }
+
+    .btn-section-save:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+    }
+
+    /* ─── Tax Live Simulator Box ──────────────────────────────────── */
+    .tax-simulator-card {
+      background: linear-gradient(145deg, #FFF9F5 0%, #FFF3EC 100%);
+      border: 1.5px solid #FFD4BF;
+      border-radius: var(--set-radius);
+      padding: 20px 22px;
+      margin-top: 20px;
+    }
+
+    .tax-sim-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--set-primary);
+    }
+
+    .tax-sim-receipt {
+      background: #FFFFFF;
+      border: 1px dashed #D6C7BC;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tax-sim-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--set-text-secondary);
+      font-weight: 600;
+    }
+
+    .tax-sim-row.total {
+      border-top: 1.5px dashed #E2D9CE;
+      padding-top: 8px;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #1E1B18;
+    }
+
+    /* ─── Barcode Preview Tag ─────────────────────────────────────── */
+    .barcode-preview-container {
+      background: #FAF8F5;
+      border: 1px dashed #D6C7BC;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    #barcodeLabelCard {
+      background: #FFFFFF;
+      color: #000000;
+      border: 1px solid #CCCCCC;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      width: 210px;
+      min-height: 130px;
+      transition: all 0.2s ease;
+    }
+
+    /* ─── WhatsApp Variable Chips ────────────────────────────────── */
+    .wa-var-chip {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 91, 34, 0.1);
+      color: #D94815;
+      border: 1px solid rgba(255, 91, 34, 0.25);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: monospace;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .wa-var-chip:hover {
+      background: rgba(255, 91, 34, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .wa-var-chip:active {
+      transform: scale(0.96);
+    }
+
+    .wa-var-chip--purple {
+      background: rgba(99, 102, 241, 0.1);
+      color: #6366F1;
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+    .wa-var-chip--purple:hover { background: rgba(99, 102, 241, 0.2); }
+
+    .wa-var-chip--green {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .wa-var-chip--green:hover { background: rgba(16, 185, 129, 0.2); }
+
+    /* ─── FoodAnalytics Users Table ───────────────────────────────── */
+    .table-wrapper {
+      background: #FFFFFF;
+      border: 1px solid var(--set-border);
+      border-radius: var(--set-radius);
+      overflow: hidden;
+      box-shadow: var(--set-shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    thead th {
+      background: #FAF8F5;
+      color: var(--set-text-secondary);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--set-border);
+    }
+
+    tbody td {
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #1E1B18;
+      border-bottom: 1px solid var(--set-border-subtle);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #FFFDFB;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 30px;
+      color: var(--set-text-muted);
+      font-weight: 600;
+    }
+
+    /* ─── Backups List Styling ────────────────────────────────────── */
+    .backup-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #FAF8F5;
+      border: 1px solid var(--set-border-subtle);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .backup-item:hover {
+      background: #FFFFFF;
+      border-color: #E2D9CE;
+      box-shadow: 0 2px 8px rgba(45, 20, 10, 0.04);
+    }
+
+    .backup-item-info { flex: 1; }
+    .backup-item-name { font-size: 13px; font-weight: 700; color: #1E1B18; }
+    .backup-item-meta { font-size: 11px; color: var(--set-text-muted); margin-top: 2px; }
+
+    /* ─── Danger Zone Reset Area ──────────────────────────────────── */
+    .danger-zone-box {
+      margin-top: 36px;
+      padding: 22px;
+      background: #FEF2F2;
+      border: 1.5px dashed #F87171;
+      border-radius: var(--set-radius);
+    }
+
+    .danger-zone-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #DC2626;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .danger-zone-desc {
+      font-size: 12px;
+      font-weight: 600;
+      color: #7F1D1D;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  
+  <!-- ─── 1. Signature FoodAnalytics Settings Sidebar ───────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-nav-item" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">أقسام الإعدادات</div>
+      
+      <div class="sidebar-nav-item active" data-section="store" onclick="showSection('store')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>بيانات الكافيه والمطعم</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="taxes" onclick="showSection('taxes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الضرائب وخدمة الصالة</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="printers" onclick="showSection('printers')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>إدارة الطابعات والباركود</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="cashier" onclick="showSection('cashier')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>صلاحيات الكاشير</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="users" onclick="showSection('users')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>إدارة المستخدمين</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="backup" onclick="showSection('backup')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>النسخ الاحتياطي</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="whatsapp" onclick="showSection('whatsapp')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>واتساب</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="wa-templates" onclick="showSection('wa-templates')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>قوالب الرسائل</span>
+      </div>
+
+      <div class="sidebar-nav-item" data-section="qr-menu" onclick="showSection('qr-menu')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>المنيو الإلكتروني QR</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div id="sidebarShopName" style="font-weight:700; color:var(--set-text-muted); font-size:11px;">CafePro Management System</div>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Content Area ──────────────────────────────────── -->
+  <div class="main-content">
+    
+    <!-- Top Command Header -->
+    <header class="app-header">
+      <div class="header-info-wrap">
+        <div class="header-badge-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div>
+          <div class="header-title" id="pageHeaderTitle">بيانات الكافيه والمطعم</div>
+          <div class="header-subtitle" id="pageHeaderSubtitle">تخصيص بيانات المتجر، الشعار، وملاحظات الفاتورة وتذييلها</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-header-save" id="headerSaveBtn" onclick="saveSettings()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>حفظ التعديلات</span>
+        </button>
+        <button class="btn-header-back" onclick="goBack()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>رجوع للرئيسية</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ─── 3. Section: Store & Receipt Settings (Default Active) ─── -->
+    <div class="content-area" id="section-store">
+      <div class="set-grid-2">
+        
+        <!-- Right Column: Store Data & Identity -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">بيانات المنشأة والهوية</div>
+              <div class="set-card-subtitle">البيانات الرسمية التي تظهر في رأس الفواتير والتقارير</div>
+            </div>
+          </div>
+
+          <!-- Logo Uploader Box -->
+          <div class="logo-upload-box">
+            <div class="logo-preview-frame" id="logoPreview">
+              <div class="logo-placeholder-text">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>شعار الكافيه</span>
+              </div>
+            </div>
+            <div class="logo-actions">
+              <button type="button" class="btn-logo-upload" onclick="chooseLogo()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>اختيار شعار الكافيه</span>
+              </button>
+              <button type="button" class="btn-logo-remove" onclick="removeLogo()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>إزالة الشعار</span>
+              </button>
+              <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="handleLogoUpload(event)" />
+              <div class="set-hint">يظهر الشعار في رأس الفاتورة الحرارية وإيصالات العملاء</div>
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">اسم الكافيه والمطعم *</label>
+            <input type="text" id="companyName" class="set-control" value="كافيه ومطعم برو" placeholder="اسم المنشأة" />
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">العنوان (يظهر على الفاتورة)</label>
+            <input type="text" id="address" class="set-control" placeholder="العنوان بالتفصيل" />
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;" class="set-field-group">
+            <div>
+              <label class="set-label">رقم الهاتف</label>
+              <input type="text" id="phone" class="set-control" placeholder="01xxxxxxxxx" />
+            </div>
+            <div>
+              <label class="set-label">العملة الرسمية</label>
+              <input type="text" id="currency" class="set-control" value="جنيه" placeholder="مثال: جنيه" />
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">الرقم الضريبي (اختياري)</label>
+            <input type="text" id="taxNumber" class="set-control" placeholder="مثال: 123-456-789" />
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">رقم واتساب الإدارة (لاستلام تقارير التقفيل اليومية)</label>
+            <input type="text" id="adminWaPhone" class="set-control" placeholder="مثال: 201xxxxxxxxx" />
+            <div class="set-hint">يُرسل النظام تقرير الإيرادات تلقائياً لهذا الرقم عند إغلاق الوردية</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">مجلد حفظ تقارير PDF تلقائياً (اختياري)</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="reportSavePath" class="set-control" placeholder="اضغط 'اختيار' لتحديد المسار" readonly style="flex:1;" />
+              <button class="btn btn-outline" type="button" onclick="selectReportFolder()" style="white-space:nowrap; padding:0 14px; font-weight:700;">اختيار</button>
+              <button class="btn btn-outline" type="button" onclick="document.getElementById('reportSavePath').value=''" style="white-space:nowrap; padding:0 10px; font-weight:700;">مسح</button>
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">⏰ ساعة تقليب اليوم الجديد (بداية اليوم العملي)</label>
+            <select id="dayCutoffHour" class="set-control" style="cursor:pointer;">
+              <option value="0">12:00 منتصف الليل (00:00 - افتراضي)</option>
+              <option value="1">01:00 صباحاً</option>
+              <option value="2">02:00 صباحاً</option>
+              <option value="3">03:00 صباحاً</option>
+              <option value="4">04:00 صباحاً</option>
+              <option value="5">05:00 صباحاً</option>
+              <option value="6">06:00 صباحاً</option>
+            </select>
+            <div class="set-hint">تحديد الساعة التي يعتبر النظام بعدها أن يوماً محاسبياً جديداً قد بدأ (مفيد إذا كان المحل يغلق فجراً).</div>
+          </div>
+        </div>
+
+        <!-- Left Column: Receipt Settings & Smart Operations -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">إعدادات الفاتورة والتشغيل الذكي</div>
+              <div class="set-card-subtitle">التحكم في نص الإيصال ومميزات التشغيل التلقائي</div>
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">ملاحظات ثابتة على كل فاتورة</label>
+            <textarea id="receiptNotes" class="set-control" rows="3" placeholder="مثال: البضاعة المباعة لا ترد ولا تستبدل بعد 14 يوم"></textarea>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">تذييل الفاتورة (عبارة الشكر)</label>
+            <input type="text" id="receiptFooter" class="set-control" placeholder="مثال: شكراً لزيارتكم ونسعد بخدمتكم دائماً" />
+          </div>
+
+          <!-- Feature Toggles -->
+          <div style="margin-top:24px;">
+            <div class="set-label" style="margin-bottom:12px; font-size:13px; color:#1E1B18;">خيارات التشغيل والطباعة</div>
+
+            <!-- Toggle: Customer Phone -->
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">إظهار تليفون العميل على الفاتورة</div>
+                <div class="set-toggle-sub">طباعة رقم هاتف العميل تلقائياً في الإيصال عند اختياره</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="showCustomerPhone" checked />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <!-- Toggle: Recipe Mode BOM -->
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">نظام الوصفات والمكونات (BOM / Recipe System)</div>
+                <div class="set-toggle-sub">خصم المواد الخام تلقائياً (بن، حليب، سكر...) عند بيع المشروبات وحساب التكلفة الفعلية وهامش الربح</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="recipeModeEnabled" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <!-- Toggle: Delivery System -->
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">نظام التوصيل والدليفري (Delivery System)</div>
+                <div class="set-toggle-sub">تفعيل الطلبات الخارجية، اختيار الطيارين، وحساب عمولة التوصيل وتتبع حالات الأوردر</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="deliveryEnabled" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-save-bar">
+            <button class="btn-section-save" onclick="saveSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ جميع بيانات الكافيه</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 4. Section: Taxes & Service Charge ─────────────────────── -->
+    <div class="content-area" id="section-taxes" style="display:none;">
+      <div class="set-grid-2">
+        
+        <!-- Controls Column -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">إعدادات خدمة الصالة والضرائب</div>
+              <div class="set-card-subtitle">التحكم في نسبة خدمة الصالة وضريبة القيمة المضافة</div>
+            </div>
+          </div>
+
+          <!-- Service Charge Card -->
+          <div style="background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:14px; padding:18px; margin-bottom:18px;">
+            <div class="set-toggle-row" style="background:#FFFFFF; margin-bottom:14px;">
+              <div>
+                <div class="set-toggle-label" style="color:var(--set-primary);">تفعيل خدمة الصالة (Service Charge)</div>
+                <div class="set-toggle-sub">تُطبق حصراً على طلبات الصالة والترابيزات (Dine-in) ولا تُطبق على التيك أواي أو الدليفري</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="serviceChargeEnabled" checked onchange="updateTaxSimulator()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-field-group" style="margin-bottom:0;">
+              <label class="set-label">نسبة خدمة الصالة (%)</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="number" id="serviceChargeRate" class="set-control" value="12" step="0.5" min="0" max="100" style="font-weight:800; font-size:15px; max-width:160px;" oninput="updateTaxSimulator()" />
+                <span style="font-weight:800; color:var(--set-text-muted); font-size:16px;">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VAT Card -->
+          <div style="background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:14px; padding:18px;">
+            <div class="set-toggle-row" style="background:#FFFFFF; margin-bottom:14px;">
+              <div>
+                <div class="set-toggle-label" style="color:var(--set-primary);">تفعيل ضريبة القيمة المضافة (VAT)</div>
+                <div class="set-toggle-sub">احتساب الضريبة النظامية على المبيعات وتوضيحها في الفاتورة</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="taxEnabled" checked onchange="updateTaxSimulator()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+              <div class="set-field-group" style="margin-bottom:0;">
+                <label class="set-label">نسبة الضريبة (%)</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="number" id="taxRate" class="set-control" value="14" step="0.5" min="0" max="100" style="font-weight:800; font-size:15px;" oninput="updateTaxSimulator()" />
+                  <span style="font-weight:800; color:var(--set-text-muted); font-size:16px;">%</span>
+                </div>
+              </div>
+
+              <div class="set-field-group" style="margin-bottom:0;">
+                <label class="set-label">نظام تسعير الأصناف</label>
+                <select id="taxType" class="set-control" style="font-weight:700; cursor:pointer;" onchange="updateTaxSimulator()">
+                  <option value="inclusive">الأسعار شاملة الضريبة (Inclusive)</option>
+                  <option value="exclusive">الأسعار غير شاملة (تُضاف فوق الإجمالي)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="set-toggle-row" style="background:#FFFFFF; margin-bottom:0;">
+              <div>
+                <div class="set-toggle-label">إعفاء طلبات التيك أواي من الضريبة</div>
+                <div class="set-toggle-sub">عدم فرض الضريبة على طلبات السفري والتيك أواي</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="taxExemptTakeaway" checked onchange="updateTaxSimulator()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-save-bar">
+            <button class="btn-section-save" onclick="saveSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ إعدادات الضرائب والخدمة</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Calculation Simulator Column -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">معاينة حية لطريقة الحساب</div>
+              <div class="set-card-subtitle">محاكاة فورية لحساب فاتورة صالة بقيمة 100 ج.م بناءً على الإعدادات</div>
+            </div>
+          </div>
+
+          <div class="tax-simulator-card">
+            <div class="tax-sim-header">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>نموذج فاتورة تجريبية (صالة / Dine-in)</span>
+            </div>
+
+            <div class="tax-sim-receipt">
+              <div class="tax-sim-row">
+                <span>إجمالي الأصناف الأساسية:</span>
+                <span id="simBasePrice" style="font-weight:700;">100.00 ج.م</span>
+              </div>
+              <div class="tax-sim-row">
+                <span>خدمة الصالة (<span id="simServiceRate">12</span>%):</span>
+                <span id="simServiceAmt" style="color:var(--set-primary); font-weight:700;">+ 12.00 ج.م</span>
+              </div>
+              <div class="tax-sim-row" style="color:var(--set-text-muted); font-size:11px;">
+                <span>المجموع الخاضع للضريبة:</span>
+                <span id="simSubtotal">112.00 ج.م</span>
+              </div>
+              <div class="tax-sim-row">
+                <span>ضريبة القيمة المضافة (<span id="simVatRate">14</span>%):</span>
+                <span id="simVatAmt" style="color:#059669; font-weight:700;">+ 15.68 ج.م</span>
+              </div>
+              <div class="tax-sim-row total">
+                <span>المبلغ الإجمالي النهائي المطلوب:</span>
+                <span id="simTotal" style="color:var(--set-primary); font-size:16px;">127.68 ج.م</span>
+              </div>
+            </div>
+
+            <div style="font-size:11px; color:var(--set-text-muted); margin-top:14px; line-height:1.6;">
+              <strong>ملاحظة للمحاسب:</strong> في طلبات التيك أواي إذا كان خيار الإعفاء مفعلاً، سيتم تطبيق سعر الأصناف الأساسي فقط (100 ج.م) دون إضافة أي خدمة أو ضريبة.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 5. Section: Printers & Barcode ────────────────────────── -->
+    <div class="content-area" id="section-printers" style="display:none;">
+      <div class="set-grid-2">
+        
+        <!-- Column 1: Printer Assignment -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">إدارة الطابعات الموصولة</div>
+              <div class="set-card-subtitle">توجيه كل نوع طباعة للطابعة المخصصة بدون مربعات حوار</div>
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">طابعة إيصالات العملاء (Thermal Receipt Printer)</label>
+            <select id="printerReceipt" class="set-control">
+              <option value="">(الافتراضية لنظام التشغيل)</option>
+            </select>
+            <div class="set-hint">تُستخدم لطباعة فواتير وبونات الحساب للعملاء (80mm / 58mm).</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">طابعة المطبخ / الباريستا (Kitchen Printer)</label>
+            <select id="printerKitchen" class="set-control">
+              <option value="">(الافتراضية لنظام التشغيل)</option>
+            </select>
+            <div class="set-hint">تُستخدم لطباعة بون التجهيز للمطبخ أو الباريستا فور تأكيد الطلب صامتاً.</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">طابعة ملصقات الباركود (Barcode Label Printer)</label>
+            <select id="printerBarcode" class="set-control">
+              <option value="">(الافتراضية لنظام التشغيل)</option>
+            </select>
+            <div class="set-hint">تُستخدم لطباعة ملصقات الباركود للخدمات والمنتجات والأكواب (Xprinter, Zebra...).</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">طابعة التقارير والمستندات (A4 Reports Printer)</label>
+            <select id="printerReports" class="set-control">
+              <option value="">(الافتراضية لنظام التشغيل)</option>
+            </select>
+            <div class="set-hint">تُستخدم لطباعة التقارير اليومية وكشوف الحسابات بحجم A4 كامل.</div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="populatePrintersList()" style="font-weight:700;">
+              تحديث قائمة الطابعات
+            </button>
+            <button type="button" class="btn btn-success btn-sm" onclick="saveSettings()" style="font-weight:700;">
+              حفظ إعدادات الطابعات
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 2: Barcode Tag Designer & Preview -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="5" x2="3" y2="19"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="17" y1="5" x2="17" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">تصميم ملصق الباركود والمعاينة</div>
+              <div class="set-card-subtitle">ضبط أبعاد الملصق ومحتوياته ومعاينته مباشرة قبل الطباعة</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;" class="set-field-group">
+            <div>
+              <label class="set-label">العرض (مم)</label>
+              <input type="number" id="barcodeWidth" class="set-control" value="38" min="20" max="100" oninput="updateBarcodePreview()" />
+            </div>
+            <div>
+              <label class="set-label">الارتفاع (مم)</label>
+              <input type="number" id="barcodeHeight" class="set-control" value="25" min="15" max="100" oninput="updateBarcodePreview()" />
+            </div>
+            <div>
+              <label class="set-label">ارتفاع الباركود</label>
+              <input type="number" id="barcodeBarHeight" class="set-control" placeholder="تلقائي (0)" min="0" max="30" step="0.5" oninput="updateBarcodePreview()" />
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">اتجاه الطباعة (Orientation)</label>
+            <select id="barcodeOrientation" class="set-control" onchange="updateBarcodePreview()">
+              <option value="portrait">رأسي / قياسي (Portrait - الافتراضي لرولات الباركود)</option>
+              <option value="landscape">أفقي / بالعرض (Landscape)</option>
+            </select>
+          </div>
+
+          <!-- Toggles for Barcode Elements -->
+          <div style="margin-bottom:16px;">
+            <div class="set-toggle-row" style="padding:10px 14px;">
+              <span class="set-toggle-label" style="font-size:12px;">إظهار اسم الكافيه والمطعم</span>
+              <label class="switch-ios">
+                <input type="checkbox" id="barcodeShowStudio" checked onchange="updateBarcodePreview()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row" style="padding:10px 14px;">
+              <span class="set-toggle-label" style="font-size:12px;">إظهار اسم المنتج / الخدمة</span>
+              <label class="switch-ios">
+                <input type="checkbox" id="barcodeShowName" checked onchange="updateBarcodePreview()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row" style="padding:10px 14px;">
+              <span class="set-toggle-label" style="font-size:12px;">إظهار السعر على الملصق</span>
+              <label class="switch-ios">
+                <input type="checkbox" id="barcodeShowPrice" checked onchange="updateBarcodePreview()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Live Barcode Preview Box -->
+          <div class="barcode-preview-container">
+            <div style="font-size:11px; font-weight:800; color:var(--set-text-muted); margin-bottom:10px;">معاينة حية للملصق (مقاس تقريبي)</div>
+            
+            <div id="barcodeLabelCard">
+              <div id="previewStudioName" style="font-size:11px; font-weight:800; color:#111; margin-bottom:2px; max-width:95%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">كافيه ومطعم برو</div>
+              <div id="previewItemName" style="font-size:10px; color:#333; margin-bottom:2px; max-width:95%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">كابتشينو كافيه وسط</div>
+              <svg id="barcodePreviewSvg" style="max-width:100%; height:auto;"></svg>
+              <div id="previewPrice" style="font-size:11px; font-weight:800; color:#000; margin-top:2px;">السعر: 250 ج.م</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <button type="button" class="btn btn-outline" onclick="testPrintBarcode()" style="font-weight:700;">
+              طباعة ملصق تجريبي
+            </button>
+            <button type="button" class="btn btn-success" onclick="saveSettings()" style="font-weight:700;">
+              حفظ إعدادات الباركود
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 6. Section: Cashier Permissions ───────────────────────── -->
+    <div class="content-area" id="section-cashier" style="display:none;">
+      <div style="max-width:860px; margin:0 auto;">
+        
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">صلاحيات الكاشير والتحكم الأمني</div>
+              <div class="set-card-subtitle">حدد الوظائف والشاشات التي ترغب في تقييد وصول الكاشير إليها لضمان انضباط العمل</div>
+            </div>
+          </div>
+
+          <!-- Lock to POS Highlight Banner -->
+          <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:14px; padding:16px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+            <div>
+              <div style="font-size:14px; font-weight:800; color:#92400E; display:flex; align-items:center; gap:8px;">
+                قفل الكاشير على شاشة البيع فقط (Lock Cashier to POS)
+              </div>
+              <div style="font-size:11px; font-weight:600; color:#B45309; margin-top:3px; line-height:1.5;">
+                توجيه الكاشير بعد تسجيل دخوله مباشرة لشاشة البيع ومنع دخوله للوحة التحكم مع تحويل زر الرجوع لتسجيل خروج مباشر.
+              </div>
+            </div>
+            <label class="switch-ios">
+              <input type="checkbox" id="cashierLockToPos" onchange="saveCashierPermissions()" />
+              <span class="switch-ios-slider"></span>
+            </label>
+          </div>
+
+          <!-- Permissions Grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+            
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">منع تعديل السعر</div>
+                <div class="set-toggle-sub">منع الكاشير من تعديل سعر الصنف في شاشة البيع</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="preventCashierPriceEdit" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">منع عمل خصم</div>
+                <div class="set-toggle-sub">منع الكاشير من إعطاء أي نسبة أو قيمة خصم على الفاتورة</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierPreventDiscount" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">منع عمل مرتجع</div>
+                <div class="set-toggle-sub">حظر وصول الكاشير لصفحة استرجاع الفواتير</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierPreventReturns" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">منع الوصول للإعدادات</div>
+                <div class="set-toggle-sub">حظر الكاشير من فتح صفحة إعدادات النظام والتهيئة</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierPreventSettings" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">إخفاء التقارير</div>
+                <div class="set-toggle-sub">منع الكاشير من استعراض تقارير المبيعات والأرباح</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierHideReports" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row">
+              <div>
+                <div class="set-toggle-label">إخفاء الحسابات والخزينة</div>
+                <div class="set-toggle-sub">منع الكاشير من الدخول لقسم المصروفات والمالية</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierHideFinance" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="set-toggle-row" style="grid-column: span 2;">
+              <div>
+                <div class="set-toggle-label">إخفاء شئون الموظفين (HR)</div>
+                <div class="set-toggle-sub">منع الكاشير من رؤية مرتبات الموظفين وسجلات الحضور والسلف</div>
+              </div>
+              <label class="switch-ios">
+                <input type="checkbox" id="cashierHideHr" onchange="saveCashierPermissions()" />
+                <span class="switch-ios-slider"></span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Out of Stock Policy -->
+          <div style="background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:14px; padding:16px;">
+            <label class="set-label" style="font-size:13px; font-weight:800; color:#1E1B18;">
+              طريقة التعامل عند نفاد رصيد المخزن في شاشة البيع:
+            </label>
+            <select id="stockOutBehavior" class="set-control" onchange="saveCashierPermissions()" style="margin-top:8px; font-weight:700;">
+              <option value="warn">السماح بالبيع مع إظهار تحذير تنبيهي (البيع بالسالب مسموح)</option>
+              <option value="block">منع البيع نهائياً عند عدم توفر كمية كافية بالمخزن</option>
+            </select>
+            <div class="set-hint">خيار "منع البيع" يحمي المخزون ويجبر الكاشير على جرد الرصيد أولاً بأول.</div>
+          </div>
+
+          <div class="section-save-bar">
+            <button class="btn-section-save" onclick="saveSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ صلاحيات الكاشير</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 7. Section: User Management ───────────────────────────── -->
+    <div class="content-area" id="section-users" style="display:none;">
+      <div class="set-card">
+        <div class="set-card-header" style="justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">إدارة المستخدمين والحسابات</div>
+              <div class="set-card-subtitle">إدارة حسابات الدخول، تعيين الأدوار والصلاحيات، وإعادة تعيين كلمات المرور</div>
+            </div>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="openNewUserModal()" style="font-weight:800; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>+ مستخدم جديد</span>
+          </button>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:50px;">#</th>
+                <th>اسم الموظف</th>
+                <th>اسم المستخدم للدخول</th>
+                <th>الدور والصلاحية</th>
+                <th>آخر تسجيل دخول</th>
+                <th>الحالة</th>
+                <th style="text-align:center;">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="7" class="table-empty">جارٍ التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── 8. Section: Backup & Restore ──────────────────────────── -->
+    <div class="content-area" id="section-backup" style="display:none;">
+      <div style="max-width:800px; margin:0 auto;">
+        
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">النسخ الاحتياطي واسترجاع البيانات</div>
+              <div class="set-card-subtitle">حفظ نسخ أمان من قاعدة البيانات محلياً وخارجياً لحماية نشاطك التجاري</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-bottom:20px;">
+            <button class="btn btn-success btn-lg" onclick="createBackup()" style="display:inline-flex; align-items:center; gap:8px; font-weight:800;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>إنشاء نسخة احتياطية الآن</span>
+            </button>
+          </div>
+
+          <!-- External Backup Path Card -->
+          <div id="externalBackupCard" style="background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02)); border:1.5px solid rgba(99,102,241,0.25); border-radius:14px; padding:18px; margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <div style="width:34px; height:34px; border-radius:10px; background:rgba(99,102,241,0.15); color:#6366F1; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:800; font-size:14px; color:#1E1B18;">النسخ الاحتياطي التلقائي خارج الـ C</div>
+                <div style="font-size:11px; color:var(--set-text-muted); margin-top:2px;">
+                  بعد كل نسخة احتياطية، يتم نسخ الملف تلقائياً في مسار خارجي (فلاشة USB، بارتشن D، أو مجلد سحابي)
+                </div>
+              </div>
+            </div>
+
+            <div id="extPathDisplay" style="background:#FFFFFF; border:1px solid var(--set-border); border-radius:8px; padding:10px 14px; font-size:12px; font-family:monospace; color:var(--set-text-secondary); margin-bottom:12px; min-height:38px; display:flex; align-items:center;">
+              <span id="extPathText" style="flex:1;">جارٍ التحميل...</span>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" id="extBrowseBtn" onclick="selectExternalBackupPath()" style="font-weight:700;">
+                اختيار مجلد خارجي
+              </button>
+              <button class="btn btn-outline btn-sm" id="extClearBtn" onclick="clearExternalBackupPath()" style="display:none; font-weight:700;">
+                ✕ إلغاء المسار
+              </button>
+            </div>
+          </div>
+
+          <!-- Available Backups List -->
+          <div class="set-card-title" style="font-size:14px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--set-border-subtle);">
+            النسخ الاحتياطية المتوفرة
+          </div>
+          <div id="backupsList">
+            <div class="table-empty">جارٍ التحميل...</div>
+          </div>
+
+          <!-- Danger Zone Reset Area -->
+          <div class="danger-zone-box">
+            <div class="danger-zone-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>منطقة الخطر (مسح البيانات وإعادة الضبط)</span>
+            </div>
+            <p class="danger-zone-desc">
+              يمكنك مسح بيانات الحركات والمبيعات كلياً أو جزئياً (مثلاً: مسح الفواتير والحركات مع الاحتفاظ بقائمة الأصناف والعملاء والموظفين). لا يمكن التراجع عن هذا الإجراء إلا باسترجاع نسخة احتياطية.
+            </p>
+            <button class="btn btn-danger" onclick="showSelectiveResetModal()" style="font-weight:800;">
+              مسح بيانات النظام واختيار المحفوظات ...
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 9. Section: WhatsApp Integration ──────────────────────── -->
+    <div class="content-area" id="section-whatsapp" style="display:none;">
+      <div style="max-width:800px; margin:0 auto;">
+        
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon" style="background:#E6F7ED; color:#0E733B; border-color:#B7EBCC;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">إعدادات ربط واتساب (WhatsApp Service)</div>
+              <div class="set-card-subtitle">إرسال الفواتير وبونات الأوردر وتنبيهات العملاء تلقائياً عبر واتساب</div>
+            </div>
+          </div>
+
+          <!-- Connection Status Card -->
+          <div id="waStatusCard" style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:12px; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div id="waStatusDot" style="width:12px; height:12px; border-radius:50%; background:#D6C7BC; flex-shrink:0; transition:background 0.3s;"></div>
+              <div>
+                <div id="waStatusText" style="font-weight:800; font-size:14px; color:#1E1B18;">جاري التحقق من الاتصال...</div>
+                <div id="waStatusHint" style="font-size:11px; color:var(--set-text-muted);">يرجى الانتظار</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-sm btn-outline" id="waRefreshBtn" onclick="checkWaStatus()" style="font-weight:700;">فحص الحالة</button>
+              <button class="btn btn-sm" id="waConnectBtn" onclick="startWaConnection()" style="background:#25D366; color:#ffffff; font-weight:800; border:none; display:none; gap:6px; align-items:center; cursor:pointer; padding:6px 14px; border-radius:8px; box-shadow:0 2px 6px rgba(37,211,102,0.3);">
+                <span>بدء الاتصال وتوليد QR</span>
+              </button>
+              <button class="btn btn-sm btn-danger" id="waDisconnectBtn" onclick="disconnectWa()" style="display:none; font-weight:700;">قطع الاتصال</button>
+            </div>
+          </div>
+
+          <!-- Provider Choice -->
+          <div style="margin-bottom:20px;">
+            <div class="set-label" style="font-size:13px; margin-bottom:10px; color:#1E1B18;">اختر طريقة الربط والإرسال:</div>
+            <div style="display:flex; gap:14px; flex-wrap:wrap;">
+              
+              <label id="providerCard_web_js" style="flex:1; min-width:220px; cursor:pointer; border:2px solid var(--set-primary); border-radius:14px; padding:16px; transition:all 0.2s; background:#FFFFFF;">
+                <input type="radio" name="waProvider" value="web_js" id="providerWebJs" onchange="onProviderChange('web_js')" style="display:none;" checked />
+                <div style="font-weight:800; font-size:14px; margin-bottom:4px; color:#1E1B18;">WhatsApp Web (مجاني عبر QR)</div>
+                <div style="font-size:11px; color:var(--set-text-muted); line-height:1.6;">
+                  ربط فوري بهاتفك عن طريق مسح الكود. لا يحتاج أي اشتراكات أو بطاقات بنكية.
+                </div>
+              </label>
+
+              <label id="providerCard_cloud_api" style="flex:1; min-width:220px; cursor:pointer; border:2px solid var(--set-border-subtle); border-radius:14px; padding:16px; transition:all 0.2s; background:#FFFFFF;">
+                <input type="radio" name="waProvider" value="cloud_api" id="providerCloudApi" onchange="onProviderChange('cloud_api')" style="display:none;" />
+                <div style="font-weight:800; font-size:14px; margin-bottom:4px; color:#1E1B18;">Meta Cloud API (الرسمي الموثق)</div>
+                <div style="font-size:11px; color:var(--set-text-muted); line-height:1.6;">
+                  عبر بوابة فيسبوك للأعمال الرسمية ومستقر بدون الحاجة لاتصال الموبايل بالإنترنت.
+                </div>
+              </label>
+
+            </div>
+          </div>
+
+          <!-- Panel WhatsApp Web (QR) -->
+          <div id="panel-web_js" style="background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:14px; padding:20px; margin-bottom:20px;">
+            <div style="font-weight:800; font-size:14px; color:#1E1B18; margin-bottom:8px;">ربط الهاتف عبر QR Code</div>
+            
+            <div id="waQrSection" style="display:none; text-align:center; padding:24px; background:#FFFFFF; border:1px solid #E2D9CE; border-radius:16px; margin-bottom:16px; box-shadow:0 4px 14px rgba(0,0,0,0.05);">
+              
+              <!-- Loader while waiting for QR -->
+              <div id="waQrLoading" style="display:none; padding:20px; text-align:center;">
+                <div style="width:36px; height:36px; border:3px solid #E2D9CE; border-top-color:#25D366; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px auto;"></div>
+                <div style="font-weight:800; font-size:13px; color:#1E1B18;">جاري تشغيل المتصفح وتوليد رمز QR...</div>
+                <div style="font-size:11px; color:var(--set-text-muted); margin-top:4px;">يرجى الانتظار بضع ثوانٍ</div>
+              </div>
+
+              <!-- QR Image and details -->
+              <div id="waQrBody" style="display:none;">
+                <div style="font-size:14px; font-weight:800; margin-bottom:12px; color:#1E1B18;">امسح الرمز التالي من تطبيق واتساب على هاتفك</div>
+                <div style="background:#FFFFFF; border-radius:14px; padding:14px; display:inline-block; border:2px solid #25D366; box-shadow:0 6px 18px rgba(37,211,102,0.15);">
+                  <img id="waQrImage" src="" alt="QR Code" style="width:220px; height:220px; display:block; image-rendering:pixelated;" />
+                </div>
+                <div style="margin-top:12px; font-size:12px; font-weight:600; color:#475569;">
+                  افتح واتساب على هاتفك ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز
+                </div>
+                <div id="waQrTimer" style="margin-top:6px; font-size:12px; color:#D97706; font-weight:700;"></div>
+                <div style="margin-top:14px;">
+                  <button type="button" class="btn btn-sm btn-outline" onclick="startWaConnection(true)" style="font-size:11px; font-weight:700; border-color:#CBD5E1;">
+                    إعادة توليد كود QR جديد
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--set-text-secondary); line-height:1.8;">
+              ✓ إرسال بون الفاتورة وتأكيد الطلب للعميل فور تسجيل الكاشير.<br>
+              ✓ إرسال رسالة جاهزية الأوردر للاستلام أو خروجه مع الدليفري.<br>
+              ✓ يتم حفظ الجلسة على جهاز الكمبيوتر ولن تحتاج لإعادة المسح في كل مرة.
+            </div>
+          </div>
+
+          <!-- Panel Cloud API -->
+          <div id="panel-cloud_api" style="display:none; background:#FAF8F5; border:1px solid var(--set-border-subtle); border-radius:14px; padding:20px; margin-bottom:20px;">
+            <div style="font-weight:800; font-size:14px; color:#1E1B18; margin-bottom:14px;">بيانات حساب Meta Cloud API</div>
+
+            <div class="set-field-group">
+              <label class="set-label">Phone Number ID *</label>
+              <input type="text" id="waPhoneNumberId" class="set-control" placeholder="مثال: 123456789012345" style="font-family:monospace; direction:ltr;" />
+            </div>
+
+            <div class="set-field-group">
+              <label class="set-label">Access Token *</label>
+              <div style="position:relative;">
+                <input type="password" id="waAccessToken" class="set-control" placeholder="EAAxxxxxxxxxxxxxxx..." style="font-family:monospace; direction:ltr; padding-left:40px;" />
+                <button onclick="toggleTokenVisibility()" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--set-text-muted);" id="tokenVisibilityBtn" type="button" title="إظهار/إخفاء">عرض</button>
+              </div>
+            </div>
+
+            <div class="set-field-group">
+              <label class="set-label">WhatsApp Business Account ID</label>
+              <input type="text" id="waBusinessAccountId" class="set-control" placeholder="مثال: 987654321098765" style="font-family:monospace; direction:ltr;" />
+            </div>
+
+            <div class="set-field-group">
+              <label class="set-label">إصدار API</label>
+              <input type="text" id="waApiVersion" class="set-control" value="v20.0" style="font-family:monospace; direction:ltr; max-width:140px;" />
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" id="testConnectionBtn" onclick="testCloudConnection()" style="font-weight:700;">
+                اختبار الاتصال
+              </button>
+              <button class="btn btn-outline btn-sm" id="verifyTemplatesBtn" onclick="verifyMetaTemplates()" style="font-weight:700;">
+                التحقق من قوالب Meta
+              </button>
+              <div id="testConnectionResult" style="font-size:12px; font-weight:700;"></div>
+            </div>
+            <div id="verifyTemplatesResult" style="margin-top:10px; font-size:12px;"></div>
+
+            <div style="margin-top:20px; border-top:1px dashed #D6C7BC; padding-top:14px;" id="templateMapTable">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Meta Webhook Section -->
+            <div style="margin-top:20px; border-top:1.5px solid var(--set-border-subtle); padding-top:18px;">
+              <div style="font-weight:800; font-size:14px; color:var(--set-primary); margin-bottom:6px;">
+                استقبال ردود ورسائل العملاء (Meta Webhook)
+              </div>
+              <div class="set-hint" style="margin-bottom:14px;">
+                يتيح لك استقبال استفسارات ورسائل العملاء والرد عليها مباشرة من شاشة محادثات الواتساب بالبرنامج.
+              </div>
+
+              <div class="set-field-group">
+                <label class="set-label">Callback URL (رابط الـ Webhook)</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="settingsWebhookUrl" class="set-control" readonly style="font-family:monospace; direction:ltr; background:#FFFFFF;" placeholder="جاري تجهيز الرابط..." />
+                  <button type="button" class="btn btn-primary btn-sm" onclick="copySettingsWebhookUrl()" style="white-space:nowrap; padding:0 14px; font-weight:700;">نسخ</button>
+                </div>
+              </div>
+
+              <div class="set-field-group">
+                <label class="set-label">Verify Token (رمز التحقق)</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="settingsVerifyToken" class="set-control" value="photostudio_wa_token" style="font-family:monospace; direction:ltr; background:#FFFFFF;" />
+                  <button type="button" class="btn btn-outline btn-sm" onclick="copySettingsVerifyToken()" style="white-space:nowrap; padding:0 14px; font-weight:700;">نسخ</button>
+                </div>
+              </div>
+
+              <div class="set-field-group" style="max-width:160px;">
+                <label class="set-label">المنفذ المحلي (Local Port)</label>
+                <input type="number" id="settingsWebhookPort" class="set-control" value="3000" style="font-family:monospace; direction:ltr;" />
+              </div>
+              
+              <span id="settingsWebhookPill" style="display:none;"></span>
+            </div>
+          </div>
+
+          <div class="section-save-bar">
+            <button class="btn-section-save" id="saveWaSettingsBtn" onclick="saveWaProviderSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ إعدادات الواتساب</span>
+            </button>
+            <div id="waSaveResult" style="font-size:12px; font-weight:700;"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 10. Section: WhatsApp Templates ───────────────────────── -->
+    <div class="content-area" id="section-wa-templates" style="display:none;">
+      <div style="max-width:880px; margin:0 auto;">
+        
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">قوالب رسائل الواتساب التلقائية</div>
+              <div class="set-card-subtitle">تخصيص نصوص الرسائل المرسلة للعملاء تلقائياً عند تسجيل الطلب والتسليم والمدفوعات</div>
+            </div>
+          </div>
+
+          <!-- Template Textareas (Tailored for Cafe & Restaurant Home Delivery) -->
+          <div class="set-field-group">
+            <label class="set-label">١. رسالة استلام وتأكيد الطلب (بدء التجهيز في المطبخ)</label>
+            <textarea id="tplInvoiceConfirm" class="set-control" rows="4" placeholder="نص رسالة تأكيد استلام الطلب"></textarea>
+            <div class="set-hint">تُرسل للعميل تلقائياً فور تسجيل الكاشير للطلب لتأكيد بيانات الأوردر.</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">٢. رسالة خروج الأوردر مع طيار الدليفري (في الطريق للعنوان)</label>
+            <textarea id="tplOrderReady" class="set-control" rows="4" placeholder="نص رسالة خروج الطلب مع مندوب التوصيل"></textarea>
+            <div class="set-hint">تُرسل عند تحويل حالة الأوردر إلى 'جاهز' أو 'خرج للتوصيل'.</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">٣. رسالة تم تسليم الأوردر بنجاح (شكر العميل وبالهناء والشفاء)</label>
+            <textarea id="tplDelivered" class="set-control" rows="4" placeholder="نص رسالة إتمام التسليم"></textarea>
+            <div class="set-hint">تُرسل فور تأكيد تسليم الأوردر للعميل بنجاح.</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">٤. إشعار سداد الحساب بالكامل (مع التوصيل أو الكاشير)</label>
+            <textarea id="tplFullPayment" class="set-control" rows="3" placeholder="نص إشعار استلام كامل الحساب"></textarea>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">٥. إشعار سداد دفعة جزئية أو عربون مسبق</label>
+            <textarea id="tplPartialPayment" class="set-control" rows="3" placeholder="نص إشعار سداد دفعة جزئية"></textarea>
+          </div>
+
+          <div class="section-save-bar">
+            <button class="btn-section-save" onclick="saveSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ قوالب الرسائل</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── 9. Section: QR Digital Menu & Multi-Tenant Isolation ─── -->
+    <div class="content-area" id="section-qr-menu" style="display:none;">
+      <div class="set-grid-2">
+
+        <!-- Card 1: Feature Flag & Ordering Mode -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon" style="background:#FFF5F0; color:#FF5B22;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">تفعيل نظام المنيو الإلكتروني (QR Menu)</div>
+              <div class="set-card-subtitle">التحكم في إتاحة ميزة الـ QR في نقطة البيع واستقبال طلبات الزبائن</div>
+            </div>
+          </div>
+
+          <!-- Feature Enable Toggle -->
+          <div class="set-toggle-row" style="margin-bottom:16px;">
+            <div>
+              <div class="set-toggle-label">تشغيل نظام المنيو الإلكتروني QR</div>
+              <div class="set-toggle-sub">
+                إذا كان العميل لا يرغب في استخدام المنيو الإلكتروني، يمكنك إيقاف هذا الخيار وسيتم إخفاء جميع أزرار وقوائم الـ QR من شاشة الكاشير وشاشة الصالة تماماً لمنع أي تشتيت.
+              </div>
+            </div>
+            <label class="switch-ios">
+              <input type="checkbox" id="enableQrMenu" checked />
+              <span class="switch-ios-slider"></span>
+            </label>
+          </div>
+
+          <!-- Service Mode -->
+          <div class="set-field-group">
+            <label class="set-label">نوع وسلوك خدمة المنيو</label>
+            <select id="qrServiceMode" class="set-control">
+              <option value="order">إرسال طلبات مباشرة للكاشير والمطبخ (طلب صالة حي مع تتبع)</option>
+              <option value="catalog">عرض الأصناف والأسعار فقط ككتالوج (بدون إرسال طلبات)</option>
+            </select>
+            <div class="set-hint">في وضع الكتالوج يستعرض العميل المشروبات والأسعار فقط دون إمكانية إرسال بون للكاشير.</div>
+          </div>
+
+          <div style="margin-top:20px; padding:14px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:12px; display:flex; align-items:flex-start; gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <div style="font-size:12px; color:#166534; line-height:1.6;">
+              <strong>نظام البث الحي الفوري (SSE):</strong> تم ربط المنيو بالكامل بتقنية Server-Sent Events بدون أي ريفريش. بمجرد قيام الكاشير باعتماد الطلب أو رفضه، تتحدث شاشة هاتف العميل في أجزاء من الثانية (0ms).
+            </div>
+          </div>
+
+          <div class="section-save-bar" style="margin-top:24px;">
+            <button class="btn-section-save" onclick="saveSettings()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>حفظ إعدادات المنيو</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Tenant Isolation & Links -->
+        <div class="set-card">
+          <div class="set-card-header">
+            <div class="set-card-icon" style="background:#F0FDF4; color:#10B981;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <div>
+              <div class="set-card-title">عزل بيانات الفروع والعملاء (Multi-Tenant)</div>
+              <div class="set-card-subtitle">تخصيص معرّف المتجر المستقل لضمان عدم تداخل البيانات بين العملاء</div>
+            </div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">معرّف الفرع / المتجر (Store Slug / Client ID) *</label>
+            <input type="text" id="qrStoreSlug" class="set-control" placeholder="مثال: cafe-royal أو branch-1" style="font-family:monospace; direction:ltr;" oninput="updateQrUrlPreview()" />
+            <div class="set-hint">هذا المعرّف يضمن فصل بيانات كل عميل في فولدر ورابط سحابي منفصل تماماً دون أي لغبطة أو تداخل بين المطاعم.</div>
+          </div>
+
+          <div class="set-field-group">
+            <label class="set-label">رابط المنيو المباشر للزبائن (الشبكة المحلية / السحابي)</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="qrLiveMenuUrl" class="set-control" readonly style="background:#FAF8F5; color:#585049; font-family:monospace; direction:ltr; font-weight:700;" value="http://..." />
+              <button type="button" class="btn btn-outline" onclick="copyQrLiveUrl()" style="white-space:nowrap; padding:0 14px; font-weight:700;">نسخ الرابط</button>
+            </div>
+            <div class="set-hint">يمكن للزبائن فتح هذا الرابط عبر الواي فاي أو بعد رفعه أونلاين على السيرفر السحابي.</div>
+          </div>
+
+          <div style="margin-top:20px; padding:14px; background:#FAF8F5; border:1px solid #EAE3DC; border-radius:12px;">
+            <div style="font-size:12.5px; font-weight:800; color:#1E1B18; margin-bottom:6px;">هيكل المجلدات المنفصلة (Desktop vs Online):</div>
+            <div style="font-size:11.5px; color:#585049; line-height:1.6;">
+              • <strong>تطبيق الديسكتوب:</strong> يعمل محلياً بالكامل على جهاز الكاشير (SQLite + Electron).<br />
+              • <strong>المنيو السحابي:</strong> مجلد مستقل <code>qr-online/</code> يتم رفعه على أي استضافة سحابية لكل عميل، ويتصل بالديسكتوب عبر الـ Real-Time Bridge بمعرّف المتجر (Store Slug).
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── Modals ────────────────────────────────────────────────── -->
+
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- New User Modal -->
+<div class="modal-overlay" id="newUserModal">
+  <div class="modal modal-sm" style="max-width:440px; border-radius:18px; overflow:hidden;">
+    <div class="modal-header" style="background:#FAF8F5; border-bottom:1px solid #EAE3DC; padding:16px 20px;">
+      <div class="modal-title" style="font-weight:800; color:#1E1B18; font-size:15px;">إضافة مستخدم جديد للنظام</div>
+      <button class="modal-close" onclick="closeModal('newUserModal')" style="font-size:16px; cursor:pointer;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div class="set-field-group">
+        <label class="set-label">الموظف المرتبط</label>
+        <select id="newUserEmployee" class="set-control">
+          <option value="">اختر الموظف</option>
+        </select>
+      </div>
+      <div class="set-field-group">
+        <label class="set-label">اسم المستخدم للدخول *</label>
+        <input type="text" id="newUserUsername" class="set-control" placeholder="اسم المستخدم بالإنجليزية" autocomplete="off" />
+      </div>
+      <div class="set-field-group">
+        <label class="set-label">كلمة المرور *</label>
+        <input type="password" id="newUserPassword" class="set-control" placeholder="كلمة المرور" />
+      </div>
+      <div class="set-field-group">
+        <label class="set-label">الدور والصلاحية</label>
+        <select id="newUserRole" class="set-control">
+          <option value="cashier">كاشير (نقطة البيع)</option>
+          <option value="admin">أدمن (مدير كامل الصلاحيات)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:16px 20px; background:#FAF8F5; border-top:1px solid #EAE3DC; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-outline" onclick="closeModal('newUserModal')" style="font-weight:700;">إلغاء</button>
+      <button class="btn btn-success" onclick="createUser()" style="font-weight:800;">حفظ المستخدم</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="resetPasswordModal">
+  <div class="modal modal-sm" style="max-width:400px; border-radius:18px; overflow:hidden;">
+    <div class="modal-header" style="background:#FAF8F5; border-bottom:1px solid #EAE3DC; padding:16px 20px;">
+      <div class="modal-title" style="font-weight:800; color:#1E1B18; font-size:15px;">إعادة تعيين كلمة المرور</div>
+      <button class="modal-close" onclick="closeModal('resetPasswordModal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <p style="font-size:13px; color:var(--set-text-secondary); margin-bottom:14px;">
+        المستخدم: <strong id="resetUserName" style="color:var(--set-primary);">—</strong>
+      </p>
+      <div class="set-field-group">
+        <label class="set-label">كلمة المرور الجديدة</label>
+        <input type="password" id="newPasswordInput" class="set-control" placeholder="أدخل كلمة المرور الجديدة" />
+      </div>
+      <input type="hidden" id="resetUserId" />
+    </div>
+    <div class="modal-footer" style="padding:16px 20px; background:#FAF8F5; border-top:1px solid #EAE3DC; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">إلغاء</button>
+      <button class="btn btn-success" onclick="confirmResetPassword()" style="font-weight:800;">تأكيد التغيير</button>
+    </div>
+  </div>
+</div>
+
+<!-- Selective Reset Modal (Data Wipe) -->
+<div id="selectiveResetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:#FFFFFF; width:520px; max-width:92%; border-radius:18px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+    <div style="padding:18px 22px; background:#DC2626; color:#FFFFFF; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-size:15px;">مسح بيانات النظام واختيار المحفوظات</div>
+      <button onclick="document.getElementById('selectiveResetModal').style.display='none'" style="background:transparent; border:none; color:#FFFFFF; font-size:20px; cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:24px;">
+      <p style="font-size:13px; color:var(--set-text-secondary); margin-bottom:18px; line-height:1.6;">
+        سيتم مسح جميع الحركات المحاسبية (الفواتير، المرتجعات، السلف، المصروفات، الخزينة). حدد ما ترغب في <strong style="color:#059669;">الاحتفاظ به</strong> أدناه:
+      </p>
+      
+      <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:22px; background:#FAF8F5; padding:18px; border-radius:12px; border:1px solid var(--set-border-subtle);">
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" id="keepCustomers" style="width:18px; height:18px; accent-color:#10B981;" checked />
+          <span style="font-size:13px; font-weight:700;">الاحتفاظ بقائمة <span style="color:var(--set-primary);">العملاء</span></span>
+        </label>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" id="keepServices" style="width:18px; height:18px; accent-color:#10B981;" checked />
+          <span style="font-size:13px; font-weight:700;">الاحتفاظ بـ <span style="color:var(--set-primary);">الأصناف والمنيو والخدمات</span></span>
+        </label>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" id="keepEmployees" style="width:18px; height:18px; accent-color:#10B981;" checked />
+          <span style="font-size:13px; font-weight:700;">الاحتفاظ بـ <span style="color:var(--set-primary);">الموظفين</span> (شامل صلاحيات الدخول)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" id="keepSettings" style="width:18px; height:18px; accent-color:#10B981;" checked />
+          <span style="font-size:13px; font-weight:700;">الاحتفاظ بـ <span style="color:var(--set-primary);">الإعدادات العامة وإعدادات الواتساب</span></span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-outline" onclick="document.getElementById('selectiveResetModal').style.display='none'" style="font-weight:700;">إلغاء</button>
+        <button class="btn btn-danger" onclick="executeSelectiveReset()" style="font-weight:800;">تأكيد ومسح البيانات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quit confirmation modal -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal modal-sm" style="max-width:420px; border-radius:18px; overflow:hidden;">
+    <div class="modal-header" style="background:#FAF8F5; border-bottom:1px solid #EAE3DC;"><div class="modal-title" style="font-weight:800;">إغلاق البرنامج</div></div>
+    <div class="modal-body" style="text-align:center; padding:24px;">
+      <p style="font-size:14px; font-weight:700; color:#1E1B18;">هل ترغب في إنشاء نسخة احتياطية من البيانات قبل الخروج؟</p>
+    </div>
+    <div class="modal-footer" style="justify-content:center; gap:8px; flex-wrap:wrap; padding:16px;">
+      <button class="btn btn-primary" onclick="sendDailyReportAndQuit()" style="width:100%; margin-bottom:8px; font-weight:800;">إرسال التقرير اليومي وإنهاء</button>
+      <button class="btn btn-success" onclick="window.electron.quitWithBackup()" style="font-weight:700;">نسخ وخروج</button>
+      <button class="btn btn-danger" onclick="window.electron.quitWithoutBackup()" style="font-weight:700;">خروج بدون نسخة</button>
+      <button class="btn btn-outline" onclick="document.getElementById('quitModal').classList.remove('open'); window.electron.cancelQuit();">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/shared/common.js"></script>
+<script src="vendor/jsbarcode.min.js"></script>
+<script src="js/settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام كافيه برو — إدارة المخزون والمواد الخام</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="vendor/sweetalert2.all.min.js"></script>
+  <script src="js/shared/common.js"></script>
+  <script src="../vendor/jsbarcode.min.js"></script>
+  <style>
+    /* ─── Inventory Commercial ERP Design Tokens ─────────────────── */
+    :root {
+      --inv-bg: #FBF9F6;
+      --inv-surface: #FFFFFF;
+      --inv-border: #EFE9E2;
+      --inv-border-subtle: #F7F3EE;
+      --inv-text: #1E1B18;
+      --inv-text-secondary: #585049;
+      --inv-text-muted: #8E847C;
+      --inv-espresso: #1E1B18;
+      --inv-caramel: #FF5B22;
+      --inv-caramel-hover: #E64A19;
+      --inv-emerald: #10B981;
+      --inv-amber: #F59E0B;
+      --inv-red: #EF4444;
+      --inv-blue: #2563EB;
+      --inv-radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.app-layout {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--inv-bg);
+      color: var(--inv-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+    }
+
+    /* ─── Layout Shell ──────────────────────────────────────────── */
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--inv-bg);
+      min-width: 0;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    .inv-header {
+      background: var(--inv-surface);
+      border-bottom: 1px solid var(--inv-border);
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .header-main-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--inv-espresso);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .header-sub-title {
+      font-size: 11px;
+      color: var(--inv-text-muted);
+      font-weight: 600;
+    }
+
+    .header-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ─── Navigation Tabs System ────────────────────────────────── */
+    .inv-tabs-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--inv-surface);
+      border-bottom: 1px solid var(--inv-border);
+      padding: 0 20px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .inv-tab {
+      padding: 0 16px;
+      height: 44px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: var(--inv-text-muted);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inv-tab:hover {
+      color: var(--inv-espresso);
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    .inv-tab.active {
+      color: var(--inv-espresso);
+      border-bottom-color: var(--inv-caramel);
+      font-weight: 800;
+      background: #FFFFFF;
+    }
+
+    /* ─── Tab Content Workspace ─────────────────────────────────── */
+    .tab-pane {
+      display: none;
+      padding: 16px 20px 24px;
+      flex: 1;
+      overflow-y: auto;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* ─── Compact Summary Metrics Row ───────────────────────────── */
+    .summary-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .summary-metrics-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid #EAE3DC;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(45, 20, 10, 0.03);
+      transition: all 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(45, 20, 10, 0.07);
+      border-color: #D6C7BC;
+    }
+
+    .kpi-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-espresso { background: rgba(30, 27, 24, 0.07); color: #1E1B18; }
+    .icon-emerald  { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+    .icon-amber    { background: rgba(245, 158, 11, 0.12); color: #D97706; }
+    .icon-red      { background: rgba(239, 68, 68, 0.12); color: #DC2626; }
+
+    .kpi-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #78716C;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .kpi-number {
+      font-size: 22px;
+      font-weight: 900;
+      color: #1E1B18;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .kpi-number.text-emerald { color: #10B981; }
+    .kpi-number.text-amber   { color: #D97706; }
+    .kpi-number.text-red     { color: #DC2626; }
+    .kpi-unit {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A8A29E;
+    }
+
+    /* ─── Integrated Toolbar Card ───────────────────────────────── */
+    .inv-toolbar-card {
+      background: var(--inv-surface);
+      border: 1px solid var(--inv-border);
+      border-radius: var(--inv-radius);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 1px 2px rgba(28, 20, 16, 0.02);
+      flex-shrink: 0;
+    }
+
+    .toolbar-left-side {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .inv-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 340px;
+    }
+
+    .search-icon-svg {
+      position: absolute;
+      right: 12px;
+      width: 14px;
+      height: 14px;
+      color: var(--inv-text-muted);
+      pointer-events: none;
+    }
+
+    .inv-search-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 34px 0 12px;
+      border: 1px solid var(--inv-border);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #F8FAFC;
+      color: var(--inv-text);
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .inv-search-input:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: var(--inv-caramel);
+      box-shadow: 0 0 0 2px rgba(212, 160, 86, 0.15);
+    }
+
+    .toolbar-right-side {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ─── Inventory Table Surface ───────────────────────────────── */
+    .table-container-surface {
+      background: var(--inv-surface);
+      border: 1px solid var(--inv-border);
+      border-radius: var(--inv-radius);
+      overflow-y: auto;
+      box-shadow: 0 1px 2px rgba(28, 20, 16, 0.02);
+      flex: 1;
+      min-height: 0;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .data-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 9px 12px;
+      background: #F8FAFC;
+      color: var(--inv-text-muted);
+      font-weight: 700;
+      font-size: 11px;
+      border-bottom: 1px solid var(--inv-border);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .data-table tbody td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--inv-border-subtle);
+      color: var(--inv-text);
+      vertical-align: middle;
+      height: 46px;
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tbody tr:hover td {
+      background: #F8FAFC;
+    }
+
+    .table-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--inv-text-muted);
+      font-size: 13px;
+    }
+
+    /* Semantic Stock Badges */
+    .stock-status-ok {
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .stock-status-low {
+      background: #FEF3C7;
+      color: #D97706;
+      border: 1px solid #FDE68A;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .stock-status-out {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .badge-accent {
+      background: #FDF8EE;
+      color: #B45309;
+      border: 1px solid #FDE68A;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-neutral {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #CBD5E1;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-danger {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ─── Recipe Builder Layout (Tab 2) ─────────────────────────── */
+    .recipe-builder-layout {
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 14px;
+      align-items: start;
+      flex: 1;
+      min-height: 0;
+    }
+
+    @media (max-width: 960px) {
+      .recipe-builder-layout { grid-template-columns: 1fr; }
+    }
+
+    .service-picker-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--inv-border);
+      background: var(--inv-surface);
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: all 0.12s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .service-picker-item:hover {
+      border-color: var(--inv-caramel);
+      background: #FDF8EE;
+    }
+
+    .service-picker-item.active {
+      border-color: var(--inv-caramel);
+      background: #FDF8EE;
+      font-weight: 800;
+      border-right: 4px solid var(--inv-caramel);
+    }
+
+    .cost-metric-pill {
+      background: #F8FAFC;
+      border: 1px solid var(--inv-border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .cost-metric-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--inv-espresso);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cost-metric-lbl {
+      font-size: 10px;
+      color: var(--inv-text-muted);
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    /* ─── Modal System Refinements ──────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 13, 10, 0.6);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #FFFFFF;
+      border-radius: 10px;
+      border: 1px solid var(--inv-border);
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal.modal-sm {
+      max-width: 440px;
+    }
+
+    .modal-header {
+      background: var(--inv-espresso);
+      color: #FFFFFF;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #FFFFFF;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.12s ease;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      background: #F8FAFC;
+      border-top: 1px solid var(--inv-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--inv-espresso);
+    }
+
+    .form-control {
+      height: 38px;
+      padding: 0 10px;
+      font-size: 13px;
+      border: 1px solid var(--inv-border);
+      border-radius: 6px;
+      background: #FFFFFF;
+      font-family: inherit;
+      color: var(--inv-text);
+      transition: all 0.15s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--inv-caramel);
+      box-shadow: 0 0 0 2px rgba(212, 160, 86, 0.15);
+    }
+
+    .card {
+      background: var(--inv-surface);
+      border: 1px solid var(--inv-border);
+      border-radius: var(--inv-radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(28, 20, 16, 0.02);
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--inv-border);
+      background: #F8FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--inv-espresso);
+    }
+
+    .card-body {
+      padding: 14px 16px;
+      flex: 1;
+    }
+  </style>
+</head>
+<body class="app-layout">
+
+  <!-- ─── 1. Global CafePro Sidebar (RTL Right-anchored) ────────── -->
+    <!-- ─── 1. Signature FoodAnalytics Clean White Sidebar ────────── -->
+    <!-- ─── 1. Signature FoodAnalytics Clean White Sidebar ────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">القوائم الأساسية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('main-dashboard.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('pos-invoice.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>نقطة البيع (POS)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('tables.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>الصالات والترابيزات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('returns.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>مرتجع طلب</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('customers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>العملاء</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('whatsapp-chat.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>محادثات واتساب</span>
+        <span class="badge-count" id="sidebarWaBadge" style="display:none; margin-right:auto; background:#10B981; color:#fff;">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section admin-only">
+      <div class="sidebar-section-title">المخزون والمالية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('suppliers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>الموردين والمشتريات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('services.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>المنتجات والأصناف</span>
+      </div>
+
+      <div class="sidebar-nav-item active" onclick="navigate('inventory.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+        <span>المخزون والمواد الخام</span>
+        <span id="sidebarInventoryBadge" class="badge-count" style="display:none; margin-right:auto; background:var(--danger); color:#fff;">0</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('finance.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الحسابات والمالية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('hr.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>شئون الموظفين</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">التقارير والإعدادات</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('daily-report.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>التقرير اليومي وإغلاق الوردية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('reports.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>التقارير المحاسبية الشاملة</span>
+      </div>
+
+      <div class="sidebar-nav-item admin-only" onclick="navigate('settings.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>الإعدادات</span>
+      </div>
+    </div>
+
+    <!-- Promo Card -->
+    <div class="sidebar-promo-card">
+      <div class="sidebar-promo-thumb">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      </div>
+      <div class="sidebar-promo-title">كافيه برو الذكي</div>
+      <div class="sidebar-promo-desc">تحليلات وإدارة شاملة لأداء كافيه ومطعمك بدقة واحترافية</div>
+      <button class="sidebar-promo-btn" onclick="navigate('pos-invoice.html')">+ طلب جديد [F1]</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="font-weight:700; color:var(--text-muted); font-size:11px;">CafePro Management System</div>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Workspace ─────────────────────────────────────── -->
+  <main class="main-workspace">
+
+    <!-- Compact Professional Header -->
+    <header class="inv-header">
+      <div class="header-titles">
+        <h1 class="header-main-title">المخزون والمواد الخام</h1>
+        <div class="header-sub-title">متابعة الكميات وحالة المخزون وتكلفة الوصفات (BOM) وسجل الحركات</div>
+      </div>
+
+      <div class="header-actions-group">
+        <button class="btn btn-outline btn-sm" onclick="openWasteModal()" title="تسجيل هالك أو تالف فوري">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>تسجيل هالك (Waste)</span>
+        </button>
+
+        <button class="btn btn-outline btn-sm" onclick="navigate('suppliers.html')" title="الانتقال للموردين وفواتير الشراء">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <span>توريد مشتريات</span>
+        </button>
+
+        <button class="btn btn-outline btn-sm" onclick="navigate('main-dashboard.html')" title="الرجوع للرئيسية">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>الرئيسية</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Operational Navigation Tabs -->
+    <div class="inv-tabs inv-tabs-bar">
+      <div class="inv-tab active" id="tab-raw" onclick="switchTab('raw')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 4.97-4.03 9-9 9A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/><path d="M12 6v6l4 2"/></svg>
+        <span>المواد الخام والمكونات</span>
+      </div>
+
+      <div class="inv-tab" id="tab-recipes" onclick="switchTab('recipes')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>
+        <span>وصفات الأصناف (BOM) والتكلفة</span>
+      </div>
+
+      <div class="inv-tab" id="tab-direct" onclick="switchTab('direct')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/></svg>
+        <span>بضاعة مباشرة وجاهزة</span>
+      </div>
+
+      <div class="inv-tab" id="tab-stocktake" onclick="switchTab('stocktake')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>الجرد الفعلي للمخزن</span>
+      </div>
+
+      <div class="inv-tab" id="tab-movements" onclick="switchTab('movements')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>سجل الحركات وتتبع الهالك</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ─── TAB 1: RAW MATERIALS (المواد الخام) ──────────────────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane active" id="pane-raw">
+      <!-- Operational Summary Strip -->
+      <div class="summary-metrics-row">
+        <!-- 1. Total Raw Items -->
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-espresso">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a9 9 0 0 1 9 9c0 4.97-4.03 9-9 9A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">أنواع المواد الخام</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number" id="statRawTotalItems">0</span>
+              <span class="kpi-unit">مادة مسجلة</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Total Valuation -->
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-emerald">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">القيمة التقديرية بالمخزن</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number text-emerald" id="statRawTotalValue">0.00</span>
+              <span class="kpi-unit">ج.م</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Low Stock Warning -->
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">مواد قاربت على النفاد</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number text-amber" id="statRawLowStock">0</span>
+              <span class="kpi-unit">تحت حد الأمان</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Out of Stock -->
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">مواد نفدت بالكامل</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number text-red" id="statRawOutStock">0</span>
+              <span class="kpi-unit">رصيد صفري</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="inv-toolbar-card">
+        <div class="toolbar-left-side">
+          <div class="inv-search-wrap">
+            <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="rawSearchInput" class="inv-search-input" placeholder="بحث باسم المادة الخام..." oninput="filterRawMaterials()" />
+          </div>
+        </div>
+        <div class="toolbar-right-side">
+          <button class="btn btn-accent btn-sm" onclick="openRawModal()" style="font-weight:800;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>إضافة مادة خام جديدة</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Surface -->
+      <div class="table-container-surface">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">#</th>
+              <th>اسم المادة الخام</th>
+              <th style="width:100px;">الوحدة الأساسية</th>
+              <th style="text-align:center; width:110px;">الرصيد المتاح</th>
+              <th style="text-align:center; width:100px;">حد التنبيه</th>
+              <th style="text-align:right; width:120px;">تكلفة الوحدة (ج.م)</th>
+              <th style="text-align:right; width:120px;">إجمالي القيمة</th>
+              <th>المورد الافتراضي</th>
+              <th style="text-align:center; width:130px;">الحالة</th>
+              <th style="text-align:center; width:180px;">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="rawTableBody">
+            <tr><td colspan="10" class="table-empty">جارٍ تحميل المواد الخام...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ─── TAB 2: RECIPES & BOM (الوصفات والتكاليف) ────────────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane" id="pane-recipes">
+      <div id="recipeNotice" style="display:none; background:#FFFBEB; border:1px solid #FCD34D; padding:10px 14px; border-radius:8px; font-weight:700; font-size:12px; color:#92400E;">
+        تنبيه: نظام الوصفات (Recipe/BOM) معطل حالياً من الإعدادات العامة. يمكنك تفعيله من شاشة الإعدادات ليقوم النظام بخصم المكونات تلقائيًا عند تأكيد الطلبات في الكاشير.
+      </div>
+
+      <div class="recipe-builder-layout">
+        <!-- Right: Services selector list (in RTL) -->
+        <div class="card" style="height:100%; display:flex; flex-direction:column;">
+          <div class="card-header">
+            <div class="card-title">قائمة الأصناف بالمنيو</div>
+          </div>
+          <div class="card-body" style="padding:10px; display:flex; flex-direction:column; gap:8px;">
+            <div class="inv-search-wrap" style="max-width:100%;">
+              <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="recipeServiceSearch" class="inv-search-input" placeholder="بحث عن صنف..." oninput="renderRecipeServicesList()" />
+            </div>
+            <div id="recipeServicesList" style="flex:1; overflow-y:auto; max-height:calc(100vh - 270px); padding-right:2px;">
+              <div class="table-empty">جارٍ التحميل...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Left: Selected Service Recipe details -->
+        <div class="card" style="height:100%; display:flex; flex-direction:column;">
+          <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div class="card-title" id="selectedServiceTitle">اختر صنفاً من القائمة</div>
+              <div style="font-size:11px; color:var(--inv-text-muted); margin-top:2px;" id="selectedServiceCat">قسم: —</div>
+            </div>
+            <!-- Pricing & Profit Metrics -->
+            <div style="display:flex; gap:8px;" id="recipeMetricsArea">
+              <div class="cost-metric-pill">
+                <div class="cost-metric-val" id="metricSellPrice">0.00</div>
+                <div class="cost-metric-lbl">سعر البيع (ج.م)</div>
+              </div>
+              <div class="cost-metric-pill">
+                <div class="cost-metric-val" style="color:var(--inv-amber);" id="metricCostPrice">0.00</div>
+                <div class="cost-metric-lbl">تكلفة المكونات</div>
+              </div>
+              <div class="cost-metric-pill">
+                <div class="cost-metric-val" style="color:var(--inv-emerald);" id="metricProfitMargin">0.00</div>
+                <div class="cost-metric-lbl">هامش الربح</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Add Component Row -->
+            <div id="addComponentArea" style="background:#F8FAFC; border:1px solid var(--inv-border); border-radius:8px; padding:10px 14px; display:none;">
+              <div style="font-weight:800; margin-bottom:8px; font-size:12px; color:var(--inv-espresso);">+ إضافة مادة خام للوصفة:</div>
+              <div style="display:grid; grid-template-columns:1fr 140px 100px; gap:10px; align-items:flex-end;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">المادة الخام</label>
+                  <select id="recipeRawSelect" class="form-control" onchange="onRecipeRawSelectChange()"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">الكمية المستهلكة (<span id="recipeUnitLabel">جرام</span>)</label>
+                  <input type="number" id="recipeRawQty" class="form-control" step="0.01" min="0.001" placeholder="مثلاً: 18" />
+                </div>
+                <button class="btn btn-accent btn-sm" onclick="addRecipeItemRow()" style="height:38px; font-weight:700;">+ إضافة</button>
+              </div>
+            </div>
+
+            <!-- Recipe Items Table -->
+            <div class="table-container-surface" style="flex:1;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>المادة الخام</th>
+                    <th style="text-align:center; width:130px;">الكمية المستهلكة</th>
+                    <th style="width:90px;">الوحدة</th>
+                    <th style="text-align:right; width:120px;">تكلفة الوحدة</th>
+                    <th style="text-align:right; width:140px;">التكلفة الإجمالية للصنف</th>
+                    <th style="text-align:center; width:70px;">حذف</th>
+                  </tr>
+                </thead>
+                <tbody id="recipeItemsTableBody">
+                  <tr><td colspan="7" class="table-empty">الرجاء اختيار صنف من القائمة لعرض وتعديل مكوناته</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;" id="saveRecipeArea">
+              <button class="btn btn-success" onclick="saveCurrentRecipe()" id="saveRecipeBtn" disabled style="font-weight:800; font-size:13px; padding:8px 24px;">حفظ الوصفة وتحديث تكلفة الصنف</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ─── TAB 3: DIRECT TRACKED ITEMS (الأصناف المباشرة) ─────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane" id="pane-direct">
+      <div class="inv-toolbar-card">
+        <div class="toolbar-left-side">
+          <div class="inv-search-wrap">
+            <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="directSearchInput" class="inv-search-input" placeholder="بحث باسم الصنف أو الباركود..." oninput="loadDirectItems()" />
+          </div>
+        </div>
+        <div class="toolbar-right-side">
+          <button class="btn btn-outline btn-sm" onclick="openPrintBarcodeModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="11" y1="8" x2="11" y2="16"/><line x1="15" y1="8" x2="15" y2="12"/><line x1="17" y1="8" x2="17" y2="16"/></svg>
+            <span>طباعة ملصقات باركود</span>
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('services.html')">
+            <span>⚙️ إدارة الأصناف والمنيو</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container-surface">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">#</th>
+              <th>اسم الصنف / البضاعة</th>
+              <th style="width:130px;">القسم</th>
+              <th style="width:130px;">الباركود</th>
+              <th style="text-align:center; width:110px;">الرصيد بالمخزن</th>
+              <th style="text-align:center; width:100px;">حد التنبيه</th>
+              <th style="text-align:right; width:110px;">سعر التكلفة</th>
+              <th style="text-align:right; width:110px;">سعر البيع</th>
+              <th style="text-align:center; width:130px;">الحالة</th>
+              <th style="text-align:center; width:120px;">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="directItemsTableBody">
+            <tr><td colspan="10" class="table-empty">جارٍ التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ─── TAB 4: STOCKTAKE (الجرد الفعلي) ────────────────────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane" id="pane-stocktake">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <!-- Start Session Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">بدء عملية جرد فعلي جديدة</div>
+          </div>
+          <div class="card-body" style="display:flex; flex-direction:column; gap:10px;">
+            <div class="form-group">
+              <label class="form-label">نوع الجرد المطلوب</label>
+              <select id="stocktakeTypeSelect" class="form-control">
+                <option value="raw_material">جرد المواد الخام والمكونات</option>
+                <option value="service">جرد الأصناف المباشرة والبضاعة الجاهزة</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ملاحظات أو عنوان الجرد</label>
+              <input type="text" id="stocktakeNotes" class="form-control" placeholder="مثلاً: جرد مواد خام أسبوعي..." />
+            </div>
+            <button class="btn btn-primary" onclick="startStocktake()" style="font-weight:800; height:38px;">بدء عملية الجرد الآن</button>
+          </div>
+        </div>
+
+        <!-- History Sessions List -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">سجل جلسات الجرد السابقة</div>
+          </div>
+          <div class="card-body" id="stocktakeSessionsList" style="max-height:220px; overflow-y:auto; padding:8px;">
+            <div class="table-empty">جارٍ التحميل...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Session Table -->
+      <div id="activeSessionArea" style="display:none; flex-direction:column; gap:10px; margin-top:4px;">
+        <div class="card">
+          <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div class="card-title" id="activeSessionTitle" style="color:var(--inv-espresso);">جلسة الجرد الحالية</div>
+            <button class="btn btn-success btn-sm" onclick="completeStocktake()" style="font-weight:800;">✅ اعتماد الجرد وتحديث الرصيد الفعلي</button>
+          </div>
+          <div class="card-body" style="padding:10px; display:flex; flex-direction:column; gap:10px;">
+            <div class="inv-search-wrap" style="max-width:320px;">
+              <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="stocktakeScanInput" class="inv-search-input" placeholder="بحث سريع في عناصر الجرد..." oninput="filterStocktakeItems()" autofocus />
+            </div>
+            <div class="table-container-surface" style="max-height:400px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>البند</th>
+                    <th>النوع / الوحدة</th>
+                    <th style="text-align:center; width:120px;">الرصيد بالبرنامج</th>
+                    <th style="text-align:center; width:140px;">العدد الفعلي المحصور</th>
+                    <th style="text-align:center; width:140px;">الفارق (عجز/زيادة)</th>
+                  </tr>
+                </thead>
+                <tbody id="stocktakeItemsBody">
+                  <tr><td colspan="5" class="table-empty">لا توجد عناصر</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- ─── TAB 5: MOVEMENTS & WASTE (سجل الحركات والهالك) ─────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane" id="pane-movements">
+      <div class="inv-toolbar-card">
+        <div class="toolbar-left-side" style="flex-wrap:wrap; gap:8px;">
+          <select id="movFilterType" class="form-control" style="width:160px; height:36px;" onchange="loadMovements()">
+            <option value="">كل أنواع الحركات</option>
+            <option value="sale">مبيعات (خصم)</option>
+            <option value="restock">توريد مشتريات (+)</option>
+            <option value="waste">هالك وإتلاف (Waste)</option>
+            <option value="stocktake_adjustment">تسوية جرد</option>
+            <option value="manual_edit">تعديل يدوي</option>
+          </select>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:var(--inv-text-muted); font-weight:700;">من:</span>
+            <input type="date" id="movFrom" class="form-control" style="width:130px; height:36px;" onchange="loadMovements()" />
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:var(--inv-text-muted); font-weight:700;">إلى:</span>
+            <input type="date" id="movTo" class="form-control" style="width:130px; height:36px;" onchange="loadMovements()" />
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadMovements()" style="height:36px;">بحث وتحديث</button>
+        </div>
+        <div class="toolbar-right-side">
+          <button class="btn btn-outline btn-sm" style="color:var(--inv-red); border-color:#FECACA;" onclick="openWasteModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>تسجيل هالك يدوي</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container-surface">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:140px;">التاريخ والوقت</th>
+              <th>البند</th>
+              <th style="width:100px;">النوع</th>
+              <th style="text-align:center; width:130px;">نوع الحركة</th>
+              <th style="text-align:center; width:120px;">التغيير</th>
+              <th style="text-align:center; width:120px;">الرصيد بعد</th>
+              <th>ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody id="movementsTableBody">
+            <tr><td colspan="7" class="table-empty">اختر التصفية واضغط بحث</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ─── MODAL 1: Add/Edit Raw Material ────────────────────────── -->
+  <div class="modal-overlay" id="rawMaterialModal">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <div class="modal-title" id="rawModalTitle">إضافة مادة خام جديدة</div>
+        <button type="button" class="modal-close" onclick="closeModal('rawMaterialModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rawId" />
+        <div class="form-group">
+          <label class="form-label">اسم المادة الخام <span style="color:var(--inv-red)">*</span></label>
+          <input type="text" id="rawName" class="form-control" placeholder="مثلاً: بن برازيلي، حليب كامل الدسم، أكواب 8oz..." />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label class="form-label">وحدة القياس الأساسية</label>
+            <select id="rawUnit" class="form-control">
+              <option value="جرام">جرام (g)</option>
+              <option value="مل">مل (ml)</option>
+              <option value="قطعة">قطعة / حبة</option>
+              <option value="كجم">كيلوجرام (kg)</option>
+              <option value="لتر">لتر (L)</option>
+              <option value="علبة">علبة</option>
+            </select>
+          </div>
+          <div class="form-group" id="rawQtyGroup">
+            <label class="form-label">الرصيد الافتتاحي</label>
+            <input type="number" id="rawQty" class="form-control" step="0.01" min="0" value="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">حد التنبيه للنقص</label>
+            <input type="number" id="rawLowThreshold" class="form-control" step="0.01" min="0" value="100" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">تكلفة الوحدة الواحدة (ج.م)</label>
+            <input type="number" id="rawCost" class="form-control" step="0.0001" min="0" value="0" placeholder="مثلاً: 0.85" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">المورد الافتراضي (اختياري)</label>
+          <select id="rawSupplierSelect" class="form-control">
+            <option value="">بدون مورد محدد</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('rawMaterialModal')">إلغاء</button>
+        <button type="button" class="btn btn-accent" onclick="saveRawMaterial()" style="font-weight:800;">حفظ المادة الخام</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL 2: Adjust Raw Material Stock ─────────────────────── -->
+  <div class="modal-overlay" id="rawAdjustModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title" id="rawAdjustTitle">تعديل رصيد مادة خام</div>
+        <button type="button" class="modal-close" onclick="closeModal('rawAdjustModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="adjustRawId" />
+        <div class="form-group">
+          <label class="form-label">نوع العملية</label>
+          <select id="adjustType" class="form-control">
+            <option value="restock">+ إضافة رصيد / توريد يدوي</option>
+            <option value="waste">تسجيل هالك / تالف (خصم)</option>
+            <option value="manual_edit">تسوية عجز أو زيادة يدوية</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الكمية (<span id="adjustUnitSpan">الوحدة</span>)</label>
+          <input type="number" id="adjustQty" class="form-control" step="0.01" placeholder="أدخل الكمية" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">سبب التعديل / ملاحظات</label>
+          <input type="text" id="adjustNotes" class="form-control" placeholder="مثلاً: سكب قهوة، كسر كوب، تسوية..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('rawAdjustModal')">إلغاء</button>
+        <button type="button" class="btn btn-accent" onclick="submitRawStockAdjust()" style="font-weight:800;">تأكيد التعديل</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL 3: Quick Waste Registration ──────────────────────── -->
+  <div class="modal-overlay" id="wasteModal">
+    <div class="modal modal-sm">
+      <div class="modal-header" style="background:#7F1D1D;">
+        <div class="modal-title">تسجيل هالك أو تالف (Waste)</div>
+        <button type="button" class="modal-close" onclick="closeModal('wasteModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">نوع البند التالف</label>
+          <select id="wasteItemType" class="form-control" onchange="populateWasteItemSelect()">
+            <option value="raw_material">مادة خام (بن، حليب، أكواب...)</option>
+            <option value="service">صنف بضاعة مباشر</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">اختر البند التالف</label>
+          <select id="wasteItemSelect" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الكمية التالفة / الهالك</label>
+          <input type="number" id="wasteQty" class="form-control" step="0.01" min="0.01" placeholder="أدخل الكمية التالفة" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">سبب الهالك</label>
+          <input type="text" id="wasteReason" class="form-control" placeholder="مثلاً: تلف في الماكينة، كسر، انتهاء صلاحية..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('wasteModal')">إلغاء</button>
+        <button type="button" class="btn btn-danger" onclick="submitQuickWaste()" style="font-weight:800;">تسجيل الهالك وخصم الرصيد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL 4: Barcode Print Modal ──────────────────────────── -->
+  <div class="modal-overlay" id="printBarcodeModal">
+    <div class="modal" style="max-width:540px;">
+      <div class="modal-header">
+        <div class="modal-title">طباعة باركود الأصناف</div>
+        <button type="button" class="modal-close" onclick="closeModal('printBarcodeModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="inv-search-wrap" style="max-width:100%; margin-bottom:10px;">
+          <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="barcodeSearchInput" class="inv-search-input" placeholder="اسم الصنف أو الباركود..." oninput="searchBarcodeItems()" />
+        </div>
+        <div id="barcodeItemsList" style="max-height:240px; overflow-y:auto; border:1px solid var(--inv-border); border-radius:6px; padding:6px;"></div>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label class="form-label" style="margin:0; white-space:nowrap;">النسخ:</label>
+            <input type="number" id="barcodeCopiesInput" class="form-control" value="1" min="1" max="100" style="width:65px; text-align:center;" />
+          </div>
+          <button type="button" class="btn btn-accent" onclick="doPrintBarcodeLabels()" style="flex:1; font-weight:800;">طباعة ملصقات الباركود</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL 5: Stocktake Session Report ─────────────────────── -->
+  <div class="modal-overlay" id="stocktakeReportModal" onclick="if(event.target===this) closeModal('stocktakeReportModal')">
+    <div class="modal" style="max-width:800px; width:92%;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="reportModalTitle">تقرير جلسة الجرد</div>
+          <div id="reportModalSub" style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">تفاصيل الكميات المحصورة والفروقات</div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('stocktakeReportModal')">✕</button>
+      </div>
+      <div class="modal-body" id="reportModalBody" style="max-height:60vh; overflow-y:auto;"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('stocktakeReportModal')">إغلاق</button>
+        <button type="button" class="btn btn-accent" onclick="window.print()" style="font-weight:700;">طباعة التقرير</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../vendor/jsbarcode.min.js"></script>
+  <script src="js/inventory.js"></script>
+</body>
+</html>
