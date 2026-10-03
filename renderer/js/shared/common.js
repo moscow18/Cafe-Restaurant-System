@@ -459,6 +459,125 @@ if (typeof window !== 'undefined') {
     { id: 16, name: 'صالة VIP 2', section: 'قسم VIP', seats: 4, status: 'فاضية', is_active: 1 }
   ];
 
+  // ─── Reactive Client-Side Database Engine (for Web & Vercel Real Storage) ───
+  const WebDB = {
+    getInvoices() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_invoices');
+        if (stored) return JSON.parse(stored);
+      } catch(e) {}
+      const today = getLocalISODate();
+      const seeds = [
+        { id: 101, invoice_number: 'INV-1001', customer_id: null, customer_name: 'عميل صالة (ترابيزة 2)', customer_phone: '', invoice_date: today, net_total: 185.0, dynamic_net_total: 185.0, status: 'محاسبة', invoice_type: 'صالة', table_id: 8, payment_method: 'الخزينة' },
+        { id: 102, invoice_number: 'INV-1002', customer_id: null, customer_name: 'أحمد محمود', customer_phone: '01012345678', invoice_date: today, net_total: 140.0, dynamic_net_total: 140.0, status: 'محاسبة', invoice_type: 'تيك أواي', table_id: null, payment_method: 'فودافون كاش' },
+        { id: 103, invoice_number: 'INV-1003', customer_id: null, customer_name: 'طاولة 4 VIP', customer_phone: '', invoice_date: today, net_total: 320.0, dynamic_net_total: 320.0, status: 'مرسلة للمطبخ', invoice_type: 'صالة', table_id: 15, payment_method: 'الخزينة' }
+      ];
+      localStorage.setItem('cafePro_web_invoices', JSON.stringify(seeds));
+      return seeds;
+    },
+    saveInvoice(data, items) {
+      const invoices = this.getInvoices();
+      const id = Date.now();
+      const nextSeq = String(invoices.length + 1).padStart(4, '0');
+      const invNum = data.invoice_number || `INV-${nextSeq}`;
+      const netTotal = parseFloat(data.net_total || data.total || 0);
+      const newInv = {
+        id: id,
+        invoice_number: invNum,
+        customer_id: data.customer_id || null,
+        customer_name: data.customer_name || 'عميل نقدي',
+        customer_phone: data.customer_phone || '',
+        invoice_date: data.invoice_date || getLocalISODate(),
+        invoice_time: new Date().toTimeString().slice(0, 5),
+        net_total: netTotal,
+        dynamic_net_total: netTotal,
+        discount: parseFloat(data.discount || 0),
+        tax_amount: parseFloat(data.tax_amount || 0),
+        service_amount: parseFloat(data.service_amount || 0),
+        status: data.status || 'محاسبة',
+        invoice_type: data.invoice_type || 'صالة',
+        table_id: data.table_id || null,
+        payment_method: data.payment_method || 'الخزينة',
+        items: items || []
+      };
+      invoices.unshift(newInv);
+      localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
+
+      this.addTreasury('إيراد', `فاتورة مبيعات ${invNum}`, netTotal, data.payment_method || 'الخزينة');
+
+      if (data.table_id) {
+        this.updateTableStatus(data.table_id, 'مشغولة');
+      }
+
+      return { success: true, data: { invoiceId: id, invoiceNumber: invNum } };
+    },
+    getTables() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_tables');
+        if (stored) return JSON.parse(stored);
+      } catch(e) {}
+      localStorage.setItem('cafePro_web_tables', JSON.stringify(DB_FALLBACK_TABLES));
+      return DB_FALLBACK_TABLES;
+    },
+    updateTableStatus(id, status) {
+      const tables = this.getTables();
+      const t = tables.find(x => String(x.id) === String(id));
+      if (t) {
+        t.status = status;
+        localStorage.setItem('cafePro_web_tables', JSON.stringify(tables));
+      }
+    },
+    saveTable(data) {
+      const tables = this.getTables();
+      if (data.id) {
+        const idx = tables.findIndex(t => String(t.id) === String(data.id));
+        if (idx !== -1) tables[idx] = { ...tables[idx], ...data };
+      } else {
+        const newId = Date.now();
+        tables.push({ id: newId, name: data.name, section: data.section || 'الصالة الرئيسية', seats: data.seats || 4, status: 'فاضية', is_active: 1 });
+      }
+      localStorage.setItem('cafePro_web_tables', JSON.stringify(tables));
+      return { success: true };
+    },
+    deleteTable(id) {
+      let tables = this.getTables();
+      tables = tables.filter(t => String(t.id) !== String(id));
+      localStorage.setItem('cafePro_web_tables', JSON.stringify(tables));
+      return { success: true };
+    },
+    getExpenses() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_expenses');
+        if (stored) return JSON.parse(stored);
+      } catch(e) {}
+      return [];
+    },
+    addExpense(typeName, amount, desc, source = 'الخزينة') {
+      const exps = this.getExpenses();
+      exps.push({ id: Date.now(), type_name: typeName, amount: parseFloat(amount), description: desc, date: getLocalISODate(), time: new Date().toTimeString().slice(0, 5), payment_source: source });
+      localStorage.setItem('cafePro_web_expenses', JSON.stringify(exps));
+      this.addTreasury('مصروف', `${typeName}: ${desc}`, amount, source);
+    },
+    getTreasury() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_treasury');
+        if (stored) return JSON.parse(stored);
+      } catch(e) {}
+      const today = getLocalISODate();
+      const initial = [
+        { id: 1, type: 'إيراد', notes: 'رصيد افتتاحي', amount: 500, treasury_type: 'الخزينة', date: today },
+        { id: 2, type: 'إيراد', notes: 'مبيعات صباحية', amount: 325, treasury_type: 'الخزينة', date: today }
+      ];
+      localStorage.setItem('cafePro_web_treasury', JSON.stringify(initial));
+      return initial;
+    },
+    addTreasury(type, notes, amount, treasuryType = 'الخزينة') {
+      const list = this.getTreasury();
+      list.push({ id: Date.now(), type, notes, amount: parseFloat(amount), treasury_type: treasuryType, date: getLocalISODate() });
+      localStorage.setItem('cafePro_web_treasury', JSON.stringify(list));
+    }
+  };
+
   if (!window.electron) {
     window.electron = {
       navigate: (page) => { window.location.href = page; },
@@ -555,7 +674,7 @@ if (typeof window !== 'undefined') {
             if (data && data.success && Array.isArray(data.data) && data.data.length > 0) return data;
           }
         } catch(e) {}
-        return { success: true, data: DB_FALLBACK_TABLES };
+        return { success: true, data: WebDB.getTables() };
       },
       save: async (data) => {
         try {
@@ -566,7 +685,7 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
-        return { success: true };
+        return WebDB.saveTable(data);
       },
       delete: async (id) => {
         try {
@@ -577,7 +696,7 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
-        return { success: true };
+        return WebDB.deleteTable(id);
       },
       updateStatus: async (id, status) => {
         try {
@@ -588,8 +707,7 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
-        const t = DB_FALLBACK_TABLES.find(x => x.id === id);
-        if (t) t.status = status;
+        WebDB.updateTableStatus(id, status);
         return { success: true };
       },
       reserve: async (data) => {
@@ -601,6 +719,9 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
+        if (data && (data.table_id || data.tableId)) {
+          WebDB.updateTableStatus(data.table_id || data.tableId, 'محجوزة');
+        }
         return { success: true };
       }
     };
@@ -675,7 +796,9 @@ if (typeof window !== 'undefined') {
             if (data && data.success && data.data) return data;
           }
         } catch(e) {}
-        return { success: true, data: '0001' };
+        const invs = WebDB.getInvoices();
+        const nextSeq = String(invs.length + 1).padStart(4, '0');
+        return { success: true, data: nextSeq };
       },
       query: async (sql, params = []) => {
         try {
@@ -691,20 +814,26 @@ if (typeof window !== 'undefined') {
         } catch(e) {}
 
         const sLower = (sql || '').toLowerCase().trim();
+        if (sLower.includes('from invoices')) {
+          return { success: true, data: WebDB.getInvoices() };
+        }
+        if (sLower.includes('from tables') && !sLower.includes('join')) {
+          return { success: true, data: WebDB.getTables() };
+        }
+        if (sLower.includes('from expenses')) {
+          return { success: true, data: WebDB.getExpenses() };
+        }
         if (sLower.includes('from service_categories') && !sLower.includes('join') && !sLower.includes('invoice_items')) {
           return { success: true, data: DB_FALLBACK_CATEGORIES };
         }
         if (sLower.includes('from services') && !sLower.includes('join') && !sLower.includes('invoice_items')) {
           return { success: true, data: DB_FALLBACK_SERVICES };
         }
-        if (sLower.includes('from tables') && !sLower.includes('join')) {
-          return { success: true, data: DB_FALLBACK_TABLES };
-        }
         if (sLower.includes('from customers')) {
-          return { success: true, data: [{ id: 1, name: 'عميل نقدي سريع', phone: '01000000000' }] };
+          return { success: true, data: [{ id: 1, name: 'عميل نقدي سريع', phone: '01000000000' }, { id: 2, name: 'أحمد محمود', phone: '01012345678' }] };
         }
         if (sLower.includes('from employees')) {
-          return { success: true, data: [{ id: 1, name: 'كاشير رئيسي' }] };
+          return { success: true, data: [{ id: 1, name: 'مدير النظام' }, { id: 2, name: 'كاشير رئيسي' }] };
         }
         return { success: true, data: [] };
       },
@@ -720,6 +849,35 @@ if (typeof window !== 'undefined') {
             if (data && data.success) return data;
           }
         } catch(e) {}
+
+        const sLower = (sql || '').toLowerCase().trim();
+        const today = getLocalISODate();
+
+        if (sLower.includes('from invoices') && sLower.includes('sum(net_total)')) {
+          const invs = WebDB.getInvoices();
+          const todayInvs = invs.filter(i => (i.invoice_date || '').startsWith(today));
+          const total = todayInvs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
+          return { success: true, data: { total: total, cnt: todayInvs.length } };
+        }
+
+        if (sLower.includes('from expenses') && sLower.includes('sum(amount)')) {
+          const exps = WebDB.getExpenses();
+          const total = exps.filter(e => (e.date || '').startsWith(today)).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+          return { success: true, data: { total: total } };
+        }
+
+        if (sLower.includes('from treasury') && sLower.includes('treasury_type')) {
+          const tr = WebDB.getTreasury();
+          let matchType = 'الخزينة';
+          if (sLower.includes('فودافون')) matchType = 'فودافون كاش';
+          else if (sLower.includes('إنستا')) matchType = 'إنستا باي';
+          else if (sLower.includes('فيزا')) matchType = 'فيزا';
+
+          const total = tr.filter(t => (t.date || '').startsWith(today) && t.treasury_type === matchType)
+            .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
+          return { success: true, data: { net: Math.max(0, total) } };
+        }
+
         return { success: true, data: { total: 0, cnt: 0, net: 0, sum: 0 } };
       },
       run: async (sql, params = []) => {
@@ -734,6 +892,24 @@ if (typeof window !== 'undefined') {
             if (data && data.success) return data;
           }
         } catch(e) {}
+
+        const sLower = (sql || '').toLowerCase().trim();
+        if (sLower.includes('insert into expenses')) {
+          const typeName = params[1] || 'مصروف عام';
+          const amount = params[2] || 0;
+          const desc = params[3] || '';
+          const source = params[5] || 'الخزينة';
+          WebDB.addExpense(typeName, amount, desc, source);
+        } else if (sLower.includes('insert into advances')) {
+          const amount = params[1] || 0;
+          const notes = params[2] || 'سلفة موظف';
+          WebDB.addExpense('سلفة', amount, notes, 'الخزينة');
+        } else if (sLower.includes('update tables') && sLower.includes('status')) {
+          if (params.length >= 2) {
+            WebDB.updateTableStatus(params[1], params[0]);
+          }
+        }
+
         return { success: true, changes: 1, lastInsertRowid: Date.now() };
       },
       saveInvoice: async (data, items) => {
@@ -748,7 +924,7 @@ if (typeof window !== 'undefined') {
             if (result && result.success) return result;
           }
         } catch(e) {}
-        return { success: true, data: { invoiceId: Date.now(), invoiceNumber: data?.invoiceNumber || '0001' } };
+        return WebDB.saveInvoice(data, items);
       },
       getDailyReport: async (date) => {
         try {
@@ -762,22 +938,59 @@ if (typeof window !== 'undefined') {
             if (result && result.success) return result;
           }
         } catch(e) {}
-        return { success: false, error: 'Failed to fetch daily report' };
+        const invs = WebDB.getInvoices();
+        const exps = WebDB.getExpenses();
+        const totalSales = invs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
+        const totalExpenses = exps.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+        return {
+          success: true,
+          data: {
+            date: date || getLocalISODate(),
+            totalSales: totalSales,
+            totalExpenses: totalExpenses,
+            netProfit: totalSales - totalExpenses,
+            invoicesCount: invs.length,
+            invoices: invs,
+            expenses: exps
+          }
+        };
       },
       updateInvoiceStatus: async () => ({ success: true }),
       reversePayment: async () => ({ success: true }),
-      addTreasuryEntry: async () => ({ success: true }),
+      addTreasuryEntry: async (type, notes, amount, treasuryType = 'الخزينة') => {
+        try {
+          const res = await fetch('/api/db/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sql: `INSERT INTO treasury (type, notes, amount, treasury_type, date, time) VALUES (?,?,?,?,?,?)`,
+              params: [type, notes, amount, treasuryType, getLocalISODate(), new Date().toTimeString().slice(0,5)]
+            })
+          });
+          if (res.ok) return await res.json();
+        } catch(e) {}
+        WebDB.addTreasury(type, notes, amount, treasuryType);
+        return { success: true };
+      },
       getTreasuryBalance: async (type = 'الخزينة') => {
         try {
-          const res = await window.db.queryOne(
-            "SELECT COALESCE(SUM(CASE WHEN type='إيراد' THEN amount ELSE -amount END), 0) as balance FROM treasury WHERE treasury_type = ?",
-            [type]
-          );
-          if (res && res.success && res.data) {
-            return { success: true, data: res.data.balance || 0 };
+          const res = await fetch('/api/db/queryOne', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sql: `SELECT COALESCE(SUM(CASE WHEN type='إيراد' THEN amount ELSE -amount END),0) as balance FROM treasury WHERE treasury_type=?`,
+              params: [type]
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && data.data) return parseFloat(data.data.balance) || 0;
           }
         } catch(e) {}
-        return { success: true, data: 0 };
+        const tr = WebDB.getTreasury();
+        const total = tr.filter(t => t.treasury_type === type)
+          .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
+        return Math.max(0, total);
       },
       getLowStockItems: async () => ({ success: true, data: [] }),
       getUnreadWhatsAppMessagesCount: async () => ({ success: true, count: 0 })
