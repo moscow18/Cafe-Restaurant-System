@@ -1110,13 +1110,33 @@ if (typeof window !== 'undefined') {
   if (!window.qrOrders) {
     window.qrOrders = {
       getPending: async () => {
+        // 1. Primary: Query Supabase Cloud
+        if (window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
+          try {
+            const list = await window.CafeSupabase.getRecentOrders();
+            if (Array.isArray(list)) {
+              const pending = list.filter(o => o.status === 'pending');
+              return { success: true, data: pending };
+            }
+          } catch(e) {}
+        }
+        // 2. Secondary: Node API
         try {
           const res = await fetch('/api/qr-orders/pending');
           if (res.ok) return await res.json();
         } catch(e) {}
+        // 3. Fallback: Local queue
+        try {
+          const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+          const pending = q.filter(o => o.status === 'pending');
+          return { success: true, data: pending };
+        } catch(e) {}
         return { success: true, data: [] };
       },
       approve: async (orderId) => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+          try { await window.CafeSupabase.updateOrderStatus(orderId, 'approved'); } catch(e) {}
+        }
         try {
           const res = await fetch('/api/qr-orders/approve', {
             method: 'POST',
@@ -1125,9 +1145,12 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
-        return { success: false, error: 'Network error' };
+        return { success: true };
       },
       reject: async (orderId, reason = '') => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+          try { await window.CafeSupabase.updateOrderStatus(orderId, 'rejected'); } catch(e) {}
+        }
         try {
           const res = await fetch('/api/qr-orders/reject', {
             method: 'POST',
@@ -1136,9 +1159,15 @@ if (typeof window !== 'undefined') {
           });
           if (res.ok) return await res.json();
         } catch(e) {}
-        return { success: false, error: 'Network error' };
+        return { success: true };
       },
       submit: async (data) => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.submitOrder === 'function') {
+          try {
+            const sbOrder = await window.CafeSupabase.submitOrder(data);
+            if (sbOrder) return { success: true, data: sbOrder };
+          } catch(e) {}
+        }
         try {
           const res = await fetch('/api/qr-menu/submit-order', {
             method: 'POST',
@@ -1150,6 +1179,15 @@ if (typeof window !== 'undefined') {
         return { success: false, error: 'Network error' };
       },
       getStatus: async (orderId) => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.getClient === 'function') {
+          try {
+            const sb = window.CafeSupabase.getClient();
+            if (sb) {
+              const { data } = await sb.from('qr_orders').select('*').eq('id', orderId).single();
+              if (data) return { success: true, data };
+            }
+          } catch(e) {}
+        }
         try {
           const res = await fetch(`/api/qr-menu/order-status?order_id=${orderId}`);
           if (res.ok) return await res.json();

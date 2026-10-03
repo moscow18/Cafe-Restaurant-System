@@ -2224,36 +2224,32 @@
   </div>
 
   <!-- ─── 13.5 MODAL: INCOMING QR ORDERS (الطلبات الواردة عبر المنيو الإلكتروني) ─── -->
-  <div class="modal-overlay" id="posQrOrdersModal" style="z-index:9999; backdrop-filter:blur(6px); background:rgba(0,0,0,0.7);">
-    <div class="modal modal-lg" style="max-width:880px; width:95%; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; max-height:88vh; background:#131418; border:1px solid rgba(255,255,255,0.08); box-shadow:0 24px 60px rgba(0,0,0,0.55);">
-      <div class="modal-header" style="background:#17181D; color:#FFFFFF; border-bottom:1px solid rgba(255,255,255,0.07); padding:16px 22px; display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:38px; height:38px; border-radius:10px; background:rgba(224, 106, 59, 0.12); border:1px solid rgba(224, 106, 59, 0.25); display:flex; align-items:center; justify-content:center; color:#FF8F6B; flex-shrink:0;">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+  <div class="modal-overlay" id="posQrOrdersModal" style="z-index:9999; backdrop-filter:blur(6px); background:rgba(15, 23, 42, 0.45);">
+    <div class="modal modal-lg" style="max-width:880px; width:95%; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; max-height:88vh; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 25px 60px rgba(15, 23, 42, 0.16);">
+      <div class="modal-header" style="background:#FFFFFF; color:#0F172A; border-bottom:1px solid #F1F5F9; padding:18px 24px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:42px; height:42px; border-radius:12px; background:#FFF7ED; border:1px solid #FFEDD5; display:flex; align-items:center; justify-content:center; color:#EA580C; flex-shrink:0;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
           </div>
           <div>
-            <div class="modal-title" style="color:#FFFFFF; font-size:15px; font-weight:800; display:flex; align-items:center; gap:10px;">
+            <div class="modal-title" style="color:#0F172A; font-size:16px; font-weight:800; display:flex; align-items:center; gap:10px;">
               <span>طلبات المنيو الإلكتروني (QR)</span>
-              <span id="qrModalCountBadge" style="background:rgba(224, 106, 59, 0.16); color:#FF8F6B; border:1px solid rgba(224, 106, 59, 0.28); font-size:11px; padding:2px 10px; border-radius:999px; font-weight:800;">0 معلقة</span>
-              <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#10B981; background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.2); padding:2px 8px; border-radius:999px; font-weight:700;">
-                <span style="width:6px; height:6px; border-radius:50%; background:#10B981; box-shadow:0 0 8px #10B981;"></span>
-                <span>بث فوري مباشر (SSE)</span>
-              </span>
+              <span id="qrModalCountBadge" style="background:#FFF7ED; color:#EA580C; border:1px solid #FFEDD5; font-size:12px; padding:3px 12px; border-radius:999px; font-weight:800;">0 معلقة</span>
             </div>
-            <div style="font-size:11.5px; color:#94A3B8; margin-top:3px;">
+            <div style="font-size:12px; color:#64748B; margin-top:3px; font-weight:500;">
               الطلبات الواردة مباشرة من هواتف الزبائن على الطاولات • اعتماد الطلب يرسله فوراً لطابعة المطبخ
             </div>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button type="button" class="btn btn-sm" onclick="fetchAndRenderQrOrders()" style="background:#1F2128; border:1px solid rgba(255,255,255,0.1); color:#E2E8F0; font-size:12px; font-weight:700; border-radius:8px; padding:6px 12px; display:flex; align-items:center; gap:6px; cursor:pointer; transition:background 0.15s ease;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <button type="button" class="btn btn-sm" onclick="fetchAndRenderQrOrders()" style="background:#FFFFFF; border:1px solid #CBD5E1; color:#334155; font-size:12.5px; font-weight:700; border-radius:8px; padding:7px 14px; display:flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:all 0.15s ease;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             <span>تحديث</span>
           </button>
-          <button type="button" style="color:#94A3B8; font-size:16px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); cursor:pointer;" onclick="closeModal('posQrOrdersModal')">✕</button>
+          <button type="button" style="color:#64748B; font-size:16px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#F1F5F9; border:1px solid #E2E8F0; cursor:pointer; transition:all 0.15s ease;" onclick="closeModal('posQrOrdersModal')">✕</button>
         </div>
       </div>
-      <div class="modal-body" id="posQrOrdersBody" style="padding:18px 22px; overflow-y:auto; flex:1; background:#101114; min-height:280px;">
+      <div class="modal-body" id="posQrOrdersBody" style="padding:20px 24px; overflow-y:auto; flex:1; background:#F8FAFC; min-height:280px;">
         <!-- Dynamic list of QR orders populated by JS -->
       </div>
     </div>

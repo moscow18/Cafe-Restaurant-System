@@ -3816,7 +3816,7 @@ async function checkPendingQrOrders() {
     if (window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
       try {
         const sbOrders = await window.CafeSupabase.getRecentOrders();
-        if (Array.isArray(sbOrders) && sbOrders.length > 0) {
+        if (Array.isArray(sbOrders)) {
           orders = sbOrders.filter(o => o.status === 'pending');
         }
       } catch(e) {}
@@ -3826,8 +3826,8 @@ async function checkPendingQrOrders() {
     if (orders.length === 0 && window.qrOrders && typeof window.qrOrders.getPending === 'function') {
       try {
         const res = await window.qrOrders.getPending();
-        if (res && res.success) {
-          orders = res.data || [];
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          orders = res.data;
         }
       } catch(e) {}
     }
@@ -3865,18 +3865,18 @@ async function checkPendingQrOrders() {
     }
 
     if (modalBadge) {
-      modalBadge.textContent = `${count} طلبات معلقة`;
+      modalBadge.textContent = `${count} معلقة`;
     }
 
     // New order alert sound & notification
-    if (count > _lastQrPendingCount) {
+    if (_lastQrPendingCount !== null && count > _lastQrPendingCount) {
       playQrOrderChime();
       const latest = orders[0];
-      const tableText = latest ? (latest.table_name || `ترابيزة ${latest.table_id || ''}`) : '';
+      const tableText = latest ? (latest.table_name || `طاولة ${latest.table_id || ''}`) : '';
       showToast(`🔔 طلب زبون جديد وارد عبر المنيو QR (${tableText})!`, 'info');
       // If modal is open, refresh its content live
       const modal = document.getElementById('posQrOrdersModal');
-      if (modal && modal.classList.contains('active')) {
+      if (modal && (modal.classList.contains('active') || modal.style.display === 'flex')) {
         renderQrOrdersList(orders);
       }
     }
@@ -3896,15 +3896,45 @@ async function fetchAndRenderQrOrders() {
   const body = document.getElementById('posQrOrdersBody');
   if (body) {
     body.innerHTML = `
-      <div style="text-align:center; padding:36px; color:#94A3B8;">
-        <div style="display:inline-block; width:28px; height:28px; border:2px solid rgba(255,255,255,0.1); border-top-color:#FF8F6B; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:12px;"></div>
-        <div style="font-size:13px; font-weight:700; color:#E2E8F0;">جاري تحميل طلبات الـ QR الواردة...</div>
+      <div style="text-align:center; padding:36px; color:#64748B;">
+        <div style="display:inline-block; width:28px; height:28px; border:2px solid #E2E8F0; border-top-color:#EA580C; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:12px;"></div>
+        <div style="font-size:13px; font-weight:700; color:#0F172A;">جاري تحديث الطلبات الواردة...</div>
       </div>
     `;
   }
   try {
-    const res = await window.qrOrders.getPending();
-    const orders = (res && res.success) ? (res.data || []) : [];
+    let orders = [];
+
+    // 1. Direct query to Supabase Cloud
+    if (window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
+      try {
+        const sbOrders = await window.CafeSupabase.getRecentOrders();
+        if (Array.isArray(sbOrders)) {
+          orders = sbOrders.filter(o => o.status === 'pending');
+        }
+      } catch(e) {
+        console.warn('Supabase fetch error in fetchAndRenderQrOrders:', e);
+      }
+    }
+
+    // 2. Direct fallback via window.qrOrders
+    if (orders.length === 0 && window.qrOrders && typeof window.qrOrders.getPending === 'function') {
+      try {
+        const res = await window.qrOrders.getPending();
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          orders = res.data;
+        }
+      } catch(e) {}
+    }
+
+    // 3. Fallback to localStorage queue
+    if (orders.length === 0) {
+      try {
+        const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+        orders = q.filter(o => o.status === 'pending');
+      } catch(e) {}
+    }
+
     _cachedQrOrders = orders;
     renderQrOrdersList(orders);
     
@@ -3928,7 +3958,7 @@ async function fetchAndRenderQrOrders() {
     _lastQrPendingCount = orders.length;
   } catch (err) {
     if (body) {
-      body.innerHTML = `<div style="text-align:center; padding:24px; color:#F87171;">تعذر تحميل الطلبات: ${escapeHtml(err.message)}</div>`;
+      body.innerHTML = `<div style="text-align:center; padding:24px; color:#EF4444; font-weight:700;">تعذر تحميل الطلبات: ${escapeHtml(err.message)}</div>`;
     }
   }
 }
@@ -3939,15 +3969,15 @@ function renderQrOrdersList(orders) {
 
   if (!orders || orders.length === 0) {
     body.innerHTML = `
-      <div style="text-align:center; padding:48px 20px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.08); border-radius:14px;">
-        <div style="width:52px; height:52px; border-radius:12px; background:#1C1E24; border:1px solid rgba(255,255,255,0.08); color:#64748B; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      <div style="text-align:center; padding:48px 20px; background:#FFFFFF; border:1px dashed #CBD5E1; border-radius:16px;">
+        <div style="width:52px; height:52px; border-radius:12px; background:#F8FAFC; border:1px solid #E2E8F0; color:#94A3B8; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </div>
-        <div style="font-size:14.5px; font-weight:800; color:#F1F5F9; margin-bottom:4px;">
+        <div style="font-size:15px; font-weight:800; color:#0F172A; margin-bottom:6px;">
           لا توجد طلبات معلقة حالياً
         </div>
-        <div style="font-size:12px; color:#94A3B8; max-width:340px; margin:0 auto; line-height:1.5;">
-          أي طلب يتم إرساله من هواتف الزبائن على الطاولات سيصل فوراً هنا عبر البث المباشر (SSE) مع تنبيه صوتي.
+        <div style="font-size:12.5px; color:#64748B; max-width:360px; margin:0 auto; line-height:1.5;">
+          أي طلب يتم إرساله من هواتف الزبائن على الطاولات سيظهر هنا فوراً.
         </div>
       </div>
     `;
@@ -3955,70 +3985,70 @@ function renderQrOrdersList(orders) {
   }
 
   body.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
       ${orders.map(order => {
         const tableName = order.table_name || (order.table_id ? `طاولة ${order.table_id}` : 'طاولة غير محددة');
         const items = order.items || [];
         const timeStr = order.created_at ? new Date(order.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
 
         return `
-          <div style="background:#17181D; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; box-shadow:0 4px 18px rgba(0,0,0,0.25);">
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:14px; padding:18px; box-shadow:0 4px 16px rgba(15,23,42,0.04);">
             <!-- Order Header Strip -->
-            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #F1F5F9; padding-bottom:12px; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="background:rgba(224,106,59,0.18); color:#FF9B79; border:1px solid rgba(224,106,59,0.32); font-weight:800; font-size:12px; padding:3px 12px; border-radius:6px;">
+                <span style="background:#FFF7ED; color:#EA580C; border:1px solid #FFEDD5; font-weight:800; font-size:12.5px; padding:4px 14px; border-radius:6px;">
                   ${escapeHtml(tableName)}
                 </span>
-                <span style="font-family:monospace; font-weight:800; font-size:13px; color:#CBD5E1;">
+                <span style="font-family:monospace; font-weight:800; font-size:13.5px; color:#0F172A;">
                   #${escapeHtml(order.order_number)}
                 </span>
-                <span style="font-size:11.5px; color:#64748B; font-variant-numeric:tabular-nums;">
+                <span style="font-size:12px; color:#64748B; font-variant-numeric:tabular-nums;">
                   ${escapeHtml(timeStr)}
                 </span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                ${order.customer_name ? `<span style="font-size:11.5px; font-weight:700; color:#E2E8F0; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:3px 10px; border-radius:6px;">${escapeHtml(order.customer_name)}</span>` : ''}
-                ${order.customer_phone ? `<span style="font-size:11.5px; font-weight:700; color:#38BDF8; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); padding:3px 10px; border-radius:6px; font-family:monospace;">${escapeHtml(order.customer_phone)}</span>` : ''}
+                ${order.customer_name ? `<span style="font-size:12px; font-weight:700; color:#334155; background:#F8FAFC; border:1px solid #E2E8F0; padding:4px 12px; border-radius:6px;">${escapeHtml(order.customer_name)}</span>` : ''}
+                ${order.customer_phone ? `<span style="font-size:12px; font-weight:700; color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; padding:4px 12px; border-radius:6px; font-family:monospace;">${escapeHtml(order.customer_phone)}</span>` : ''}
               </div>
             </div>
 
             <!-- Items List Table -->
-            <div style="margin-bottom:12px; border:1px solid rgba(255,255,255,0.06); border-radius:8px; overflow:hidden;">
-              <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <div style="margin-bottom:14px; border:1px solid #E2E8F0; border-radius:10px; overflow:hidden;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px;">
                 <thead>
-                  <tr style="background:#1E2026; color:#94A3B8; text-align:right; border-bottom:1px solid rgba(255,255,255,0.07);">
-                    <th style="padding:8px 12px; font-weight:700;">الصنف والتفاصيل</th>
-                    <th style="padding:8px 12px; font-weight:700; text-align:center;">الكمية</th>
-                    <th style="padding:8px 12px; font-weight:700; text-align:left;">السعر</th>
-                    <th style="padding:8px 12px; font-weight:700; text-align:left;">الإجمالي</th>
+                  <tr style="background:#F8FAFC; color:#64748B; text-align:right; border-bottom:1px solid #E2E8F0;">
+                    <th style="padding:10px 14px; font-weight:700;">الصنف والتفاصيل</th>
+                    <th style="padding:10px 14px; font-weight:700; text-align:center;">الكمية</th>
+                    <th style="padding:10px 14px; font-weight:700; text-align:left;">السعر</th>
+                    <th style="padding:10px 14px; font-weight:700; text-align:left;">الإجمالي</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${items.map(it => {
                     let cupBadge = '';
                     if (it.notes && it.notes.includes('كوب كرتون')) {
-                      cupBadge = '<span style="background:rgba(245,158,11,0.12); color:#FCD34D; border:1px solid rgba(245,158,11,0.22); padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px;">كوب كرتون</span>';
+                      cupBadge = '<span style="background:#FEF3C7; color:#B45309; border:1px solid #FDE68A; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; margin-right:4px;">كوب كرتون</span>';
                     } else if (it.notes && it.notes.includes('كوب بلاستيك')) {
-                      cupBadge = '<span style="background:rgba(56,189,248,0.12); color:#38BDF8; border:1px solid rgba(56,189,248,0.22); padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px;">كوب بلاستيك</span>';
+                      cupBadge = '<span style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; margin-right:4px;">كوب بلاستيك</span>';
                     } else if (it.notes && it.notes.includes('كوب زجاجي')) {
-                      cupBadge = '<span style="background:rgba(16,185,129,0.12); color:#34D399; border:1px solid rgba(16,185,129,0.22); padding:1px 7px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px;">زجاجي للصالة</span>';
+                      cupBadge = '<span style="background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; margin-right:4px;">زجاجي للصالة</span>';
                     }
                     return `
-                      <tr style="border-bottom:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.1);">
-                        <td style="padding:9px 12px; font-weight:700; color:#FFFFFF;">
+                      <tr style="border-bottom:1px solid #F1F5F9; background:#FFFFFF;">
+                        <td style="padding:10px 14px; font-weight:700; color:#0F172A;">
                           <div style="display:flex; align-items:center; gap:6px;">
-                            <span>${escapeHtml(it.service_name)}</span>
+                            <span>${escapeHtml(it.service_name || it.display_name || 'صنف')}</span>
                             ${cupBadge}
                           </div>
-                          ${it.notes ? `<div style="font-size:11px; color:#FDBA74; font-weight:600; margin-top:2px;">• ${escapeHtml(it.notes)}</div>` : ''}
+                          ${it.notes ? `<div style="font-size:11.5px; color:#D97706; font-weight:600; margin-top:3px;">• ${escapeHtml(it.notes)}</div>` : ''}
                         </td>
-                        <td style="padding:9px 12px; text-align:center;">
-                          <span style="font-weight:800; color:#FFFFFF; font-size:13px; background:rgba(255,255,255,0.08); padding:2px 8px; border-radius:4px; font-variant-numeric:tabular-nums;">${it.quantity}</span>
+                        <td style="padding:10px 14px; text-align:center;">
+                          <span style="font-weight:800; color:#0F172A; font-size:13px; background:#F1F5F9; padding:3px 10px; border-radius:6px; font-variant-numeric:tabular-nums;">${it.quantity}</span>
                         </td>
-                        <td style="padding:9px 12px; text-align:left; color:#94A3B8; font-size:12px; font-variant-numeric:tabular-nums;">
+                        <td style="padding:10px 14px; text-align:left; color:#64748B; font-size:12.5px; font-variant-numeric:tabular-nums;">
                           ${fmt(it.price)} ج.م
                         </td>
-                        <td style="padding:9px 12px; text-align:left; font-weight:800; color:#FFFFFF; font-size:13px; font-variant-numeric:tabular-nums;">
+                        <td style="padding:10px 14px; text-align:left; font-weight:800; color:#0F172A; font-size:13.5px; font-variant-numeric:tabular-nums;">
                           ${fmt(it.total || (it.price * it.quantity))} ج.م
                         </td>
                       </tr>
@@ -4030,23 +4060,23 @@ function renderQrOrdersList(orders) {
 
             <!-- Notes if any -->
             ${order.notes ? `
-              <div style="background:#1D1F26; border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:11.5px; color:#E2E8F0;">
-                <strong style="color:#FF8F6B;">ملاحظة العميل:</strong> ${escapeHtml(order.notes)}
+              <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:9px 14px; margin-bottom:14px; font-size:12px; color:#92400E;">
+                <strong style="color:#B45309;">ملاحظة العميل:</strong> ${escapeHtml(order.notes)}
               </div>
             ` : ''}
 
             <!-- Bottom Row: Total & Action Buttons -->
-            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; flex-wrap:wrap; gap:12px;">
-              <div style="display:flex; align-items:baseline; gap:6px;">
-                <span style="font-size:12.5px; font-weight:700; color:#94A3B8;">الإجمالي المطلوب:</span>
-                <span style="font-size:19px; font-weight:900; color:#FF9B79; font-variant-numeric:tabular-nums;">${fmt(order.total)} ج.م</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #F1F5F9; padding-top:14px; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                <span style="font-size:13px; font-weight:700; color:#64748B;">الإجمالي المطلوب:</span>
+                <span style="font-size:21px; font-weight:900; color:#EA580C; font-variant-numeric:tabular-nums;">${fmt(order.total)} ج.م</span>
               </div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <button type="button" onclick="rejectQrOrder(${order.id})" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.22); color:#F87171; font-weight:700; font-size:12px; padding:7px 14px; border-radius:8px; cursor:pointer; transition:all 0.15s ease;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button type="button" onclick="rejectQrOrder(${order.id})" style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:8px; cursor:pointer; transition:all 0.15s ease;">
                   رفض الطلب
                 </button>
-                <button type="button" onclick="approveAndDispatchQrOrder(${order.id})" style="background:linear-gradient(135deg, #E06A3B 0%, #D05929 100%); border:none; color:#FFFFFF; font-weight:800; font-size:12.5px; padding:8px 18px; border-radius:8px; cursor:pointer; box-shadow:0 4px 14px rgba(224,106,59,0.3); display:inline-flex; align-items:center; gap:7px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                <button type="button" onclick="approveAndDispatchQrOrder(${order.id})" style="background:linear-gradient(135deg, #E06A3B 0%, #D05929 100%); border:none; color:#FFFFFF; font-weight:800; font-size:13px; padding:9px 20px; border-radius:8px; cursor:pointer; box-shadow:0 4px 14px rgba(224,106,59,0.3); display:inline-flex; align-items:center; gap:8px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>اعتماد وإرسال للمطبخ</span>
                 </button>
               </div>
@@ -4240,6 +4270,10 @@ init().then(() => {
   if (settings.enable_qr_menu === undefined || Number(settings.enable_qr_menu) !== 0) {
     checkPendingQrOrders();
     setupPosRealtimeSSE();
+    // Periodic safety poll every 4 seconds to sync orders across all browsers
+    setInterval(() => {
+      checkPendingQrOrders();
+    }, 4000);
   } else {
     const qrBtn = document.getElementById('btnQrOrdersBadge');
     if (qrBtn) qrBtn.style.setProperty('display', 'none', 'important');
