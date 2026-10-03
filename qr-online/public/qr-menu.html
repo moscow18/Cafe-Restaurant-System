@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/renderer/js/shared/supabase-bridge.js"></script>
   <style>
     :root {
       --bg-canvas: #0A0B0E;
@@ -2264,24 +2266,51 @@
       };
 
       let orderData = null;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        const res = await fetch('/api/qr-menu/submit-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.success) {
-            orderData = data;
+
+      // 1. Try Supabase Cloud Realtime first
+      if (window.CafeSupabase && typeof window.CafeSupabase.submitOrder === 'function') {
+        try {
+          const sbOrder = await window.CafeSupabase.submitOrder(payload);
+          if (sbOrder && sbOrder.id) {
+            orderData = {
+              success: true,
+              id: sbOrder.id,
+              order_id: sbOrder.id,
+              order_number: sbOrder.order_number,
+              table_id: sbOrder.table_id,
+              table_name: sbOrder.table_name,
+              customer_name: sbOrder.customer_name,
+              status: sbOrder.status || 'pending',
+              items: sbOrder.items || payload.items
+            };
+            console.log('[Supabase Cloud] Order placed live:', orderData);
           }
+        } catch(e) {
+          console.warn('[Supabase Cloud Submission Exception]', e);
         }
-      } catch (err) {
-        console.warn('Backend serverless timeout, switching to local instant flow');
+      }
+
+      // 2. Fallback to server endpoint
+      if (!orderData) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1200);
+          const res = await fetch('/api/qr-menu/submit-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success) {
+              orderData = data;
+            }
+          }
+        } catch (err) {
+          console.warn('Backend serverless timeout, switching to local instant flow');
+        }
       }
 
       if (!orderData) {
@@ -2376,6 +2405,14 @@
     }
 
     function setupOrderRealtimeListener(orderId) {
+      // 1. Supabase Cloud Realtime
+      if (window.CafeSupabase && typeof window.CafeSupabase.subscribeToOrderStatus === 'function') {
+        window.CafeSupabase.subscribeToOrderStatus(orderId, (updatedOrder) => {
+          console.log('[Supabase Realtime Status Change]', updatedOrder.status);
+          updateStepperUI(updatedOrder.status, updatedOrder);
+        });
+      }
+
       if (menuRealtimeSource) {
         try { menuRealtimeSource.close(); } catch(e) {}
         menuRealtimeSource = null;

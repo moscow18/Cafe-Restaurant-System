@@ -3810,10 +3810,36 @@ function playQrOrderChime() {
 
 async function checkPendingQrOrders() {
   try {
-    if (!window.qrOrders || typeof window.qrOrders.getPending !== 'function') return;
-    const res = await window.qrOrders.getPending();
-    if (!res || !res.success) return;
-    const orders = res.data || [];
+    let orders = [];
+
+    // 1. Check Supabase Cloud Realtime Orders
+    if (window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
+      try {
+        const sbOrders = await window.CafeSupabase.getRecentOrders();
+        if (Array.isArray(sbOrders) && sbOrders.length > 0) {
+          orders = sbOrders.filter(o => o.status === 'pending');
+        }
+      } catch(e) {}
+    }
+
+    // 2. Check local Electron / Node bridge
+    if (orders.length === 0 && window.qrOrders && typeof window.qrOrders.getPending === 'function') {
+      try {
+        const res = await window.qrOrders.getPending();
+        if (res && res.success) {
+          orders = res.data || [];
+        }
+      } catch(e) {}
+    }
+
+    // 3. Check localStorage queue
+    if (orders.length === 0) {
+      try {
+        const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+        orders = q.filter(o => o.status === 'pending');
+      } catch(e) {}
+    }
+
     _cachedQrOrders = orders;
     const count = orders.length;
 
@@ -4044,11 +4070,12 @@ async function approveAndDispatchQrOrder(orderId) {
   }
 
   try {
-    // 1. Mark order as approved in QR database
-    const approveRes = await window.qrOrders.approve(orderId);
-    if (!approveRes || !approveRes.success) {
-      showToast('تعذر تحديث حالة الطلب: ' + (approveRes?.error || ''), 'error');
-      return;
+    // 1. Mark order as approved in QR database (Supabase Cloud + Local)
+    if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+      try { await window.CafeSupabase.updateOrderStatus(orderId, 'approved'); } catch(e) {}
+    }
+    if (window.qrOrders && typeof window.qrOrders.approve === 'function') {
+      try { await window.qrOrders.approve(orderId); } catch(e) {}
     }
 
     // 2. Set POS to Dine-in order mode
@@ -4135,13 +4162,14 @@ async function rejectQrOrder(orderId) {
   const reason = (result.value || '').trim() || 'تم إلغاء الطلب من الكاشير';
 
   try {
-    const res = await window.qrOrders.reject(orderId, reason);
-    if (res && res.success) {
-      showToast('تم رفض الطلب وإبلاغ العميل ✓', 'info');
-      await fetchAndRenderQrOrders();
-    } else {
-      showToast('تعذر رفض الطلب: ' + (res?.error || ''), 'error');
+    if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+      try { await window.CafeSupabase.updateOrderStatus(orderId, 'rejected'); } catch(e) {}
     }
+    if (window.qrOrders && typeof window.qrOrders.reject === 'function') {
+      try { await window.qrOrders.reject(orderId, reason); } catch(e) {}
+    }
+    showToast('تم رفض الطلب وإبلاغ العميل ✓', 'info');
+    await fetchAndRenderQrOrders();
   } catch (err) {
     showToast('خطأ: ' + err.message, 'error');
   }
@@ -4150,6 +4178,20 @@ async function rejectQrOrder(orderId) {
 let _posSseSource = null;
 
 function setupPosRealtimeSSE() {
+  // ─── 1. Supabase Cloud Realtime Channel (Instant Push Across Devices / Vercel) ───
+  if (window.CafeSupabase && typeof window.CafeSupabase.subscribeToIncomingOrders === 'function') {
+    window.CafeSupabase.subscribeToIncomingOrders((order) => {
+      console.log('[Supabase Cloud RealTime] Instant QR Table Order Received:', order);
+      playQrOrderChime();
+      showToast(`🔔 طلب زبون جديد وارد عبر المنيو QR (${order.table_name || 'طاولة'})!`, 'info');
+      checkPendingQrOrders();
+      const modal = document.getElementById('posQrOrdersModal');
+      if (modal && modal.classList.contains('active')) {
+        fetchAndRenderQrOrders();
+      }
+    });
+  }
+
   if (_posSseSource) {
     try { _posSseSource.close(); } catch(e) {}
     _posSseSource = null;
