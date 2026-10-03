@@ -1773,33 +1773,48 @@
     }
 
     async function fetchMenuData() {
+      let json = null;
       try {
         const res = await fetch('/api/qr-menu/data');
-        const json = await res.json();
-        if (json && json.success) {
-          const data = json.data;
-          allCategories = data.categories || [];
-          allServices = data.services || [];
-          allTables = data.tables || [];
-          shopSettings = data.settings || {};
-
-          if (shopSettings.company_name) {
-            const el = document.getElementById('shopNameDisplay');
-            if (el && currentLang === 'ar') el.textContent = shopSettings.company_name;
-          }
-
-          if (selectedTable && selectedTable.id) {
-            const match = allTables.find(tb => tb.id === selectedTable.id);
-            if (match) selectedTable = match;
-          }
-
-          renderCategoriesStrip();
-          renderProductsGrid();
-          renderTablesPickerGrid();
-          updateCartUI();
+        if (res.ok) {
+          json = await res.json();
         }
-      } catch (err) {
-        console.error('Failed to load menu data:', err);
+      } catch (e) {
+        console.warn('API unavailable, trying fallback menu-data.json...');
+      }
+
+      if (!json || !json.success) {
+        try {
+          const res = await fetch('./menu-data.json');
+          if (res.ok) {
+            json = await res.json();
+          }
+        } catch (err) {
+          console.error('Failed to load fallback menu data:', err);
+        }
+      }
+
+      if (json && json.success) {
+        const data = json.data;
+        allCategories = data.categories || [];
+        allServices = data.services || [];
+        allTables = data.tables || [];
+        shopSettings = data.settings || {};
+
+        if (shopSettings.company_name) {
+          const el = document.getElementById('shopNameDisplay');
+          if (el && currentLang === 'ar') el.textContent = shopSettings.company_name;
+        }
+
+        if (selectedTable && selectedTable.id) {
+          const match = allTables.find(tb => tb.id === selectedTable.id);
+          if (match) selectedTable = match;
+        }
+
+        renderCategoriesStrip();
+        renderProductsGrid();
+        renderTablesPickerGrid();
+        updateCartUI();
       }
     }
 
@@ -1878,11 +1893,12 @@
       }
 
       container.innerHTML = filtered.map(item => {
-        let imgSrc = item.image;
-        if (!imgSrc) {
-          imgSrc = '../assets/items/espresso.jpg';
-        } else if (imgSrc.startsWith('assets/')) {
-          imgSrc = '../' + imgSrc;
+        let imgSrc = item.image || 'assets/items/espresso.jpg';
+        if (imgSrc.startsWith('../')) {
+          imgSrc = imgSrc.replace(/^\.\.\//, '');
+        }
+        if (!imgSrc.startsWith('assets/') && !imgSrc.startsWith('http') && !imgSrc.startsWith('/')) {
+          imgSrc = 'assets/' + imgSrc;
         }
 
         const price = Number(item.sell_price || item.price || 0);
@@ -2247,35 +2263,85 @@
         }))
       };
 
+      let orderData = null;
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         const res = await fetch('/api/qr-menu/submit-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
-        const data = await res.json();
-
-        if (data && data.success) {
-          currentActiveOrder = data;
-          localStorage.setItem('cafePro_active_order_id', data.order_id);
-
-          // Save cart items recap for tracker
-          const recapItems = [...cart];
-          cart = [];
-          updateCartUI();
-          closeSheet('cartSheet');
-
-          // Directly open calm live order tracker
-          openLiveTrackerSheet(data, recapItems);
-        } else {
-          alert('Could not place order: ' + (data?.error || ''));
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success) {
+            orderData = data;
+          }
         }
       } catch (err) {
-        alert('Error placing order: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span id="btnSendOrderText">${t.sendOrderBtn}</span>`;
+        console.warn('Backend serverless timeout, switching to local instant flow');
       }
+
+      if (!orderData) {
+        // Fallback Interactive Simulation for Online Demos / Portfolios
+        const demoId = Math.floor(1000 + Math.random() * 9000);
+        orderData = {
+          success: true,
+          order_id: demoId,
+          order_number: `QR-${demoId}`,
+          table_id: selectedTable.id,
+          table_name: selectedTable.name,
+          customer_name: payload.customer_name,
+          status: 'pending',
+          is_demo: true,
+          items: payload.items
+        };
+      }
+
+      // Also record to localStorage pending orders queue so POS on same browser receives it
+      try {
+        const existing = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+        existing.unshift(orderData);
+        localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(existing.slice(0, 30)));
+      } catch(e) {}
+
+      currentActiveOrder = orderData;
+      localStorage.setItem('cafePro_active_order_id', orderData.order_id);
+
+      // Save cart items recap for tracker
+      const recapItems = [...cart];
+      cart = [];
+      updateCartUI();
+      closeSheet('cartSheet');
+
+      // Directly open calm live order tracker
+      openLiveTrackerSheet(orderData, recapItems);
+
+      // If demo mode, simulate realistic kitchen workflow transitions!
+      if (orderData.is_demo) {
+        simulateDemoFlow(orderData);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = `<span id="btnSendOrderText">${t.sendOrderBtn}</span>`;
+    }
+
+    function simulateDemoFlow(orderData) {
+      setTimeout(() => {
+        if (currentActiveOrder && String(currentActiveOrder.order_id) === String(orderData.order_id)) {
+          currentActiveOrder.status = 'approved';
+          updateStepperUI('approved', orderData);
+        }
+      }, 3500);
+
+      setTimeout(() => {
+        if (currentActiveOrder && String(currentActiveOrder.order_id) === String(orderData.order_id)) {
+          currentActiveOrder.status = 'completed';
+          updateStepperUI('completed', orderData);
+        }
+      }, 8500);
     }
 
     // ─── Real-Time Live Order Tracker (Server-Sent Events / SSE) ───

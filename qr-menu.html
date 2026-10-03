@@ -2265,11 +2265,15 @@
 
       let orderData = null;
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         const res = await fetch('/api/qr-menu/submit-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data && data.success) {
@@ -2277,7 +2281,7 @@
           }
         }
       } catch (err) {
-        console.warn('Backend unavailable, activating Demo Interactive Flow');
+        console.warn('Backend serverless timeout, switching to local instant flow');
       }
 
       if (!orderData) {
@@ -2295,6 +2299,13 @@
           items: payload.items
         };
       }
+
+      // Also record to localStorage pending orders queue so POS on same browser receives it
+      try {
+        const existing = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+        existing.unshift(orderData);
+        localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(existing.slice(0, 30)));
+      } catch(e) {}
 
       currentActiveOrder = orderData;
       localStorage.setItem('cafePro_active_order_id', orderData.order_id);
