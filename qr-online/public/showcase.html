@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CafePro • العرض التقديمي الشامل لنظام إدارة المطاعم والكافيهات</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0e0f12;
+      --bg-card: #16181d;
+      --bg-card-hover: #1c1f26;
+      --accent: #e07a5f;
+      --accent-glow: rgba(224, 122, 95, 0.25);
+      --emerald: #2ec4b6;
+      --emerald-glow: rgba(46, 196, 182, 0.2);
+      --text-main: #f4f4f6;
+      --text-muted: #8e95a5;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(224, 122, 95, 0.35);
+      --font-ar: 'Cairo', -apple-system, sans-serif;
+      --font-en: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-ar);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glows */
+    .ambient-glow-1 {
+      position: fixed;
+      top: -150px;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(224, 122, 95, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-glow-2 {
+      position: fixed;
+      bottom: -150px;
+      left: -100px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(46, 196, 182, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(14, 15, 18, 0.85);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e07a5f 0%, #d05333 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .brand-logo svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .brand-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(46, 196, 182, 0.15);
+      color: var(--emerald);
+      border: 1px solid rgba(46, 196, 182, 0.3);
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #e07a5f 0%, #c85335 100%);
+      color: white;
+      box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(224, 122, 95, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 99px;
+      background: rgba(224, 122, 95, 0.1);
+      border: 1px solid var(--border-accent);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    .hero-title {
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #c9ccd6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 36px;
+    }
+
+    /* Interactive Live Showcase Area */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin: 40px 0 80px;
+    }
+
+    /* Phone Mockup Frame */
+    .phone-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .phone-tag {
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phone-tag-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+    }
+
+    .phone-mockup {
+      width: 360px;
+      height: 720px;
+      background: #000;
+      border-radius: 46px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 10px #1e2026, 0 0 0 12px rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .phone-speaker {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 20px;
+      background: #000;
+      border-radius: 12px;
+      z-index: 20;
+    }
+    .phone-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #121316;
+    }
+
+    /* Feature Cards Column */
+    .features-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      transition: all 0.25s ease;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(224, 122, 95, 0.3);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(224, 122, 95, 0.12);
+      border: 1px solid var(--border-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .feature-icon.emerald {
+      background: rgba(46, 196, 182, 0.12);
+      border-color: rgba(46, 196, 182, 0.3);
+      color: var(--emerald);
+    }
+    .feature-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .feature-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* POS Gallery */
+    .gallery-section {
+      padding: 60px 0;
+      border-top: 1px solid var(--border);
+    }
+    .section-head {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+    .section-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .gallery-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+    .gallery-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-4px);
+    }
+    .gallery-img-box {
+      width: 100%;
+      height: 180px;
+      background: #090a0d;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gallery-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .gallery-item:hover .gallery-img-box img {
+      transform: scale(1.04);
+    }
+    .gallery-content {
+      padding: 18px;
+    }
+    .gallery-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .gallery-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Live CTA Banner */
+    .cta-box {
+      background: linear-gradient(135deg, rgba(224, 122, 95, 0.15) 0%, rgba(46, 196, 182, 0.1) 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: 24px;
+      padding: 48px;
+      text-align: center;
+      margin: 60px 0 80px;
+    }
+    .cta-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 14px;
+    }
+    .cta-desc {
+      color: var(--text-muted);
+      max-width: 550px;
+      margin: 0 auto 28px;
+      font-size: 15px;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .showcase-grid {
+        grid-template-columns: 1fr;
+      }
+      .phone-mockup {
+        width: 100%;
+        max-width: 360px;
+        height: 640px;
+      }
+      .hero-title {
+        font-size: 30px;
+      }
+      .cta-box {
+        padding: 32px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <header>
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        </div>
+        <div>
+          <div class="brand-title">CafePro <span class="brand-badge">Live System</span></div>
+        </div>
+      </a>
+      <div class="header-actions">
+        <a href="index.html" target="_blank" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>فتح المنيو كامل</span>
+        </a>
+        <button class="btn btn-primary" onclick="copyDemoLink()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="btnCopyText">نسخ رابط العرض للعميل</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero Header -->
+    <section class="hero">
+      <div class="hero-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>جاهز للعمل سحابياً ومحلياً بدون توقف</span>
+      </div>
+      <h1 class="hero-title">الحل الذكي المتكامل لإدارة المطاعم، الكافيهات، واللاونج</h1>
+      <p class="hero-subtitle">
+        استعرض كيف يعمل السيستم مع عملائك: قائمة طعام ذكية بالـ QR Code تدعم العربية والإنجليزية وحساب الضرائب، مع ربط لحظي بالطاولات والمطبخ ونقاط البيع POS.
+      </p>
+    </section>
+
+    <!-- Interactive Live Showcase -->
+    <section class="showcase-grid">
+      <!-- Live Phone Demo -->
+      <div class="phone-container">
+        <div class="phone-tag">
+          <span class="phone-tag-dot"></span>
+          <span>تجربة تفاعلية حية (يمكنك التصفح والطلب الآن)</span>
+        </div>
+        <div class="phone-mockup">
+          <div class="phone-speaker"></div>
+          <iframe src="index.html" class="phone-iframe" title="CafePro Live Mobile Menu"></iframe>
+        </div>
+      </div>
+
+      <!-- Features Column -->
+      <div class="features-col">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          </div>
+          <div>
+            <h3 class="feature-title">منيو ثنائي اللغة (عربي / إنجليزي)</h3>
+            <p class="feature-desc">تغيير فوري بنقرة واحدة بين الواجهتين مع خط Plus Jakarta Sans الإنجليزي العصري وتنسيق كامل للأسماء والأصناف والتصنيفات.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon emerald">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div>
+            <h3 class="feature-title">محرك ضرائب وخدمة آلي (VAT & Service)</h3>
+            <p class="feature-desc">دعم كامل لضريبة القيمة المضافة (شاملة أو مضافة) بالإضافة لنسبة الخدمة، وحساب إجمالي الفاتورة بدقة محاسبية فورية.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <h3 class="feature-title">إدارة وتحديد الطاولات</h3>
+            <p class="feature-desc">تحديد تلقائي لرقم الطاولة من خلال رابط الـ QR، مع إمكانية اختيار الطاولة يدوياً وتتبع حالة الطلب لحظياً خطوة بخطوة.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon emerald">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div>
+            <h3 class="feature-title">ربط المطبخ والكاشير اللحظي (SSE)</h3>
+            <p class="feature-desc">الطلب يصل مباشرة لشاشة الكاشير وطابعة المطبخ مع تنبيهات صوتية دون الحاجة لإعادة تحميل الصفحة.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- POS Management Gallery -->
+    <section class="gallery-section">
+      <div class="section-head">
+        <h2 class="section-title">شاشات نظام الكاشير والإدارة الميدانية (POS)</h2>
+        <p class="section-subtitle">نظام سطح مكتب متين مبني بـ Electron و SQLite يعمل أوفلاين ويتحمل أقصى ضغط عمل في أوقات الذروة.</p>
+      </div>
+
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <div class="gallery-img-box">
+            <img src="assets/screenshots/delivery_check.png" alt="POS Invoicing">
+          </div>
+          <div class="gallery-content">
+            <h4 class="gallery-title">نقطة البيع وإصدار الفواتير</h4>
+            <p class="gallery-desc">إصدار سريع للفواتير، الدفع نقداً أو فيزا أو محافظ إلكترونية، وربط الطلبات الخارجية والدليفري.</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="gallery-img-box">
+            <img src="assets/screenshots/inventory_report_check.png" alt="Inventory">
+          </div>
+          <div class="gallery-content">
+            <h4 class="gallery-title">إدارة المخزون والمواد الخام</h4>
+            <p class="gallery-desc">خصم آلي للجرامات والكميات مع كل كوب قهوة أو وجبة تباع، وتنبيهات بالنواقص قبل نفادها.</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="gallery-img-box">
+            <img src="assets/screenshots/reports_check.png" alt="Reports">
+          </div>
+          <div class="gallery-content">
+            <h4 class="gallery-title">التقارير المالية والأرباح</h4>
+            <p class="gallery-desc">تقارير أرباح يومية، شفتات الكاشير، المصروفات، وأداء الأصناف الأكثر مبيعاً برسوم بيانية واضحة.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Box -->
+    <section class="cta-box">
+      <h3 class="cta-title">هل ترغب بعرض هذا النظام لعملائك أو تشغيله الآن؟</h3>
+      <p class="cta-desc">يمكنك إرسال رابط هذا العرض مباشرة لأصحاب الكافيهات والمطاعم ليروا التجربة بأنفسهم من هواتفهم.</p>
+      <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+        <a href="index.html" class="btn btn-primary" style="padding:14px 28px; font-size:16px;">
+          <span>📱 تجربة المنيو على الموبايل</span>
+        </a>
+        <button class="btn btn-secondary" onclick="copyDemoLink()" style="padding:14px 28px; font-size:16px;">
+          <span>📋 نسخ رابط التجربة</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      &copy; 2026 CafePro Systems • نظام متكامل لإدارة المطاعم والكافيهات
+    </div>
+  </footer>
+
+  <script>
+    function copyDemoLink() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('btnCopyText');
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = '✓ تم نسخ الرابط!';
+          setTimeout(() => { btn.textContent = old; }, 2500);
+        }
+      }).catch(() => {
+        prompt('انسخ هذا الرابط لمشاركته مع العميل:', window.location.href);
+      });
+    }
+  </script>
+</body>
+</html>
