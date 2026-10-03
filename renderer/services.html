@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام كافيه برو — إدارة قائمة الأصناف والمنتجات والأسعار</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="../node_modules/sweetalert2/dist/sweetalert2.all.min.js"></script>
+  <script src="js/shared/common.js"></script>
+  <style>
+    /* ─── Services Commercial ERP Design Tokens ─────────────────── */
+    :root {
+      --srv-bg: #FBF9F6;
+      --srv-surface: #FFFFFF;
+      --srv-border: #EFE9E2;
+      --srv-border-subtle: #F7F3EE;
+      --srv-text: #1E1B18;
+      --srv-text-secondary: #585049;
+      --srv-text-muted: #8E847C;
+      --srv-espresso: #1E1B18;
+      --srv-caramel: #FF5B22;
+      --srv-caramel-hover: #E64A19;
+      --srv-emerald: #10B981;
+      --srv-amber: #F59E0B;
+      --srv-red: #EF4444;
+      --srv-blue: #2563EB;
+      --srv-radius: 14px;
+      --srv-shadow-sm: 0 2px 8px rgba(45, 20, 10, 0.04);
+      --srv-shadow-md: 0 8px 24px rgba(45, 20, 10, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.app-layout {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--srv-bg);
+      color: var(--srv-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+    }
+
+    /* ─── Layout Shell ──────────────────────────────────────────── */
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--srv-bg);
+      min-width: 0;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    .srv-header {
+      background: var(--srv-surface);
+      border-bottom: 1px solid var(--srv-border);
+      height: 60px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .header-main-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--srv-espresso);
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-sub-title {
+      font-size: 11px;
+      color: var(--srv-text-muted);
+      font-weight: 600;
+    }
+
+    .header-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* View Mode Switcher */
+    .view-switcher {
+      display: flex;
+      background: #F4EFEA;
+      padding: 3px;
+      border-radius: 10px;
+      gap: 2px;
+    }
+
+    .view-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--srv-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .view-btn.active {
+      background: #FFFFFF;
+      color: var(--srv-caramel);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    /* ─── Scrollable Workspace Content ──────────────────────────── */
+    .srv-content-area {
+      flex: 1;
+      overflow-y: hidden;
+      padding: 14px 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    /* ─── Compact Summary Metrics Row ───────────────────────────── */
+    .summary-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .summary-metrics-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid #EAE3DC;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(45, 20, 10, 0.03);
+      transition: all 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(45, 20, 10, 0.07);
+      border-color: #D6C7BC;
+    }
+
+    .kpi-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-espresso { background: rgba(30, 27, 24, 0.07); color: #1E1B18; }
+    .icon-caramel  { background: rgba(255, 91, 34, 0.12); color: #FF5B22; }
+    .icon-emerald  { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+    .icon-amber    { background: rgba(245, 158, 11, 0.12); color: #D97706; }
+
+    .kpi-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #78716C;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .kpi-number {
+      font-size: 22px;
+      font-weight: 900;
+      color: #1E1B18;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .kpi-number.text-emerald { color: #10B981; }
+    .kpi-number.text-amber   { color: #D97706; }
+    .kpi-unit {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A8A29E;
+    }
+
+    /* ─── Workstation Dual Zone ─────────────────────────────────── */
+    .workstation-body {
+      flex: 1;
+      display: flex;
+      gap: 14px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ─── Zone A: Category Navigation Panel (Right side) ────────── */
+    .category-pane {
+      width: 250px;
+      background: var(--srv-surface);
+      border: 1px solid var(--srv-border);
+      border-radius: var(--srv-radius);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: var(--srv-shadow-sm);
+      overflow: hidden;
+    }
+
+    .cat-pane-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--srv-border);
+      background: #FAF8F5;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cat-pane-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--srv-espresso);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cat-add-form {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cat-add-input {
+      flex: 1;
+      height: 32px;
+      background: #FFFFFF;
+      border: 1px solid var(--srv-border);
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-family: inherit;
+      color: var(--srv-text);
+      transition: all 0.15s ease;
+    }
+
+    .cat-add-input:focus {
+      outline: none;
+      border-color: var(--srv-caramel);
+      box-shadow: 0 0 0 2px rgba(255, 91, 34, 0.12);
+    }
+
+    .cat-add-btn {
+      height: 32px;
+      padding: 0 12px;
+      background: var(--srv-caramel);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease;
+    }
+
+    .cat-add-btn:hover {
+      background: var(--srv-caramel-hover);
+    }
+
+    .cat-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cat-item-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--srv-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .cat-item-pill:hover {
+      background: #F5EFEB;
+      color: var(--srv-espresso);
+    }
+
+    .cat-item-pill.active {
+      background: #FFF0E6;
+      color: var(--srv-caramel);
+      font-weight: 800;
+      border-right: 3px solid var(--srv-caramel);
+    }
+
+    .cat-count-badge {
+      font-size: 10px;
+      background: #EFE9E2;
+      color: var(--srv-text-muted);
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cat-item-pill.active .cat-count-badge {
+      background: var(--srv-caramel);
+      color: #FFFFFF;
+    }
+
+    /* ─── Zone B: Products Main Panel (Left side) ───────────────── */
+    .products-main-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Toolbar Surface */
+    .srv-toolbar-card {
+      background: var(--srv-surface);
+      border: 1px solid var(--srv-border);
+      border-radius: var(--srv-radius);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: var(--srv-shadow-sm);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left-side {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .srv-search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 340px;
+    }
+
+    .srv-search-wrap .search-icon-svg {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--srv-text-muted);
+      pointer-events: none;
+    }
+
+    .srv-search-input {
+      width: 100%;
+      height: 34px;
+      background: #FAF8F5;
+      border: 1px solid var(--srv-border);
+      border-radius: 8px;
+      padding: 0 32px 0 10px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--srv-text);
+      transition: all 0.15s ease;
+    }
+
+    .srv-search-input:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: var(--srv-caramel);
+      box-shadow: 0 0 0 2px rgba(255, 91, 34, 0.12);
+    }
+
+    .filter-tabs-group {
+      display: flex;
+      background: #F4EFEA;
+      padding: 2px;
+      border-radius: 8px;
+      gap: 2px;
+    }
+
+    .filter-tab-btn {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--srv-text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .filter-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--srv-espresso);
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .toolbar-right-side {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category-title-indicator {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--srv-espresso);
+    }
+
+    .results-count-pill {
+      font-size: 11px;
+      font-weight: 700;
+      background: #F1EFEA;
+      color: var(--srv-text-secondary);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── View 1: Grid Cards View ───────────────────────────────── */
+    .cards-grid-container {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      padding: 4px 2px 18px 2px;
+    }
+
+    .product-card {
+      background: #FFFFFF;
+      border: 1px solid #EAE3DC;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(45, 20, 10, 0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 310px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .product-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(45, 20, 10, 0.09);
+      border-color: #D6C7BC;
+    }
+
+    .product-card-thumb-wrap {
+      width: 100%;
+      height: 135px;
+      background: #FDF9F6;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #F0EAE3;
+    }
+
+    .product-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-card-img {
+      transform: scale(1.06);
+    }
+
+    .product-card-placeholder-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: rgba(255, 91, 34, 0.1);
+      color: #FF5B22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .product-type-pill {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      z-index: 2;
+    }
+
+    .type-prepared {
+      background: rgba(16, 185, 129, 0.92);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    .type-ready {
+      background: rgba(245, 158, 11, 0.92);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+    }
+
+    .product-card-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .product-card-cat-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FF5B22;
+      background: #FFF7ED;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+
+    .product-card-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1E1B18;
+      line-height: 1.35;
+      min-height: 40px;
+      margin-top: 2px;
+    }
+
+    .product-card-barcode {
+      font-family: monospace;
+      font-size: 10px;
+      color: #78716C;
+      background: #F5EFEB;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      align-self: flex-start;
+      direction: ltr;
+    }
+
+    .product-card-pricing-strip {
+      background: #FDF9F6;
+      border: 1px solid #EFE8DF;
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .card-sell-price {
+      font-size: 18px;
+      font-weight: 900;
+      color: #FF5B22;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-cost-price {
+      font-size: 11px;
+      font-weight: 700;
+      color: #78716C;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-profit-badge {
+      font-size: 11px;
+      font-weight: 800;
+      background: #DCFCE7;
+      color: #15803D;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .product-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 34px;
+      gap: 6px;
+      padding-top: 8px;
+      border-top: 1px dashed #EAE3DC;
+      margin-top: 8px;
+    }
+
+    .btn-quick-price {
+      height: 32px;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #BFDBFE;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .btn-quick-price:hover {
+      background: #1D4ED8;
+      color: #FFFFFF;
+      border-color: #1D4ED8;
+    }
+
+    .btn-edit-item {
+      height: 32px;
+      background: #F8FAFC;
+      color: #334155;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .btn-edit-item:hover {
+      background: #E2E8F0;
+      color: #0F172A;
+      border-color: #94A3B8;
+    }
+
+    .btn-delete-item {
+      height: 32px;
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-delete-item:hover {
+      background: #DC2626;
+      color: #FFFFFF;
+      border-color: #DC2626;
+    }
+
+    .btn-delete-item:hover {
+      background: var(--srv-red);
+      color: #FFFFFF;
+      border-color: var(--srv-red);
+    }
+
+    /* ─── View 2: Table Surface ─────────────────────────────────── */
+    .table-container-surface {
+      flex: 1;
+      background: var(--srv-surface);
+      border: 1px solid var(--srv-border);
+      border-radius: var(--srv-radius);
+      box-shadow: var(--srv-shadow-sm);
+      overflow-y: auto;
+      display: none;
+    }
+
+    .table-container-surface.active {
+      display: block;
+    }
+
+    .srv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .srv-table thead th {
+      position: sticky;
+      top: 0;
+      background: #FAF8F5;
+      color: var(--srv-text-secondary);
+      padding: 10px 12px;
+      font-weight: 800;
+      font-size: 11px;
+      border-bottom: 1px solid var(--srv-border);
+      white-space: nowrap;
+      z-index: 5;
+    }
+
+    .srv-table tbody td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--srv-border-subtle);
+      color: var(--srv-text);
+      vertical-align: middle;
+      height: 48px;
+    }
+
+    .srv-table tbody tr:hover td {
+      background: #FAF8F5;
+    }
+
+    /* Product Identity Cell in Table */
+    .product-identity-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .product-thumbnail-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--srv-border);
+      background: #F7F3EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .product-thumbnail-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-name-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--srv-espresso);
+    }
+
+    /* ─── Modern Modal System ───────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 13, 10, 0.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .srv-modal-box {
+      background: #FFFFFF;
+      border-radius: 18px;
+      border: 1px solid var(--srv-border);
+      width: 680px;
+      max-width: 95%;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(28, 20, 16, 0.25);
+      animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPopIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .srv-modal-header {
+      background: #FAF8F5;
+      border-bottom: 1px solid var(--srv-border);
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .srv-modal-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--srv-espresso);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .srv-modal-close-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--srv-border);
+      color: var(--srv-text-secondary);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    .srv-modal-close-btn:hover {
+      background: #FEF2F2;
+      color: var(--srv-red);
+      border-color: #FECACA;
+    }
+
+    .srv-modal-body {
+      padding: 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .srv-modal-footer {
+      padding: 14px 22px;
+      background: #FAF8F5;
+      border-top: 1px solid var(--srv-border);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Form Fields Styling */
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-grid-3col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid-2col, .form-grid-3col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-field-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--srv-espresso);
+    }
+
+    .form-control {
+      height: 40px;
+      border: 1px solid var(--srv-border);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--srv-text);
+      background: #FFFFFF;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--srv-caramel);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.12);
+    }
+
+    /* Image Uploader Card */
+    .image-uploader-card {
+      background: #FAF8F5;
+      border: 1.5px dashed #D6CCC2;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.15s ease;
+    }
+
+    .image-uploader-card:hover {
+      border-color: var(--srv-caramel);
+    }
+
+    .image-preview-box {
+      width: 74px;
+      height: 74px;
+      border-radius: 10px;
+      background: #FFFFFF;
+      border: 1px solid var(--srv-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .image-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Size row */
+    .size-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr 1.2fr auto;
+      gap: 8px;
+      align-items: center;
+      background: #FFFFFF;
+      padding: 8px 10px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+
+    /* Quick Edit Price Modal */
+    .quick-price-box {
+      width: 380px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--srv-border);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="app-layout">
+
+  <!-- ─── 1. Signature FoodAnalytics Clean White Sidebar ────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" id="navbarLogoIcon">
+        <img src="assets/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.src='../assets/logo.png'" />
+      </div>
+      <div>
+        <div class="logo-text" id="navbarLogoText">كافيه برو</div>
+        <div class="logo-sub">CoffeePro Analytics</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">القوائم الأساسية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('main-dashboard.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>الرئيسية (Dashboard)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('pos-invoice.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>نقطة البيع (POS)</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('tables.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>الصالات والترابيزات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('returns.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>مرتجع طلب</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('customers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>العملاء</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('whatsapp-chat.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>محادثات واتساب</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">المخزون والمالية</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('suppliers.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><polyline points="16 12 20 12 22 15 22 19 16 19"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>الموردين والمشتريات</span>
+      </div>
+
+      <div class="sidebar-nav-item active" onclick="navigate('services.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>المنتجات والأصناف</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('inventory.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/><line x1="8" y1="7" x2="8" y2="7.01"/></svg>
+        <span>المخزون والمواد الخام</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('finance.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>الحسابات والمالية</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('hr.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>شئون الموظفين</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">التقارير والإعدادات</div>
+
+      <div class="sidebar-nav-item" onclick="navigate('daily-report.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>التقرير اليومي للمبيعات</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('reports.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>التقارير المحاسبية الشاملة</span>
+      </div>
+
+      <div class="sidebar-nav-item" onclick="navigate('settings.html')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>الإعدادات</span>
+      </div>
+    </div>
+
+    <!-- Promo Card -->
+    <div class="sidebar-promo-card">
+      <div class="sidebar-promo-thumb">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+      </div>
+      <div class="sidebar-promo-title">كافيه برو الذكي</div>
+      <div class="sidebar-promo-desc">تحليلات وإدارة شاملة لأداء كافيه ومطعمك بدقة واحترافية</div>
+      <button class="sidebar-promo-btn" onclick="navigate('pos-invoice.html')">+ طلب جديد [F1]</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="font-weight:700; color:var(--text-muted); font-size:11px;">CafePro Management System</div>
+    </div>
+  </aside>
+
+  <!-- ─── 2. Main Workspace ─────────────────────────────────────── -->
+  <main class="main-workspace">
+
+    <!-- Header -->
+    <header class="srv-header">
+      <div class="header-titles">
+        <h1 class="header-main-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--srv-caramel);"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span>إدارة الأصناف والمنتجات والأسعار</span>
+        </h1>
+        <div class="header-sub-title">إدارة المنيو، تعديل الأسعار الفوري، وإضافة وحذف الأصناف والخدمات</div>
+      </div>
+
+      <div class="header-actions-group">
+        <!-- View Mode Switcher -->
+        <div class="view-switcher">
+          <button type="button" class="view-btn active" id="btnViewGrid" onclick="switchView('grid')" title="عرض الكروت الحديث">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>كروت المنيو</span>
+          </button>
+          <button type="button" class="view-btn" id="btnViewTable" onclick="switchView('table')" title="عرض الجدول">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>جدول تفصيلي</span>
+          </button>
+        </div>
+
+        <button class="btn btn-outline btn-sm" onclick="goBack()" title="العودة لشاشة لوحة التحكم">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>رجوع للرئيسية</span>
+        </button>
+
+        <button class="btn btn-accent btn-sm" onclick="openServiceModal()" style="font-weight:800; background:var(--srv-caramel); color:#fff; border:none; padding:8px 16px; border-radius:10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>+ إضافة صنف جديد</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace Content Area -->
+    <div class="srv-content-area">
+
+      <!-- Summary Metrics Row -->
+      <div class="summary-metrics-row">
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-espresso">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">إجمالي الأصناف والمنتجات</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number" id="statTotalServices">0</span>
+              <span class="kpi-unit">صنف مسجل</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-caramel">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">أقسام وتصنيفات المنيو</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number" id="statTotalCategories">0</span>
+              <span class="kpi-unit">قسم معتمد</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-emerald">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">أصناف تحضير بالطلب</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number text-emerald" id="statPreparedCount">0</span>
+              <span class="kpi-unit">مشروب ووجبة</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap icon-amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div class="kpi-details">
+            <div class="kpi-label">بضاعة مخزن جاهزة</div>
+            <div class="kpi-val-row">
+              <span class="kpi-number text-amber" id="statReadyCount">0</span>
+              <span class="kpi-unit">معلبات وكانز</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workstation Dual Zone -->
+      <div class="workstation-body">
+
+        <!-- Zone A: Categories Navigation (Right) -->
+        <div class="category-pane">
+          <div class="cat-pane-header">
+            <div class="cat-pane-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>أقسام المنيو</span>
+            </div>
+
+            <div class="cat-add-form">
+              <input type="text" id="newCatName" class="cat-add-input" placeholder="اسم قسم جديد..." onkeydown="if(event.key==='Enter')addCategory()" />
+              <button class="cat-add-btn" onclick="addCategory()" title="إضافة قسم جديد">إضافة</button>
+            </div>
+          </div>
+
+          <div class="cat-list-container" id="categoryList">
+            <!-- Categories rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Zone B: Products Main Panel (Left) -->
+        <div class="products-main-panel">
+
+          <!-- Integrated Toolbar -->
+          <div class="srv-toolbar-card">
+            <div class="toolbar-left-side">
+              <div class="srv-search-wrap">
+                <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="serviceSearch" class="srv-search-input" placeholder="بحث باسم الصنف أو الباركود..." oninput="renderCurrentView()" />
+              </div>
+
+              <div class="filter-tabs-group" role="tablist">
+                <button type="button" class="filter-tab-btn active" id="tabTypeAll" onclick="setTypeFilter('all')">الكل</button>
+                <button type="button" class="filter-tab-btn" id="tabTypePrepared" onclick="setTypeFilter('prepared')">تحضير</button>
+                <button type="button" class="filter-tab-btn" id="tabTypeReady" onclick="setTypeFilter('ready')">جاهزة</button>
+              </div>
+            </div>
+
+            <div class="toolbar-right-side">
+              <div class="category-title-indicator" id="currentCategoryTitle">جميع الأصناف والمنتجات</div>
+              <div class="results-count-pill" id="servicesCount">0 صنف</div>
+            </div>
+          </div>
+
+          <!-- View 1: Modern Cards Grid -->
+          <div class="cards-grid-container" id="servicesCardsGrid">
+            <!-- Cards rendered here -->
+          </div>
+
+          <!-- View 2: Table Surface -->
+          <div class="table-container-surface" id="servicesTableContainer">
+            <table class="srv-table">
+              <thead>
+                <tr>
+                  <th style="width:40px; text-align:center;">#</th>
+                  <th>اسم الصنف / المنتج</th>
+                  <th style="width:110px;">النوع</th>
+                  <th style="width:130px;">القسم</th>
+                  <th style="width:120px;">الباركود</th>
+                  <th style="width:100px;">التكلفة</th>
+                  <th style="width:110px;">سعر البيع</th>
+                  <th style="width:150px; text-align:center;">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="servicesBody">
+                <tr><td colspan="8" style="text-align:center; padding:32px; color:var(--srv-text-muted);">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ─── 3. Add / Edit Service Modal (Redesigned & Modern) ────────── -->
+  <div class="modal-overlay" id="serviceModal">
+    <div class="srv-modal-box">
+      <div class="srv-modal-header">
+        <div class="srv-modal-title" id="serviceModalTitle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--srv-caramel);"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span>إضافة صنف جديد للمنيو</span>
+        </div>
+        <button type="button" class="srv-modal-close-btn" onclick="closeModal('serviceModal')">✕</button>
+      </div>
+
+      <div class="srv-modal-body">
+        <input type="hidden" id="srvId" />
+
+        <!-- Row 1: Item Type & Category -->
+        <div class="form-grid-2col">
+          <div class="form-field-group">
+            <label>نوع الصنف</label>
+            <select id="srvTrackInv" class="form-control" onchange="toggleInvFields()">
+              <option value="0">صنف تحضير (مشروبات / وجبات بالطلب)</option>
+              <option value="1">بضاعة جاهزة (كانز / معلبات برصيد مخزن)</option>
+            </select>
+          </div>
+
+          <div class="form-field-group">
+            <label>القسم بالمنيو *</label>
+            <select id="srvCat" class="form-control">
+              <option value="">اختر القسم</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Image Uploader & Product Name -->
+        <div class="image-uploader-card">
+          <div class="image-preview-box" id="srvImagePreviewWrap" onclick="document.getElementById('srvImageFile').click()" title="انقر لاختيار صورة">
+            <img id="srvImagePreview" src="" style="display:none;" />
+            <div id="srvImagePlaceholder" style="display:flex; flex-direction:column; align-items:center; color:var(--srv-text-muted);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+          </div>
+          <input type="file" id="srvImageFile" accept="image/*" style="display:none;" onchange="handleServiceImageUpload(event)" />
+          <input type="hidden" id="srvImage" />
+
+          <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-size:12px; font-weight:700; color:var(--srv-espresso); margin:0;">اسم الصنف أو المنتج *</label>
+              <button type="button" id="srvImageRemoveBtn" class="btn btn-sm btn-outline" style="display:none; font-size:10px; padding:2px 8px; color:var(--srv-red);" onclick="removeServiceImage()">حذف الصورة</button>
+            </div>
+            <input type="text" id="srvName" class="form-control" placeholder="مثال: كابتشينو إيطالي، برجر لحم مخصوص..." style="font-weight:700;" />
+            <div style="display:flex; gap:6px; margin-top:2px;">
+              <button type="button" class="btn btn-sm btn-outline" style="font-size:11px; padding:2px 8px;" onclick="document.getElementById('srvImageFile').click()">+ اختيار صورة من الجهاز</button>
+              <button type="button" class="btn btn-sm btn-outline" style="font-size:11px; padding:2px 8px;" onclick="removeServiceImage()">بدون صورة</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Barcode Field & Toggle -->
+        <div class="form-field-group">
+          <label>الباركود</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="text" id="srvBarcode" class="form-control" placeholder="امسح الباركود أو اتركه للتوليد التلقائي" style="font-family:monospace; flex:1;" />
+            <button type="button" class="btn btn-outline" onclick="generateBarcode()" style="height:40px; padding:0 14px; font-weight:700; white-space:nowrap;">توليد كود</button>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--srv-text-muted); cursor:pointer; margin-top:3px;">
+            <input type="checkbox" id="autoGenerateBarcode" style="width:14px; height:14px;" />
+            <span>توليد باركود تلقائياً عند إضافة صنف جديد</span>
+          </label>
+        </div>
+
+        <!-- Row 4: Pricing & Taxation -->
+        <div class="form-grid-3col">
+          <div class="form-field-group">
+            <label>سعر التكلفة (ج.م)</label>
+            <input type="number" id="srvCost" class="form-control" placeholder="0.00" step="0.5" oninput="calcProfitMarginModal()" />
+          </div>
+
+          <div class="form-field-group">
+            <label style="color:var(--srv-espresso);">سعر البيع (ج.م) *</label>
+            <input type="number" id="srvSell" class="form-control" placeholder="0.00" step="0.5" style="font-weight:900; color:var(--srv-emerald);" oninput="calcProfitMarginModal()" />
+          </div>
+
+          <div class="form-field-group">
+            <label>خاضع للضريبة</label>
+            <select id="srvIsTaxable" class="form-control">
+              <option value="1">نعم (خاضع للضريبة)</option>
+              <option value="0">معفى من الضريبة</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="modalProfitMarginBadge" style="font-size:11px; font-weight:700; color:var(--srv-emerald); background:#ECFDF5; padding:6px 12px; border-radius:8px; display:none;">
+          هامش الربح المتوقع: <span id="modalProfitMarginVal">0%</span>
+        </div>
+
+        <!-- Inventory Stock Fields (Ready goods only) -->
+        <div id="invFieldsRow" style="display:none; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px; padding:12px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px;">
+          <div class="form-field-group">
+            <label style="font-size:11px; color:#166534;">الكمية بالمخزن</label>
+            <input type="number" id="srvQty" class="form-control" placeholder="0" min="0" value="0" style="height:36px; font-weight:700;" />
+          </div>
+          <div class="form-field-group">
+            <label style="font-size:11px; color:#166534;">حد التنبيه عند النقص</label>
+            <input type="number" id="srvLowThreshold" class="form-control" placeholder="0" min="0" value="0" style="height:36px; font-weight:700;" />
+          </div>
+          <div class="form-field-group">
+            <label style="font-size:11px; color:#9A3412;">تاريخ انتهاء الصلاحية</label>
+            <input type="date" id="srvExpiry" class="form-control" style="height:36px; font-weight:700;" />
+          </div>
+        </div>
+
+        <!-- Product Sizes & Variations -->
+        <div id="sizesSectionWrapper" style="background:#FAF8F5; border:1px solid var(--srv-border); border-radius:10px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:var(--srv-espresso); cursor:pointer; margin:0;">
+              <input type="checkbox" id="srvHasSizes" onchange="toggleSizesSection()" style="width:16px; height:16px;" />
+              <span>هذا الصنف يتوفر بعدة أحجام ومقاسات (مثل سنجل، دبل، لارج...)</span>
+            </label>
+          </div>
+
+          <div id="sizesContent" style="display:none; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed var(--srv-border);">
+              <span style="font-size:12px; font-weight:800; color:var(--srv-espresso);">قائمة أحجام الصنف وأسعارها:</span>
+              <button type="button" class="btn btn-sm btn-primary" onclick="addCustomSizeRow()" style="font-size:11px; font-weight:800; padding:5px 14px; background:var(--srv-caramel); border:none; color:#fff; border-radius:8px; cursor:pointer;">+ إضافة حجم مخصص</button>
+            </div>
+
+            <div id="sizesListContainer" style="display:flex; flex-direction:column; gap:6px;">
+              <!-- Size rows -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="srv-modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('serviceModal')" style="padding:8px 20px; font-weight:700;">إلغاء</button>
+        <button type="button" class="btn btn-primary" onclick="saveService()" style="padding:8px 30px; font-weight:800; font-size:14px; background:var(--srv-caramel); border:none; color:#fff; border-radius:10px;">حفظ الصنف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 4. Quick Price Edit Modal ──────────────────────────────── -->
+  <div class="modal-overlay" id="quickPriceModal">
+    <div class="quick-price-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:15px; font-weight:800; color:var(--srv-espresso); margin:0;">تعديل سعر البيع السريع</h3>
+        <button type="button" class="srv-modal-close-btn" onclick="closeModal('quickPriceModal')">✕</button>
+      </div>
+      <input type="hidden" id="qpServiceId" />
+      <div style="font-size:13px; font-weight:700; color:var(--srv-caramel); margin-bottom:12px;" id="qpServiceName">اسم الصنف</div>
+      
+      <div class="form-field-group" style="margin-bottom:14px;">
+        <label>سعر البيع الجديد (ج.م) *</label>
+        <input type="number" id="qpNewPrice" class="form-control" step="0.5" style="font-size:18px; font-weight:900; color:var(--srv-emerald); height:46px;" />
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-primary" onclick="submitQuickPrice()" style="flex:1; height:42px; font-weight:800; background:var(--srv-emerald); border:none; color:#fff; border-radius:10px;">حفظ السعر الجديد</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('quickPriceModal')" style="height:42px; font-weight:700; border-radius:10px;">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 5. Application Logic ────────────────────────────────────── -->
+  <script>
+  let categories = [];
+  let allServices = [];
+  let currentCategoryId = 0; // 0 = All
+  let currentTypeFilter = 'all'; // 'all' | 'prepared' | 'ready'
+  let currentViewMode = 'grid'; // 'grid' | 'table'
+
+  // 25 Default cafe & restaurant items seeded in photostudio.db
+  const defaultSeedCategories = [
+    { id: 1, name: 'مشروبات ساخنة وقهوة' },
+    { id: 2, name: 'مشروبات باردة ومثلجات' },
+    { id: 3, name: 'ساندوتشات ووجبات' },
+    { id: 4, name: 'بيتزا وباستا' },
+    { id: 5, name: 'حلويات ومخبوزات' }
+  ];
+
+  const defaultSeedServices = [
+    { id: 1, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'إسبريسو سينجل / دبل', barcode: 'CF-101', sell_price: 35, cost_price: 12, track_inventory: 0, image: '../assets/items/espresso.jpg' },
+    { id: 2, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'كابتشينو إيطالي كلاسيك', barcode: 'CF-102', sell_price: 55, cost_price: 20, track_inventory: 0, image: '../assets/items/cappuccino.jpg' },
+    { id: 3, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'فانيليا ولاتيه كاراميل', barcode: 'CF-103', sell_price: 65, cost_price: 24, track_inventory: 0, image: '../assets/items/latte.jpg' },
+    { id: 4, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'فلات وايت أسترالي', barcode: 'CF-104', sell_price: 60, cost_price: 22, track_inventory: 0, image: '../assets/items/flat-white.jpg' },
+    { id: 5, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'شاي كرك بالهيل والزعفران', barcode: 'CF-105', sell_price: 40, cost_price: 15, track_inventory: 0, image: '../assets/items/karak-tea.jpg' },
+    { id: 6, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'هوت شوكليت بالمارشميلو', barcode: 'CF-106', sell_price: 60, cost_price: 25, track_inventory: 0, image: '../assets/items/hot-chocolate.jpg' },
+    { id: 7, category_id: 1, cat_name: 'مشروبات ساخنة وقهوة', name: 'قهوة تركي مخصوص بالحبهان', barcode: 'CF-107', sell_price: 30, cost_price: 10, track_inventory: 0, image: '../assets/items/turkish-coffee.jpg' },
+
+    { id: 8, category_id: 2, cat_name: 'مشروبات باردة ومثلجات', name: 'آيس سبانش لاتيه', barcode: 'CF-201', sell_price: 70, cost_price: 28, track_inventory: 0, image: '../assets/items/iced-latte.jpg' },
+    { id: 9, category_id: 2, cat_name: 'مشروبات باردة ومثلجات', name: 'موهيتو فراولة وليمون نعناع', barcode: 'CF-202', sell_price: 55, cost_price: 18, track_inventory: 0, image: '../assets/items/mojito.jpg' },
+    { id: 10, category_id: 2, cat_name: 'مشروبات باردة ومثلجات', name: 'سموذي مانجو باشن فروت', barcode: 'CF-203', sell_price: 65, cost_price: 22, track_inventory: 0, image: '../assets/items/mango-smoothie.jpg' },
+    { id: 11, category_id: 2, cat_name: 'مشروبات باردة ومثلجات', name: 'أوريو فرابيه بالكريمة', barcode: 'CF-204', sell_price: 75, cost_price: 30, track_inventory: 0, image: '../assets/items/oreo-frappe.jpg' },
+    { id: 12, category_id: 2, cat_name: 'مشروبات باردة ومثلجات', name: 'عصير برتقال فريش طبيعي', barcode: 'CF-205', sell_price: 45, cost_price: 16, track_inventory: 0, image: '../assets/items/orange-juice.jpg' },
+
+    { id: 13, category_id: 3, cat_name: 'ساندوتشات ووجبات', name: 'كلاسيك بيف برجر تشيز', barcode: 'CF-301', sell_price: 145, cost_price: 75, track_inventory: 0, image: '../assets/items/burger.jpg' },
+    { id: 14, category_id: 3, cat_name: 'ساندوتشات ووجبات', name: 'ساندوتش كريسبي تشيكن مدخن', barcode: 'CF-302', sell_price: 130, cost_price: 65, track_inventory: 0, image: '../assets/items/crispy-chicken.jpg' },
+    { id: 15, category_id: 3, cat_name: 'ساندوتشات ووجبات', name: 'كلوب ساندوتش سوبريم', barcode: 'CF-303', sell_price: 110, cost_price: 50, track_inventory: 0, image: '../assets/items/club-sandwich.jpg' },
+    { id: 16, category_id: 3, cat_name: 'ساندوتشات ووجبات', name: 'ستيك ريب آي مشوي بصوص المشروم', barcode: 'CF-304', sell_price: 280, cost_price: 150, track_inventory: 0, image: '../assets/items/ribeye-steak.jpg' },
+    { id: 17, category_id: 3, cat_name: 'ساندوتشات ووجبات', name: 'طبق كوردون بلو محشي جبن', barcode: 'CF-305', sell_price: 185, cost_price: 95, track_inventory: 0, image: '../assets/items/cordon-bleu.jpg' },
+
+    { id: 18, category_id: 4, cat_name: 'بيتزا وباستا', name: 'بيتزا مارجريتا نابوليتان', barcode: 'CF-401', sell_price: 120, cost_price: 50, track_inventory: 0, image: '../assets/items/pizza-margherita.jpg' },
+    { id: 19, category_id: 4, cat_name: 'بيتزا وباستا', name: 'بيتزا بيبروني سوبريم', barcode: 'CF-402', sell_price: 155, cost_price: 70, track_inventory: 0, image: '../assets/items/pizza-pepperoni.jpg' },
+    { id: 20, category_id: 4, cat_name: 'بيتزا وباستا', name: 'باستا فوتشيني ألفريدو دجاج', barcode: 'CF-403', sell_price: 140, cost_price: 65, track_inventory: 0, image: '../assets/items/pasta-alfredo.jpg' },
+    { id: 21, category_id: 4, cat_name: 'بيتزا وباستا', name: 'باستا بيني أرابياتا حارة', barcode: 'CF-404', sell_price: 95, cost_price: 40, track_inventory: 0, image: '../assets/items/penne-arrabbiata.jpg' },
+
+    { id: 22, category_id: 5, cat_name: 'حلويات ومخبوزات', name: 'تشيز كيك بلوبيري نيويورك', barcode: 'CF-501', sell_price: 85, cost_price: 35, track_inventory: 0, image: '../assets/items/cheesecake.jpg' },
+    { id: 23, category_id: 5, cat_name: 'حلويات ومخبوزات', name: 'كيك لافا شوكولاتة فادج', barcode: 'CF-502', sell_price: 90, cost_price: 40, track_inventory: 0, image: '../assets/items/chocolate-lava.jpg' },
+    { id: 24, category_id: 5, cat_name: 'حلويات ومخبوزات', name: 'وافل بلجيكي بالنوتيلا والفواكه', barcode: 'CF-503', sell_price: 80, cost_price: 32, track_inventory: 0, image: '../assets/items/waffle.jpg' },
+    { id: 25, category_id: 5, cat_name: 'حلويات ومخبوزات', name: 'كرواسون زبدة فرنسي باللوز', barcode: 'CF-504', sell_price: 50, cost_price: 20, track_inventory: 0, image: '../assets/items/croissant.jpg' }
+  ];
+
+  function navigate(page) {
+    if (window.electron && typeof window.electron.navigate === 'function') {
+      window.electron.navigate(page).catch(() => { window.location.href = page; });
+    } else {
+      window.location.href = page;
+    }
+  }
+
+  function goBack() {
+    navigate('main-dashboard.html');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function fmt(n) {
+    const val = parseFloat(n) || 0;
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function showToast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    if (!c) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, icon: type, title: msg });
+      }
+      return;
+    }
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span> ${msg}`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+
+  function openModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.add('open');
+  }
+
+  function closeModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.remove('open');
+  }
+
+  function switchView(mode) {
+    currentViewMode = mode;
+    const btnGrid = document.getElementById('btnViewGrid');
+    const btnTable = document.getElementById('btnViewTable');
+    const cardsGrid = document.getElementById('servicesCardsGrid');
+    const tableContainer = document.getElementById('servicesTableContainer');
+
+    if (mode === 'grid') {
+      btnGrid.classList.add('active');
+      btnTable.classList.remove('active');
+      cardsGrid.style.display = 'grid';
+      tableContainer.classList.remove('active');
+      tableContainer.style.display = 'none';
+    } else {
+      btnTable.classList.add('active');
+      btnGrid.classList.remove('active');
+      cardsGrid.style.display = 'none';
+      tableContainer.classList.add('active');
+      tableContainer.style.display = 'block';
+    }
+    renderCurrentView();
+  }
+
+  function setTypeFilter(type) {
+    currentTypeFilter = type;
+    document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+    if (type === 'all') document.getElementById('tabTypeAll').classList.add('active');
+    else if (type === 'prepared') document.getElementById('tabTypePrepared').classList.add('active');
+    else if (type === 'ready') document.getElementById('tabTypeReady').classList.add('active');
+    renderCurrentView();
+  }
+
+  function selectCategory(id, name) {
+    currentCategoryId = id;
+    document.getElementById('currentCategoryTitle').textContent = name || 'جميع الأصناف والمنتجات';
+    renderCategories();
+    renderCurrentView();
+  }
+
+  // ─── Categories Management ──────────────────────────────────────────────────
+  async function loadCategories() {
+    try {
+      if (window.db && typeof window.db.query === 'function') {
+        const res = await window.db.query('SELECT * FROM service_categories ORDER BY id', []);
+        if (res.success && res.data && res.data.length > 0) {
+          categories = res.data;
+        } else {
+          categories = defaultSeedCategories;
+        }
+      } else {
+        categories = defaultSeedCategories;
+      }
+    } catch (e) {
+      console.warn('loadCategories error, using default seed:', e);
+      categories = defaultSeedCategories;
+    }
+    renderCategories();
+    populateCategorySelect();
+  }
+
+  function renderCategories() {
+    const list = document.getElementById('categoryList');
+    if (!list) return;
+
+    const allCount = allServices.length;
+    let html = `
+      <div class="cat-item-pill ${currentCategoryId === 0 ? 'active' : ''}" onclick="selectCategory(0, 'جميع الأصناف والمنتجات')">
+        <span>جميع الأقسام</span>
+        <span class="cat-count-badge">${allCount}</span>
+      </div>
+    `;
+
+    categories.forEach(c => {
+      const count = allServices.filter(s => s.category_id === c.id).length;
+      html += `
+        <div class="cat-item-pill ${currentCategoryId === c.id ? 'active' : ''}" onclick="selectCategory(${c.id}, '${escapeHtml(c.name)}')">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(c.name)}</span>
+          <span class="cat-count-badge">${count}</span>
+        </div>
+      `;
+    });
+
+    list.innerHTML = html;
+  }
+
+  function populateCategorySelect() {
+    const sel = document.getElementById('srvCat');
+    if (!sel) return;
+    const curVal = sel.value;
+    sel.innerHTML = '<option value="">اختر القسم</option>' + categories.map(c => `
+      <option value="${c.id}">${escapeHtml(c.name)}</option>
+    `).join('');
+    if (curVal) sel.value = curVal;
+  }
+
+  async function addCategory() {
+    const input = document.getElementById('newCatName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    try {
+      if (window.db && typeof window.db.run === 'function') {
+        await window.db.run('INSERT INTO service_categories (name) VALUES (?)', [name]);
+      }
+    } catch(e) {}
+
+    const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+    categories.push({ id: newId, name });
+    input.value = '';
+    renderCategories();
+    populateCategorySelect();
+    showToast('تمت إضافة القسم بنجاح');
+  }
+
+  // ─── Services Data Loading ──────────────────────────────────────────────────
+  async function loadServices() {
+    try {
+      let loadedData = null;
+      if (window.db && typeof window.db.query === 'function') {
+        const res = await window.db.query(
+          'SELECT s.*, c.name as cat_name FROM services s LEFT JOIN service_categories c ON s.category_id=c.id ORDER BY s.id DESC', []
+        );
+        if (res.success && res.data && res.data.length > 0) {
+          loadedData = res.data;
+        }
+      }
+      
+      allServices = loadedData || defaultSeedServices;
+
+      // Update Header Stats
+      const totalCount = allServices.length;
+      const totalCats = categories.length;
+      const preparedCount = allServices.filter(s => !s.track_inventory || s.track_inventory === 0).length;
+      const readyCount = allServices.filter(s => s.track_inventory === 1).length;
+
+      document.getElementById('statTotalServices').textContent = totalCount;
+      document.getElementById('statTotalCategories').textContent = totalCats;
+      document.getElementById('statPreparedCount').textContent = preparedCount;
+      document.getElementById('statReadyCount').textContent = readyCount;
+
+      renderCategories();
+      renderCurrentView();
+    } catch (e) {
+      console.error('loadServices error:', e);
+      allServices = defaultSeedServices;
+      renderCurrentView();
+    }
+  }
+
+  function getFilteredServices() {
+    const query = (document.getElementById('serviceSearch')?.value || '').trim().toLowerCase();
+    let filtered = allServices;
+
+    if (currentCategoryId !== 0) {
+      filtered = filtered.filter(s => s.category_id === currentCategoryId);
+    }
+
+    if (currentTypeFilter === 'prepared') {
+      filtered = filtered.filter(s => !s.track_inventory || s.track_inventory === 0);
+    } else if (currentTypeFilter === 'ready') {
+      filtered = filtered.filter(s => s.track_inventory === 1);
+    }
+
+    if (query) {
+      filtered = filtered.filter(s =>
+        (s.name && s.name.toLowerCase().includes(query)) ||
+        (s.barcode && s.barcode.toLowerCase().includes(query)) ||
+        (s.cat_name && s.cat_name.toLowerCase().includes(query))
+      );
+    }
+
+    const countEl = document.getElementById('servicesCount');
+    if (countEl) countEl.textContent = `${filtered.length} صنف`;
+
+    return filtered;
+  }
+
+  function renderCurrentView() {
+    const filtered = getFilteredServices();
+    if (currentViewMode === 'grid') {
+      renderCardsGrid(filtered);
+    } else {
+      renderServicesTable(filtered);
+    }
+  }
+
+  // ─── Render 1: Cards Grid ───────────────────────────────────────────────────
+  function renderCardsGrid(items) {
+    const grid = document.getElementById('servicesCardsGrid');
+    if (!grid) return;
+
+    if (!items.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1; text-align:center; padding:60px 20px; background:#fff; border-radius:16px; border:1px dashed var(--srv-border);">
+          <div style="width:48px; height:48px; border-radius:14px; background:#FAF5F0; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; color:#FF5B22;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div style="font-size:15px; font-weight:800; color:var(--srv-espresso);">لا توجد أصناف مطابقة للبحث أو الفلتر</div>
+          <div style="font-size:12px; color:var(--srv-text-muted); margin-top:4px;">يمكنك إضافة صنف جديد للمنيو بالضغط على زر إضافة صنف بالأعلى</div>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = items.map(s => {
+      const isReady = s.track_inventory === 1;
+      const typeLabel = isReady ? 'بضاعة مخزن' : 'تحضير بالطلب';
+      const typeClass = isReady ? 'type-ready' : 'type-prepared';
+      const cost = parseFloat(s.cost_price) || 0;
+      const sell = parseFloat(s.sell_price) || 0;
+      const profit = sell > 0 ? Math.round(((sell - cost) / sell) * 100) : 0;
+
+      // Smart Image Mapping: if s.image is missing, find matching asset
+      let imgPath = s.image;
+      if (!imgPath) {
+        const seedMatch = defaultSeedServices.find(x => 
+          x.name === s.name || 
+          (s.name && x.name && (s.name.includes(x.name.split(' ')[0]) || x.name.includes(s.name.split(' ')[0]))) ||
+          (x.barcode && s.barcode && x.barcode === s.barcode)
+        );
+        if (seedMatch && seedMatch.image) imgPath = seedMatch.image;
+      }
+
+      let imgMarkup = '';
+      if (imgPath) {
+        imgMarkup = `<img src="${imgPath}" class="product-card-img" alt="${escapeHtml(s.name)}" onerror="this.onerror=null; this.src='../assets/icon.png';" />`;
+      } else {
+        imgMarkup = `
+          <div class="product-card-placeholder-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="product-card">
+          <div class="product-card-thumb-wrap">
+            <span class="product-type-pill ${typeClass}">${typeLabel}</span>
+            ${imgMarkup}
+          </div>
+
+          <div class="product-card-body">
+            <div>
+              <div class="product-card-cat-name">${escapeHtml(s.cat_name || 'بدون قسم')}</div>
+              <div class="product-card-title">${escapeHtml(s.name)}</div>
+              ${s.barcode ? `<div class="product-card-barcode">${escapeHtml(s.barcode)}</div>` : ''}
+            </div>
+
+            <div>
+              <div class="product-card-pricing-strip">
+                <div>
+                  <div style="font-size:10px; color:var(--srv-text-muted); font-weight:700;">سعر البيع</div>
+                  <div class="card-sell-price">${fmt(sell)} <small style="font-size:11px;">ج.م</small></div>
+                </div>
+                <div style="text-align:left; display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                  <span class="card-profit-badge">ربح: ${profit}%</span>
+                  <span class="card-cost-price">التكلفة: ${fmt(cost)} ج.م</span>
+                </div>
+              </div>
+
+              <div class="product-card-actions">
+                <button class="btn-quick-price" onclick="openQuickPriceModal(${s.id})" title="تعديل سريع لسعر البيع فقط">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <span>السعر</span>
+                </button>
+
+                <button class="btn-edit-item" onclick="editService(${s.id})" title="تعديل كامل بيانات ومكونات الصنف">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <span>تعديل</span>
+                </button>
+
+                <button class="btn-delete-item" onclick="deleteService(${s.id})" title="حذف الصنف نهائياً">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ─── Render 2: Detailed Table ───────────────────────────────────────────────
+  function renderServicesTable(items) {
+    const tbody = document.getElementById('servicesBody');
+    if (!tbody) return;
+
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--srv-text-muted);">لا توجد أصناف مطابقة</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map((s, i) => {
+      const isReady = s.track_inventory === 1;
+      const typeLabel = isReady ? 'جاهزة' : 'تحضير';
+      const cost = parseFloat(s.cost_price) || 0;
+      const sell = parseFloat(s.sell_price) || 0;
+
+      const imgThumb = s.image
+        ? `<div class="product-thumbnail-box"><img src="${s.image}" class="product-thumbnail-img" /></div>`
+        : `<div class="product-thumbnail-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg></div>`;
+
+      return `
+        <tr>
+          <td style="text-align:center; color:var(--srv-text-muted); font-variant-numeric:tabular-nums;">${i + 1}</td>
+          <td>
+            <div class="product-identity-cell">
+              ${imgThumb}
+              <div>
+                <div class="product-name-text">${escapeHtml(s.name)}</div>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-weight:700; color:${isReady ? 'var(--srv-amber)' : 'var(--srv-emerald)'};">${typeLabel}</span></td>
+          <td><span style="background:#FAF8F5; padding:3px 8px; border-radius:6px; font-weight:700;">${escapeHtml(s.cat_name || 'بدون قسم')}</span></td>
+          <td><span style="font-family:monospace; direction:ltr; display:inline-block;">${escapeHtml(s.barcode || '—')}</span></td>
+          <td style="color:var(--srv-red); font-weight:700;">${fmt(cost)} ج.م</td>
+          <td style="color:var(--srv-emerald); font-weight:900;">${fmt(sell)} ج.م</td>
+          <td style="text-align:center;">
+            <div style="display:flex; justify-content:center; gap:6px;">
+              <button class="btn-quick-price" style="padding:0 8px;" onclick="openQuickPriceModal(${s.id})">تعديل السعر</button>
+              <button class="btn-edit-item" style="padding:0 8px;" onclick="editService(${s.id})">تعديل</button>
+              <button class="btn-delete-item" style="width:28px;" onclick="deleteService(${s.id})">✕</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ─── Quick Price Modal ──────────────────────────────────────────────────────
+  function openQuickPriceModal(id) {
+    const s = allServices.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('qpServiceId').value = s.id;
+    document.getElementById('qpServiceName').textContent = s.name;
+    document.getElementById('qpNewPrice').value = s.sell_price;
+    openModal('quickPriceModal');
+    setTimeout(() => {
+      const inp = document.getElementById('qpNewPrice');
+      inp.focus();
+      inp.select();
+    }, 100);
+  }
+
+  async function submitQuickPrice() {
+    const id = parseInt(document.getElementById('qpServiceId').value);
+    const newPrice = parseFloat(document.getElementById('qpNewPrice').value) || 0;
+    if (newPrice <= 0) {
+      showToast('يرجى إدخال سعر صحيح', 'error');
+      return;
+    }
+
+    try {
+      if (window.db && typeof window.db.run === 'function') {
+        await window.db.run('UPDATE services SET sell_price=? WHERE id=?', [newPrice, id]);
+      }
+    } catch(e) {}
+
+    const target = allServices.find(x => x.id === id);
+    if (target) target.sell_price = newPrice;
+
+    closeModal('quickPriceModal');
+    renderCurrentView();
+    showToast('تم تحديث سعر البيع بنجاح');
+  }
+
+  // ─── Delete Service ─────────────────────────────────────────────────────────
+  async function deleteService(id) {
+    const s = allServices.find(x => x.id === id);
+    const name = s ? s.name : 'الصنف';
+
+    const r = await Swal.fire({
+      title: 'حذف الصنف من المنيو',
+      text: `هل أنت متأكد من حذف "${name}"؟ لن يظهر في نقطة البيع بعد الآن.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#94A3B8',
+      confirmButtonText: 'نعم، حذف الصنف',
+      cancelButtonText: 'إلغاء'
+    });
+
+    if (r.isConfirmed) {
+      try {
+        if (window.db && typeof window.db.run === 'function') {
+          await window.db.run('DELETE FROM services WHERE id=?', [id]);
+        }
+      } catch(e) {}
+
+      allServices = allServices.filter(x => x.id !== id);
+      renderCurrentView();
+      renderCategories();
+      showToast('تم حذف الصنف بنجاح');
+    }
+  }
+
+  // ─── Add / Edit Service Modal Functions ─────────────────────────────────────
+  function openServiceModal() {
+    document.getElementById('serviceModalTitle').innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--srv-caramel);"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>إضافة صنف جديد للمنيو</span>
+    `;
+    document.getElementById('srvId').value = '';
+    document.getElementById('srvName').value = '';
+    document.getElementById('srvBarcode').value = '';
+    document.getElementById('srvCost').value = '';
+    document.getElementById('srvSell').value = '';
+    document.getElementById('srvTrackInv').value = '0';
+    document.getElementById('srvIsTaxable').value = '1';
+    document.getElementById('srvQty').value = '0';
+    document.getElementById('srvLowThreshold').value = '0';
+    document.getElementById('srvHasSizes').checked = false;
+    document.getElementById('sizesContent').style.display = 'none';
+    document.getElementById('sizesListContainer').innerHTML = '';
+    removeServiceImage();
+    toggleInvFields();
+    calcProfitMarginModal();
+
+    if (currentCategoryId !== 0) {
+      document.getElementById('srvCat').value = currentCategoryId;
+    }
+
+    openModal('serviceModal');
+  }
+
+  async function editService(id) {
+    const s = allServices.find(x => x.id === id);
+    if (!s) return;
+
+    document.getElementById('serviceModalTitle').innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--srv-caramel);"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>تعديل الصنف: ${escapeHtml(s.name)}</span>
+    `;
+    document.getElementById('srvId').value = s.id;
+    document.getElementById('srvName').value = s.name;
+    document.getElementById('srvCat').value = s.category_id || '';
+    document.getElementById('srvBarcode').value = s.barcode || '';
+    document.getElementById('srvCost').value = s.cost_price || 0;
+    document.getElementById('srvSell').value = s.sell_price || 0;
+    document.getElementById('srvTrackInv').value = s.track_inventory ? '1' : '0';
+    document.getElementById('srvIsTaxable').value = s.is_taxable === 0 ? '0' : '1';
+    document.getElementById('srvQty').value = s.quantity || 0;
+    document.getElementById('srvLowThreshold').value = s.low_stock_threshold || 0;
+
+    // Load sizes for this service
+    document.getElementById('srvHasSizes').checked = false;
+    document.getElementById('sizesContent').style.display = 'none';
+    document.getElementById('sizesListContainer').innerHTML = '';
+
+    if (window.services && typeof window.services.getSizes === 'function') {
+      try {
+        const szRes = await window.services.getSizes(s.id);
+        if (szRes && szRes.success && szRes.data && szRes.data.length > 0) {
+          document.getElementById('srvHasSizes').checked = true;
+          document.getElementById('sizesContent').style.display = 'block';
+          szRes.data.forEach(sz => addCustomSizeRow(sz));
+        }
+      } catch(err) {
+        console.warn('Could not load sizes for service:', err);
+      }
+    }
+
+    const imgVal = s.image || '';
+    document.getElementById('srvImage').value = imgVal;
+    const imgPreview = document.getElementById('srvImagePreview');
+    const placeholder = document.getElementById('srvImagePlaceholder');
+    const removeBtn = document.getElementById('srvImageRemoveBtn');
+    if (imgVal) {
+      imgPreview.src = imgVal;
+      imgPreview.style.display = 'block';
+      placeholder.style.display = 'none';
+      removeBtn.style.display = 'inline-block';
+    } else {
+      removeServiceImage();
+    }
+
+    toggleInvFields();
+    calcProfitMarginModal();
+    openModal('serviceModal');
+  }
+
+  function toggleInvFields() {
+    const isReady = document.getElementById('srvTrackInv').value === '1';
+    const invRow = document.getElementById('invFieldsRow');
+    if (invRow) invRow.style.display = isReady ? 'grid' : 'none';
+  }
+
+  function handleServiceImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      document.getElementById('srvImage').value = dataUrl;
+      const preview = document.getElementById('srvImagePreview');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      document.getElementById('srvImagePlaceholder').style.display = 'none';
+      document.getElementById('srvImageRemoveBtn').style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeServiceImage() {
+    document.getElementById('srvImage').value = '';
+    const preview = document.getElementById('srvImagePreview');
+    preview.src = '';
+    preview.style.display = 'none';
+    document.getElementById('srvImagePlaceholder').style.display = 'flex';
+    document.getElementById('srvImageRemoveBtn').style.display = 'none';
+    const fileInp = document.getElementById('srvImageFile');
+    if (fileInp) fileInp.value = '';
+  }
+
+  function generateBarcode() {
+    const rnd = Math.floor(10000000 + Math.random() * 90000000);
+    document.getElementById('srvBarcode').value = 'CP-' + rnd;
+  }
+
+  function calcProfitMarginModal() {
+    const cost = parseFloat(document.getElementById('srvCost').value) || 0;
+    const sell = parseFloat(document.getElementById('srvSell').value) || 0;
+    const badge = document.getElementById('modalProfitMarginBadge');
+    const val = document.getElementById('modalProfitMarginVal');
+
+    if (sell > 0) {
+      const pct = Math.round(((sell - cost) / sell) * 100);
+      val.textContent = `${pct}% (ربح ${fmt(sell - cost)} ج.م)`;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function toggleSizesSection() {
+    const chk = document.getElementById('srvHasSizes').checked;
+    document.getElementById('sizesContent').style.display = chk ? 'block' : 'none';
+    if (chk && document.getElementById('sizesListContainer').children.length === 0) {
+      addCustomSizeRow();
+    }
+  }
+
+  function addCustomSizeRow(data = {}) {
+    const container = document.getElementById('sizesListContainer');
+    const div = document.createElement('div');
+    div.className = 'size-row';
+    div.style.cssText = 'display:grid; grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.5fr 36px; gap:8px; align-items:center; background:#fff; padding:8px 10px; border-radius:8px; border:1px solid var(--srv-border); margin-bottom:6px; box-shadow:0 1px 3px rgba(0,0,0,0.04);';
+    div.innerHTML = `
+      <div>
+        <label style="font-size:10px; color:var(--srv-text-muted); display:block; margin-bottom:2px; font-weight:700;">اسم الحجم *</label>
+        <input type="text" class="form-control size-name-input" placeholder="سنجل / دبل / كبير..." value="${escapeHtml(data.size_name || data.name || '')}" style="height:34px; font-size:12px; font-weight:700;" />
+      </div>
+      <div>
+        <label style="font-size:10px; color:var(--srv-text-muted); display:block; margin-bottom:2px; font-weight:700;">سعر البيع *</label>
+        <input type="number" class="form-control size-price-input" placeholder="0.00" value="${data.price !== undefined ? data.price : (data.sell_price !== undefined ? data.sell_price : '')}" step="0.5" style="height:34px; font-size:12px; font-weight:800; color:var(--srv-emerald);" />
+      </div>
+      <div>
+        <label style="font-size:10px; color:var(--srv-text-muted); display:block; margin-bottom:2px; font-weight:700;">التكلفة</label>
+        <input type="number" class="form-control size-cost-input" placeholder="0.00" value="${data.cost_price !== undefined ? data.cost_price : (data.cost !== undefined ? data.cost : '')}" step="0.5" style="height:34px; font-size:12px;" />
+      </div>
+      <div>
+        <label style="font-size:10px; color:var(--srv-text-muted); display:block; margin-bottom:2px; font-weight:700;">معامل الوصفة</label>
+        <input type="number" class="form-control size-ratio-input" placeholder="1.0" value="${data.recipe_ratio !== undefined ? data.recipe_ratio : (data.ratio !== undefined ? data.ratio : 1.0)}" step="0.1" style="height:34px; font-size:12px;" />
+      </div>
+      <div>
+        <label style="font-size:10px; color:var(--srv-text-muted); display:block; margin-bottom:2px; font-weight:700;">باركود خاص</label>
+        <input type="text" class="form-control size-barcode-input" placeholder="اختياري" value="${escapeHtml(data.barcode || '')}" style="height:34px; font-size:11px; font-family:monospace;" />
+      </div>
+      <div style="padding-top:16px;">
+        <button type="button" class="btn btn-sm" style="color:var(--srv-red); background:#FEF2F2; border:1px solid #FECACA; height:34px; width:34px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:800;" onclick="this.closest('.size-row').remove()" title="حذف هذا الحجم">✕</button>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+
+  async function saveService() {
+    const id = document.getElementById('srvId').value;
+    const name = document.getElementById('srvName').value.trim();
+    const catId = document.getElementById('srvCat').value || null;
+    let barcode = document.getElementById('srvBarcode').value.trim() || null;
+    const autoGen = document.getElementById('autoGenerateBarcode')?.checked;
+    if (!barcode && autoGen) {
+      generateBarcode();
+      barcode = document.getElementById('srvBarcode').value.trim();
+    }
+    const cost = parseFloat(document.getElementById('srvCost').value) || 0;
+    const sell = parseFloat(document.getElementById('srvSell').value) || 0;
+    const trackInv = parseInt(document.getElementById('srvTrackInv').value) || 0;
+    const isTaxable = parseInt(document.getElementById('srvIsTaxable').value);
+    const qty = parseFloat(document.getElementById('srvQty').value) || 0;
+    const lowThresh = parseFloat(document.getElementById('srvLowThreshold').value) || 0;
+    const image = document.getElementById('srvImage').value || null;
+
+    if (!name || sell <= 0) {
+      showToast('يرجى كتابة اسم الصنف وسعر البيع بشكل صحيح', 'error');
+      return;
+    }
+
+    const hasSizes = document.getElementById('srvHasSizes').checked ? 1 : 0;
+    const sizeRows = document.querySelectorAll('#sizesListContainer .size-row');
+    const sizesList = [];
+    if (hasSizes) {
+      sizeRows.forEach((row, idx) => {
+        const szName = row.querySelector('.size-name-input')?.value.trim();
+        const szPrice = parseFloat(row.querySelector('.size-price-input')?.value) || 0;
+        const szCost = parseFloat(row.querySelector('.size-cost-input')?.value) || 0;
+        const szRatio = parseFloat(row.querySelector('.size-ratio-input')?.value) || 1.0;
+        const szBarcode = row.querySelector('.size-barcode-input')?.value.trim() || null;
+        if (szName) {
+          sizesList.push({
+            size_name: szName,
+            price: szPrice,
+            cost_price: szCost,
+            recipe_ratio: szRatio,
+            barcode: szBarcode,
+            is_default: idx === 0 ? 1 : 0
+          });
+        }
+      });
+    }
+
+    const effectiveHasSizes = (hasSizes && sizesList.length > 0) ? 1 : 0;
+    const catObj = categories.find(c => c.id == catId);
+    const catName = catObj ? catObj.name : 'بدون قسم';
+
+    let savedServiceId = id;
+    try {
+      if (window.db && typeof window.db.run === 'function') {
+        if (id) {
+          await window.db.run(
+            'UPDATE services SET category_id=?, name=?, barcode=?, sell_price=?, cost_price=?, track_inventory=?, quantity=?, low_stock_threshold=?, is_taxable=?, image=?, has_sizes=? WHERE id=?',
+            [catId, name, barcode, sell, cost, trackInv, qty, lowThresh, isTaxable, image, effectiveHasSizes, id]
+          );
+        } else {
+          const insRes = await window.db.run(
+            'INSERT INTO services (category_id, name, barcode, sell_price, cost_price, track_inventory, quantity, low_stock_threshold, is_taxable, image, has_sizes) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            [catId, name, barcode, sell, cost, trackInv, qty, lowThresh, isTaxable, image, effectiveHasSizes]
+          );
+          if (insRes && insRes.lastInsertRowid) {
+            savedServiceId = insRes.lastInsertRowid;
+          } else {
+            const maxRow = await window.db.queryOne('SELECT max(id) as maxId FROM services');
+            if (maxRow && maxRow.data) savedServiceId = maxRow.data.maxId;
+          }
+        }
+      }
+
+      // Save sizes to service_sizes table
+      if (savedServiceId && window.services && typeof window.services.saveSizes === 'function') {
+        await window.services.saveSizes(savedServiceId, sizesList);
+      }
+    } catch(e) {
+      console.warn('DB save warning:', e);
+    }
+
+    if (id) {
+      const idx = allServices.findIndex(x => x.id == id);
+      if (idx !== -1) {
+        allServices[idx] = {
+          ...allServices[idx],
+          name, category_id: catId, cat_name: catName, barcode, sell_price: sell, cost_price: cost, track_inventory: trackInv, is_taxable: isTaxable, image, has_sizes: effectiveHasSizes
+        };
+      }
+      showToast('تم تعديل بيانات الصنف وأحجامه بنجاح ✓');
+    } else {
+      const newId = savedServiceId || (allServices.length > 0 ? Math.max(...allServices.map(x => x.id)) + 1 : 1);
+      allServices.unshift({
+        id: newId, name, category_id: catId, cat_name: catName, barcode, sell_price: sell, cost_price: cost, track_inventory: trackInv, is_taxable: isTaxable, image, has_sizes: effectiveHasSizes
+      });
+      showToast('تمت إضافة الصنف الجديد وأحجامه بنجاح للمنيو ✓');
+    }
+
+    closeModal('serviceModal');
+    renderCategories();
+    renderCurrentView();
+  }
+
+  // ─── Initialization ─────────────────────────────────────────────────────────
+  async function init() {
+    await loadCategories();
+    await loadServices();
+  }
+
+  window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

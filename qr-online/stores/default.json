@@ -1,0 +1,398 @@
+{
+  "store_slug": "default",
+  "store_name": "كافيه برو",
+  "currency": "ج.م",
+  "service_mode": "order",
+  "categories": [
+    {
+      "id": 5,
+      "name": "ساخن"
+    },
+    {
+      "id": 6,
+      "name": "فرابيه"
+    },
+    {
+      "id": 7,
+      "name": "سموزي"
+    },
+    {
+      "id": 8,
+      "name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 9,
+      "name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 10,
+      "name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 11,
+      "name": "بيتزا وباستا"
+    },
+    {
+      "id": 12,
+      "name": "حلويات ومخبوزات"
+    },
+    {
+      "id": 13,
+      "name": "ايس كريم"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "category_id": 7,
+      "name": "قهوة تركي",
+      "barcode": null,
+      "price": 50.0,
+      "sell_price": 50.0,
+      "image": null,
+      "category_name": "سموزي"
+    },
+    {
+      "id": 2,
+      "category_id": 8,
+      "name": "إسبريسو سينجل / دبل",
+      "barcode": "CF-101",
+      "price": 35.0,
+      "sell_price": 35.0,
+      "image": "../assets/items/espresso.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 6,
+      "category_id": 8,
+      "name": "شاي كرك بالهيل والزعفران",
+      "barcode": "CF-105",
+      "price": 40.0,
+      "sell_price": 40.0,
+      "image": "../assets/items/karak-tea.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 4,
+      "category_id": 8,
+      "name": "فانيليا ولاتيه كاراميل",
+      "barcode": "CF-103",
+      "price": 65.0,
+      "sell_price": 65.0,
+      "image": "../assets/items/latte.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 5,
+      "category_id": 8,
+      "name": "فلات وايت أسترالي",
+      "barcode": "CF-104",
+      "price": 60.0,
+      "sell_price": 60.0,
+      "image": "../assets/items/flat-white.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 8,
+      "category_id": 8,
+      "name": "قهوة تركي مخصوص بالحبهان",
+      "barcode": "CF-107",
+      "price": 30.0,
+      "sell_price": 30.0,
+      "image": "../assets/items/turkish-coffee.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 3,
+      "category_id": 8,
+      "name": "كابتشينو إيطالي كلاسيك",
+      "barcode": "CF-102",
+      "price": 55.0,
+      "sell_price": 55.0,
+      "image": "../assets/items/cappuccino.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 7,
+      "category_id": 8,
+      "name": "هوت شوكليت بالمارشميلو",
+      "barcode": "CF-106",
+      "price": 60.0,
+      "sell_price": 60.0,
+      "image": "../assets/items/hot-chocolate.jpg",
+      "category_name": "مشروبات ساخنة وقهوة"
+    },
+    {
+      "id": 9,
+      "category_id": 9,
+      "name": "آيس سبانش لاتيه",
+      "barcode": "CF-201",
+      "price": 70.0,
+      "sell_price": 70.0,
+      "image": "../assets/items/iced-latte.jpg",
+      "category_name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 12,
+      "category_id": 9,
+      "name": "أوريو فرابيه بالكريمة",
+      "barcode": "CF-204",
+      "price": 75.0,
+      "sell_price": 75.0,
+      "image": "../assets/items/oreo-frappe.jpg",
+      "category_name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 11,
+      "category_id": 9,
+      "name": "سموذي مانجو باشن فروت",
+      "barcode": "CF-203",
+      "price": 65.0,
+      "sell_price": 65.0,
+      "image": "../assets/items/mango-smoothie.jpg",
+      "category_name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 13,
+      "category_id": 9,
+      "name": "عصير برتقال فريش طبيعي",
+      "barcode": "CF-205",
+      "price": 45.0,
+      "sell_price": 45.0,
+      "image": "../assets/items/orange-juice.jpg",
+      "category_name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 10,
+      "category_id": 9,
+      "name": "موهيتو فراولة وليمون نعناع",
+      "barcode": "CF-202",
+      "price": 55.0,
+      "sell_price": 55.0,
+      "image": "../assets/items/mojito.jpg",
+      "category_name": "مشروبات باردة ومثلجات"
+    },
+    {
+      "id": 15,
+      "category_id": 10,
+      "name": "ساندوتش كريسبي تشيكن مدخن",
+      "barcode": "CF-302",
+      "price": 130.0,
+      "sell_price": 130.0,
+      "image": "../assets/items/crispy-chicken.jpg",
+      "category_name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 17,
+      "category_id": 10,
+      "name": "ستيك ريب آي مشوي بصوص المشروم",
+      "barcode": "CF-304",
+      "price": 280.0,
+      "sell_price": 280.0,
+      "image": "../assets/items/ribeye-steak.jpg",
+      "category_name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 18,
+      "category_id": 10,
+      "name": "طبق كوردون بلو محشي جبن",
+      "barcode": "CF-305",
+      "price": 185.0,
+      "sell_price": 185.0,
+      "image": "../assets/items/cordon-bleu.jpg",
+      "category_name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 14,
+      "category_id": 10,
+      "name": "كلاسيك بيف برجر تشيز",
+      "barcode": "CF-301",
+      "price": 145.0,
+      "sell_price": 145.0,
+      "image": "../assets/items/burger.jpg",
+      "category_name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 16,
+      "category_id": 10,
+      "name": "كلوب ساندوتش سوبريم",
+      "barcode": "CF-303",
+      "price": 110.0,
+      "sell_price": 110.0,
+      "image": "../assets/items/club-sandwich.jpg",
+      "category_name": "ساندوتشات ووجبات"
+    },
+    {
+      "id": 22,
+      "category_id": 11,
+      "name": "باستا بيني أرابياتا حارة",
+      "barcode": "CF-404",
+      "price": 95.0,
+      "sell_price": 95.0,
+      "image": "../assets/items/penne-arrabbiata.jpg",
+      "category_name": "بيتزا وباستا"
+    },
+    {
+      "id": 21,
+      "category_id": 11,
+      "name": "باستا فوتشيني ألفريدو دجاج",
+      "barcode": "CF-403",
+      "price": 140.0,
+      "sell_price": 140.0,
+      "image": "../assets/items/pasta-alfredo.jpg",
+      "category_name": "بيتزا وباستا"
+    },
+    {
+      "id": 20,
+      "category_id": 11,
+      "name": "بيتزا بيبروني سوبريم",
+      "barcode": "CF-402",
+      "price": 155.0,
+      "sell_price": 155.0,
+      "image": "../assets/items/pizza-pepperoni.jpg",
+      "category_name": "بيتزا وباستا"
+    },
+    {
+      "id": 19,
+      "category_id": 11,
+      "name": "بيتزا مارجريتا نابوليتان",
+      "barcode": "CF-401",
+      "price": 120.0,
+      "sell_price": 120.0,
+      "image": "../assets/items/pizza-margherita.jpg",
+      "category_name": "بيتزا وباستا"
+    },
+    {
+      "id": 23,
+      "category_id": 12,
+      "name": "تشيز كيك بلوبيري نيويورك",
+      "barcode": "CF-501",
+      "price": 85.0,
+      "sell_price": 85.0,
+      "image": "../assets/items/cheesecake.jpg",
+      "category_name": "حلويات ومخبوزات"
+    },
+    {
+      "id": 26,
+      "category_id": 12,
+      "name": "كرواسون زبدة فرنسي باللوز",
+      "barcode": "CF-504",
+      "price": 50.0,
+      "sell_price": 50.0,
+      "image": "../assets/items/croissant.jpg",
+      "category_name": "حلويات ومخبوزات"
+    },
+    {
+      "id": 24,
+      "category_id": 12,
+      "name": "كيك لافا شوكولاتة فادج",
+      "barcode": "CF-502",
+      "price": 90.0,
+      "sell_price": 90.0,
+      "image": "../assets/items/chocolate-lava.jpg",
+      "category_name": "حلويات ومخبوزات"
+    },
+    {
+      "id": 25,
+      "category_id": 12,
+      "name": "وافل بلجيكي بالنوتيلا والفواكه",
+      "barcode": "CF-503",
+      "price": 80.0,
+      "sell_price": 80.0,
+      "image": "../assets/items/waffle.jpg",
+      "category_name": "حلويات ومخبوزات"
+    },
+    {
+      "id": 27,
+      "category_id": 13,
+      "name": "ايس كريم فسدق",
+      "barcode": null,
+      "price": 50.0,
+      "sell_price": 50.0,
+      "image": "data:image/jpeg;base64,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",
+      "category_name": "ايس كريم"
+    }
+  ],
+  "tables": [
+    {
+      "id": 7,
+      "name": "ترابيزة 1",
+      "section": "الصالة الرئيسية",
+      "seats": 4,
+      "status": "مشغولة"
+    },
+    {
+      "id": 8,
+      "name": "ترابيزة 2",
+      "section": "الصالة الرئيسية",
+      "seats": 4,
+      "status": "فاضية"
+    },
+    {
+      "id": 9,
+      "name": "ترابيزة 3",
+      "section": "الصالة الرئيسية",
+      "seats": 2,
+      "status": "فاضية"
+    },
+    {
+      "id": 10,
+      "name": "ترابيزة 4",
+      "section": "الصالة الرئيسية",
+      "seats": 6,
+      "status": "فاضية"
+    },
+    {
+      "id": 11,
+      "name": "عائلية 1",
+      "section": "ركن العائلات",
+      "seats": 8,
+      "status": "فاضية"
+    },
+    {
+      "id": 12,
+      "name": "عائلية 2",
+      "section": "ركن العائلات",
+      "seats": 6,
+      "status": "فاضية"
+    },
+    {
+      "id": 13,
+      "name": "تراس 1",
+      "section": "التراس الخارجي",
+      "seats": 4,
+      "status": "فاضية"
+    },
+    {
+      "id": 14,
+      "name": "تراس 2",
+      "section": "التراس الخارجي",
+      "seats": 4,
+      "status": "فاضية"
+    },
+    {
+      "id": 15,
+      "name": "صالة VIP 1",
+      "section": "قسم VIP",
+      "seats": 6,
+      "status": "فاضية"
+    },
+    {
+      "id": 16,
+      "name": "صالة VIP 2",
+      "section": "قسم VIP",
+      "seats": 4,
+      "status": "فاضية"
+    }
+  ],
+  "orders": [],
+  "order_sequence": 1,
+  "settings": {
+    "company_name": "كافيه ومطعم برو",
+    "tax_enabled": 0,
+    "tax_rate": 14.0,
+    "tax_type": "inclusive",
+    "service_charge_enabled": 1,
+    "service_charge_rate": 12.0
+  }
+}

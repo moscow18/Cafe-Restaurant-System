@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CafePro — Specialty Coffee & Artisan Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-canvas: #0A0B0E;
+      --bg-surface: #101116;
+      --bg-card: #15161D;
+      --bg-card-hover: #1B1C24;
+      --bg-elevated: #21222D;
+      --hairline: rgba(255, 255, 255, 0.07);
+      --hairline-strong: rgba(255, 255, 255, 0.14);
+      --primary: #E07A5F;
+      --primary-hover: #D0694E;
+      --primary-subtle: rgba(224, 122, 95, 0.14);
+      --accent-gold: #F2C94C;
+      --text-primary: #F5F5F7;
+      --text-secondary: #A0A1AA;
+      --text-muted: #6E7079;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 999px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html[dir="rtl"] body {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      direction: rtl;
+    }
+
+    html[dir="ltr"] body {
+      direction: ltr;
+    }
+
+    /* ─── Mobile Viewport Frame (App-like Shell) ─── */
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-surface);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: 96px;
+      border-left: 1px solid var(--hairline);
+      border-right: 1px solid var(--hairline);
+    }
+
+    /* ─── Top Header (Clean, Spacious, Not Crowded) ─── */
+    .app-header {
+      padding: 16px 18px 14px 18px;
+      background: rgba(18, 19, 22, 0.94);
+      border-bottom: 1px solid var(--hairline);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .brand-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #181920;
+      border: 1px solid rgba(224, 122, 95, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand-text-box {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.2;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-tagline {
+      font-size: 11px;
+      color: #9A9BA4;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+      letter-spacing: 0.1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Streamlined, Breathable Header Actions */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Minimalist Language Switcher (No bulky double badges) */
+    .lang-toggle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius-full);
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .lang-toggle-btn:hover {
+      border-color: var(--primary);
+      color: var(--text-primary);
+      background: rgba(224, 122, 95, 0.1);
+    }
+
+    .lang-toggle-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Clean Minimalist Table Selector (No redundant Change button) */
+    .table-picker-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius-full);
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    .table-picker-pill:hover {
+      border-color: var(--primary);
+      background: rgba(224, 122, 95, 0.1);
+    }
+
+    .table-picker-pill:active {
+      transform: scale(0.97);
+    }
+
+    .table-picker-pill .tbl-icon {
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+    }
+
+    .table-picker-pill .tbl-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .table-picker-pill .tbl-arrow {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+    }
+
+    /* Search Bar */
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-box {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 42px;
+      background: #17181C;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    html[dir="ltr"] .search-box input {
+      padding: 0 38px 0 38px;
+    }
+
+    html[dir="rtl"] .search-box input {
+      padding: 0 38px 0 38px;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      background: #1C1D21;
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    html[dir="ltr"] .search-box .search-icon {
+      left: 13px;
+    }
+
+    html[dir="rtl"] .search-box .search-icon {
+      right: 13px;
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      display: none;
+    }
+
+    html[dir="ltr"] .search-clear-btn {
+      right: 12px;
+    }
+
+    html[dir="rtl"] .search-clear-btn {
+      left: 12px;
+    }
+
+    /* ─── Categories Horizontal Strip (Minimal Luxury) ─── */
+    .categories-strip {
+      display: flex;
+      gap: 8px;
+      padding: 16px 18px 10px 18px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      user-select: none;
+    }
+
+    .categories-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      background: #16171E;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .cat-pill svg {
+      color: var(--text-muted);
+      transition: color 0.15s ease;
+    }
+
+    .cat-pill:hover {
+      border-color: rgba(224, 122, 95, 0.3);
+      color: var(--text-primary);
+    }
+
+    .cat-pill.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(224, 122, 95, 0.35);
+    }
+
+    .cat-pill.active svg {
+      color: #FFFFFF;
+    }
+
+    /* ─── Section Header ─── */
+    .section-header {
+      padding: 12px 18px 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .section-count {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Products Grid (Clean 2-Column Food Cards, NO FAKE AI BADGES) ─── */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 6px 18px 24px 18px;
+    }
+
+    .product-card {
+      background: var(--bg-card);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      position: relative;
+    }
+
+    .product-card:hover {
+      border-color: rgba(224, 122, 95, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .product-card:active {
+      transform: scale(0.97);
+    }
+
+    /* Out of Stock Card State */
+    .product-card.is-sold-out {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .product-card.is-sold-out:hover {
+      border-color: var(--hairline);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .product-img-box {
+      width: 100%;
+      height: 125px;
+      background: #111215;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.35s ease;
+    }
+
+    .product-card:not(.is-sold-out):hover .product-img-box img {
+      transform: scale(1.06);
+    }
+
+    .product-card.is-sold-out .product-img-box img {
+      filter: grayscale(0.8);
+    }
+
+    /* Clean Sold Out Badge */
+    .sold-out-badge {
+      position: absolute;
+      top: 8px;
+      background: rgba(22, 23, 29, 0.92);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #F87171;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      backdrop-filter: blur(6px);
+      z-index: 3;
+    }
+
+    html[dir="ltr"] .sold-out-badge {
+      left: 8px;
+    }
+
+    html[dir="rtl"] .sold-out-badge {
+      right: 8px;
+    }
+
+    .card-in-cart-pill {
+      position: absolute;
+      top: 8px;
+      background: rgba(18, 19, 25, 0.92);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 2;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    html[dir="ltr"] .card-in-cart-pill {
+      right: 8px;
+    }
+
+    html[dir="rtl"] .card-in-cart-pill {
+      left: 8px;
+    }
+
+    .product-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .product-cat-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.1px;
+    }
+
+    .product-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 36px;
+    }
+
+    .product-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: auto;
+    }
+
+    .product-price {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+
+    .product-price .curr {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    html[dir="ltr"] .product-price .curr {
+      margin-left: 2px;
+    }
+
+    html[dir="rtl"] .product-price .curr {
+      margin-right: 2px;
+    }
+
+    .product-add-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-subtle);
+      border: 1px solid rgba(224, 122, 95, 0.3);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .product-add-btn:hover {
+      background: var(--primary);
+      color: #FFFFFF;
+      transform: scale(1.08);
+    }
+
+    .product-add-btn:active {
+      transform: scale(0.92);
+    }
+
+    .product-card.is-sold-out .product-add-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--hairline);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ─── Empty State ─── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 18px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    /* ─── Floating Cart Bar (Bottom Sticky) ─── */
+    .floating-cart-pill {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      width: calc(100% - 36px);
+      max-width: 440px;
+      height: 54px;
+      background: rgba(22, 24, 31, 0.95);
+      border: 1px solid rgba(224, 122, 95, 0.35);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(224, 122, 95, 0.12);
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 50;
+      backdrop-filter: blur(16px);
+    }
+
+    .floating-cart-pill.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .cart-pill-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cart-pill-count {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 2px 8px rgba(224, 122, 95, 0.4);
+    }
+
+    .cart-pill-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cart-pill-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cart-pill-total {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cart-pill-btn {
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      padding: 7px 16px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 800;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(224, 122, 95, 0.35);
+      transition: all 0.15s ease;
+    }
+
+    .cart-pill-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    /* ─── Drawer Modal Overlays (Sheet from Bottom) ─── */
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .sheet-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sheet-content {
+      width: 100%;
+      max-width: 480px;
+      background: #141518;
+      border: 1px solid var(--hairline-strong);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .sheet-overlay.active .sheet-content {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--hairline-strong);
+      border-radius: 2px;
+      margin: 10px auto 4px auto;
+    }
+
+    .sheet-header {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .sheet-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .sheet-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sheet-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .sheet-footer {
+      padding: 14px 20px 20px 20px;
+      border-top: 1px solid var(--hairline);
+      background: #17181C;
+    }
+
+    /* ─── Customizer Segmented Controls ─── */
+    .cust-group {
+      margin-bottom: 16px;
+    }
+
+    .cust-group-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cust-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .cust-option-card {
+      background: #1A1B1F;
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cust-option-card svg {
+      color: var(--text-muted);
+    }
+
+    .cust-option-card .opt-name {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .cust-option-card.active {
+      border-color: var(--primary);
+      background: var(--primary-subtle);
+    }
+
+    .cust-option-card.active svg {
+      color: var(--primary);
+    }
+
+    .cust-option-card.active .opt-name {
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    .cust-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .cust-chip {
+      background: #1A1B1F;
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 8px 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .cust-chip.active {
+      border-color: var(--primary);
+      background: var(--primary-subtle);
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    /* ─── Cart Item Row ─── */
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .cart-item-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cart-item-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .cart-item-notes {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .cart-item-price {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cart-qty-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1C1D21;
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .cart-qty-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cart-qty-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-primary);
+      min-width: 18px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Primary Action Buttons */
+    .btn-action-primary {
+      width: 100%;
+      height: 46px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-action-primary:active {
+      background: var(--primary-hover);
+    }
+
+    .btn-action-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ─── Architectural Order Status Timeline ─── */
+    .status-sheet-hero {
+      text-align: center;
+      padding: 16px 0 20px 0;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 20px;
+    }
+
+    .status-sheet-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(224, 122, 95, 0.12);
+      border: 1px solid rgba(224, 122, 95, 0.3);
+      padding: 3px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-family: var(--font-mono);
+    }
+
+    .status-sheet-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .status-sheet-sub {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* Vertical 3-Stage Timeline */
+    .stepper-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+    }
+
+    .timeline-step::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      bottom: -16px;
+      width: 2px;
+      background: var(--hairline);
+    }
+
+    html[dir="ltr"] .timeline-step::before {
+      left: 13px;
+    }
+
+    html[dir="rtl"] .timeline-step::before {
+      right: 13px;
+    }
+
+    .timeline-step:last-child::before {
+      display: none;
+    }
+
+    .step-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #18191D;
+      border: 2px solid var(--hairline-strong);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-step.completed .step-marker {
+      background: #10B981;
+      border-color: #10B981;
+      color: #FFFFFF;
+    }
+
+    .timeline-step.active .step-marker {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 0 0 4px rgba(224, 122, 95, 0.25);
+    }
+
+    .timeline-step.rejected .step-marker {
+      background: #EF4444;
+      border-color: #EF4444;
+      color: #FFFFFF;
+    }
+
+    .step-body {
+      flex: 1;
+      padding-top: 3px;
+    }
+
+    .step-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .timeline-step.active .step-title,
+    .timeline-step.completed .step-title {
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    .step-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ─── 1. TOP HEADER (CLEAN & NON-CROWDED) ─── -->
+    <header class="app-header">
+      <div class="brand-row">
+        <div class="brand-left">
+          <div class="brand-avatar">
+            <img src="../assets/logo.png" alt="CafePro" onerror="this.src='assets/logo.png'" />
+          </div>
+          <div class="brand-text-box">
+            <div class="brand-title" id="shopNameDisplay">CafePro</div>
+            <div class="brand-tagline" id="shopTaglineDisplay">Specialty Coffee & Artisan Kitchen</div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Sleek Minimal Language Switcher Button -->
+          <button type="button" class="lang-toggle-btn" onclick="toggleLanguage()" title="Switch Language / تغيير اللغة">
+            <span id="langSwitchLabel">عربي</span>
+          </button>
+
+          <!-- Sleek Minimal Table Selector (No nested change pill) -->
+          <div class="table-picker-pill" onclick="openTablePickerSheet()" title="Select Table">
+            <span class="tbl-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19h16"/><path d="M4 15h16"/><path d="M6 15v4"/><path d="M18 15v4"/><path d="M3 11l9-7 9 7v4H3v-4z"/></svg>
+            </span>
+            <span class="tbl-text" id="headerTableNameDisplay">Table 1</span>
+            <span class="tbl-arrow">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Input -->
+      <div class="search-wrap">
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="searchInput" placeholder="Search specialty coffee, desserts, mains..." oninput="onSearchInput(this.value)" />
+          <button type="button" class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── 2. CATEGORIES HORIZONTAL STRIP ─── -->
+    <nav class="categories-strip" id="categoriesStrip">
+      <!-- Populated via JavaScript -->
+    </nav>
+
+    <!-- ─── 3. SECTION HEADER ─── -->
+    <div class="section-header">
+      <div class="section-title" id="activeCategoryTitle">All Menu Items</div>
+      <div class="section-count" id="activeItemsCount">0 items</div>
+    </div>
+
+    <!-- ─── 4. PRODUCTS GRID (2-COLUMN CARDS) ─── -->
+    <main class="products-grid" id="productsGrid">
+      <!-- Populated via JavaScript -->
+    </main>
+
+    <!-- ─── 5. FLOATING CART PILL ─── -->
+    <div class="floating-cart-pill" id="floatingCartPill" onclick="openCartSheet()">
+      <div class="cart-pill-left">
+        <span class="cart-pill-count" id="floatCartCount">0</span>
+        <span class="cart-pill-title" id="floatCartTitleText">Order Bag</span>
+      </div>
+      <div class="cart-pill-right">
+        <span class="cart-pill-total" id="floatCartTotal">0 EGP</span>
+        <button type="button" class="cart-pill-btn" id="floatCartBtnText">Review</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── 6. DRAWER: TABLE PICKER SHEET ─── -->
+  <div class="sheet-overlay" id="tablePickerSheet" onclick="handleOverlayClick(event, 'tablePickerSheet')">
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title" id="tableSheetTitleText">Select Your Table</div>
+        <button type="button" class="sheet-close-btn" onclick="closeSheet('tablePickerSheet')">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;" id="tableSheetDescText">
+          Choose where you are seated so kitchen sends your order directly
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:8px;" id="tablesPickerGrid">
+          <!-- Populated via JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 7. DRAWER: ITEM CUSTOMIZER (CUP, SUGAR, NOTES) ─── -->
+  <div class="sheet-overlay" id="itemCustomizerSheet" onclick="handleOverlayClick(event, 'itemCustomizerSheet')">
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <div class="sheet-title" id="custItemName">Item Name</div>
+          <div style="font-size:13px; font-weight:800; color:var(--text-primary); font-variant-numeric:tabular-nums;" id="custItemBasePrice">0 EGP</div>
+        </div>
+        <button type="button" class="sheet-close-btn" onclick="closeSheet('itemCustomizerSheet')">✕</button>
+      </div>
+
+      <div class="sheet-body">
+        <!-- Cup Choice Group (For drinks) -->
+        <div class="cust-group" id="groupCupChoice">
+          <div class="cust-group-title">
+            <span id="custCupTitleText">Cup Choice</span>
+            <span style="font-size:11px; color:var(--text-muted);" id="custRequiredText">Required</span>
+          </div>
+          <div class="cust-grid-3">
+            <div class="cust-option-card active" data-cup="Paper Cup" onclick="selectCustomizerCup('Paper Cup', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+              <span class="opt-name" id="cupOptPaper">Paper Cup</span>
+            </div>
+            <div class="cust-option-card" data-cup="Iced Cup" onclick="selectCustomizerCup('Iced Cup', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 17a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8L6 3Z"/><line x1="4" y1="3" x2="20" y2="3"/></svg>
+              <span class="opt-name" id="cupOptPlastic">Iced Cup</span>
+            </div>
+            <div class="cust-option-card" data-cup="Dine-in Glass" onclick="selectCustomizerCup('Dine-in Glass', this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l-1 9a4 4 0 0 1-4 3.5A4 4 0 0 1 7 11L8 2Z"/><line x1="12" y1="14.5" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+              <span class="opt-name" id="cupOptGlass">Dine-in Glass</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sugar Level Group (For drinks) -->
+        <div class="cust-group" id="groupSugarChoice">
+          <div class="cust-group-title">
+            <span id="custSugarTitleText">Sweetness</span>
+          </div>
+          <div class="cust-grid-4">
+            <div class="cust-chip" data-sugar="No Sugar" onclick="selectCustomizerSugar('No Sugar', this)" id="sugarOptNone">No Sugar</div>
+            <div class="cust-chip" data-sugar="Light" onclick="selectCustomizerSugar('Light', this)" id="sugarOptLight">Light</div>
+            <div class="cust-chip active" data-sugar="Regular" onclick="selectCustomizerSugar('Regular', this)" id="sugarOptRegular">Regular</div>
+            <div class="cust-chip" data-sugar="Extra" onclick="selectCustomizerSugar('Extra', this)" id="sugarOptExtra">Extra</div>
+          </div>
+        </div>
+
+        <!-- Special Instructions / Notes -->
+        <div class="cust-group">
+          <div class="cust-group-title">
+            <span id="custNotesTitleText">Special Instructions</span>
+          </div>
+          <input type="text" id="custSpecialNotes" placeholder="e.g. oat milk, less ice, extra hot..." style="width:100%; height:40px; background:#1A1B1F; border:1px solid var(--hairline); border-radius:8px; color:var(--text-primary); padding:0 12px; font-size:12.5px; font-family:inherit; outline:none;" />
+        </div>
+
+        <!-- Quantity Stepper -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-top:6px;">
+          <span style="font-size:13px; font-weight:700; color:var(--text-secondary);" id="custQtyLabel">Quantity</span>
+          <div class="cart-qty-ctrl" style="padding:3px;">
+            <button type="button" class="cart-qty-btn" onclick="adjustCustomizerQty(-1)">−</button>
+            <span class="cart-qty-val" id="custQtyVal" style="font-size:14px; min-width:24px;">1</span>
+            <button type="button" class="cart-qty-btn" onclick="adjustCustomizerQty(1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-footer">
+        <button type="button" class="btn-action-primary" id="btnConfirmAddToCart" onclick="confirmAddToCart()">
+          <span id="custSubmitBtnText">Add to Order</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 8. DRAWER: CART & ORDER CONFIRMATION SHEET ─── -->
+  <div class="sheet-overlay" id="cartSheet" onclick="handleOverlayClick(event, 'cartSheet')">
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <div class="sheet-title" id="cartSheetTitle">Review Your Order</div>
+          <div style="font-size:11.5px; color:var(--text-muted);" id="cartSheetTableDisplay">Table: Not selected</div>
+        </div>
+        <button type="button" class="sheet-close-btn" onclick="closeSheet('cartSheet')">✕</button>
+      </div>
+
+      <div class="sheet-body">
+        <div id="cartItemsList">
+          <!-- Populated via JavaScript -->
+        </div>
+
+        <!-- Customer Info (Optional) -->
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--hairline); display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-secondary);" id="guestDetailsTitle">Guest Details (Optional)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <input type="text" id="custOrderName" placeholder="Your Name" style="height:38px; background:#1A1B1F; border:1px solid var(--hairline); border-radius:8px; color:var(--text-primary); padding:0 10px; font-size:12px; font-family:inherit; outline:none;" />
+            <input type="tel" id="custOrderPhone" placeholder="Mobile Number" style="height:38px; background:#1A1B1F; border:1px solid var(--hairline); border-radius:8px; color:var(--text-primary); padding:0 10px; font-size:12px; font-family:inherit; outline:none; direction:ltr;" />
+          </div>
+        </div>
+
+        <!-- Dynamic Totals Breakdown (With Tax & Service Charge) -->
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--hairline); display:flex; flex-direction:column; gap:6px;">
+          <!-- Subtotal -->
+          <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
+            <span id="subtotalLabel">Subtotal:</span>
+            <span id="cartSubtotalText" style="font-variant-numeric:tabular-nums; font-weight:700;">0 EGP</span>
+          </div>
+
+          <!-- Dynamic Tax Row (if tax is exclusive) -->
+          <div id="cartTaxRow" style="display:none; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
+            <span id="cartTaxLabel">VAT (14%):</span>
+            <span id="cartTaxText" style="font-variant-numeric:tabular-nums; font-weight:700; color:#E07A5F;">+0 EGP</span>
+          </div>
+
+          <!-- Dynamic Service Charge Row -->
+          <div id="cartServiceRow" style="display:none; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
+            <span id="cartServiceLabel">Service Charge (12%):</span>
+            <span id="cartServiceText" style="font-variant-numeric:tabular-nums; font-weight:700; color:#E07A5F;">+0 EGP</span>
+          </div>
+
+          <!-- Grand Total -->
+          <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:800; color:var(--text-primary); padding-top:4px; border-top:1px solid rgba(255,255,255,0.06);">
+            <span id="totalLabel">Total:</span>
+            <span id="cartTotalText" style="color:var(--primary); font-variant-numeric:tabular-nums;">0 EGP</span>
+          </div>
+
+          <!-- Note if Inclusive Tax -->
+          <div id="cartTaxInclusiveNote" style="display:none; font-size:11px; color:var(--text-muted); text-align:center; padding-top:2px;">
+            Prices include 14% VAT
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-footer">
+        <button type="button" class="btn-action-primary" id="btnSendOrder" onclick="submitCustomerOrder()">
+          <span id="btnSendOrderText">Confirm & Send Order to Kitchen ➔</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 9. DRAWER: ARCHITECTURAL LIVE ORDER TRACKER ─── -->
+  <div class="sheet-overlay" id="trackerSheet" onclick="handleOverlayClick(event, 'trackerSheet')">
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title" id="trackerSheetTitle">Order Status Tracker</div>
+        <button type="button" class="sheet-close-btn" onclick="closeSheet('trackerSheet')">✕</button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="status-sheet-hero">
+          <div class="status-sheet-badge" id="trackerOrderNumberBadge">#QR-0001</div>
+          <div class="status-sheet-title" id="trackerHeadline">Order Placed Successfully</div>
+          <div class="status-sheet-sub" id="trackerTableSub">Table 1 • CafePro</div>
+        </div>
+
+        <!-- 3-Stage Hairline Timeline -->
+        <div class="stepper-timeline" id="stepperTimeline">
+          <!-- Stage 1 -->
+          <div class="timeline-step active" id="stepNode1">
+            <div class="step-marker">1</div>
+            <div class="step-body">
+              <div class="step-title" id="step1Title">Awaiting Kitchen Confirmation</div>
+              <div class="step-desc" id="step1Desc">Routed directly to POS terminal, awaiting barista confirmation</div>
+            </div>
+          </div>
+
+          <!-- Stage 2 -->
+          <div class="timeline-step" id="stepNode2">
+            <div class="step-marker">2</div>
+            <div class="step-body">
+              <div class="step-title" id="step2Title">In Preparation</div>
+              <div class="step-desc" id="step2Desc">Our barista & kitchen crew are crafting your order with care</div>
+            </div>
+          </div>
+
+          <!-- Stage 3 -->
+          <div class="timeline-step" id="stepNode3">
+            <div class="step-marker">3</div>
+            <div class="step-body">
+              <div class="step-title" id="step3Title">Ready & Served to Table</div>
+              <div class="step-desc" id="step3Desc">Your order is ready and being served to your table. Enjoy!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Summary List -->
+        <div style="background:#17181C; border:1px solid var(--hairline); border-radius:10px; padding:12px; margin-top:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:8px;" id="trackerItemsRecapTitle">Order Items Recap:</div>
+          <div id="trackerItemsRecap" style="display:flex; flex-direction:column; gap:6px;">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-footer" style="display:flex; gap:8px;">
+        <button type="button" class="btn-action-primary" style="background:#22242A; border:1px solid var(--hairline-strong); color:var(--text-primary);" onclick="closeSheet('trackerSheet')">
+          <span id="btnBackToMenu">Back to Menu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── JAVASCRIPT APPLICATION LOGIC ─── -->
+  <script>
+    // ─── TRANSLATIONS & I18N DICTIONARY ───
+    const I18N = {
+      en: {
+        shopName: "CafePro",
+        shopTagline: "Specialty Coffee & Artisan Kitchen",
+        langSwitchLabel: "عربي",
+        tablePrefix: "Table",
+        selectTable: "Select Table",
+        searchPlaceholder: "Search specialty coffee, desserts, mains...",
+        inCartSuffix: "in order",
+        allCategory: "All",
+        allMenuTitle: "All Menu Items",
+        itemsCountSuffix: "items",
+        emptySearchTitle: "No matching items found",
+        emptySearchSub: "Try searching for coffee, latte, pasta, or dessert",
+        cartTitle: "Order Bag",
+        cartReview: "Review",
+        cartSheetTitle: "Review Your Order",
+        cartEmpty: "Your order bag is empty",
+        cartEmptySub: "Explore the menu to add your favorite drinks & bites",
+        currency: "EGP",
+        tableSheetTitle: "Select Your Table",
+        tableSheetSub: "Choose where you are seated so kitchen sends your order directly",
+        tableNotSelected: "Table: Not selected",
+        guestDetails: "Guest Details (Optional)",
+        guestNamePlaceholder: "Your Name",
+        guestPhonePlaceholder: "Mobile Number",
+        subtotal: "Subtotal:",
+        vatLabel: "VAT",
+        serviceLabel: "Service Charge",
+        total: "Total:",
+        inclusiveNote: "Prices include VAT",
+        soldOut: "Sold Out",
+        sendOrderBtn: "Confirm & Send Order to Kitchen ➔",
+        sendingOrderBtn: "Sending to Kitchen...",
+        cupChoice: "Cup Choice",
+        required: "Required",
+        cupPaper: "Paper Cup",
+        cupPlastic: "Iced Cup",
+        cupGlass: "Dine-in Glass",
+        sweetness: "Sweetness",
+        sugarNone: "No Sugar",
+        sugarLight: "Light",
+        sugarRegular: "Regular",
+        sugarExtra: "Extra",
+        specialNotes: "Special Instructions",
+        specialNotesPlaceholder: "e.g. oat milk, less ice, extra hot...",
+        quantity: "Quantity",
+        addToOrder: "Add to Order",
+        trackerSheetTitle: "Order Status Tracker",
+        trackerSuccessHeadline: "Order Placed Successfully",
+        trackerApprovedHeadline: "Order approved & being prepared at the bar",
+        trackerReadyHeadline: "Order ready and served to your table",
+        trackerRejectedHeadline: "Order Declined by Cashier",
+        step1Title: "Awaiting Kitchen Confirmation",
+        step1Desc: "Routed directly to POS terminal, awaiting barista confirmation",
+        step2Title: "In Preparation",
+        step2Desc: "Our barista & kitchen crew are crafting your order with care",
+        step3Title: "Ready & Served to Table",
+        step3Desc: "Your order is ready and being served to your table. Enjoy!",
+        recapTitle: "Order Items Recap:",
+        backToMenu: "Back to Menu",
+        reasonPrefix: "Reason:"
+      },
+      ar: {
+        shopName: "كافيه برو",
+        shopTagline: "قهوة مختصة • أطباق ومخبوزات طازجة",
+        langSwitchLabel: "EN",
+        tablePrefix: "طاولة",
+        selectTable: "اختر طاولة",
+        searchPlaceholder: "ابحث عن قهوة، حلى، أو وجبة مفضلة...",
+        inCartSuffix: "بالطلب",
+        allCategory: "الكل",
+        allMenuTitle: "قائمة الأصناف",
+        itemsCountSuffix: "صنف",
+        emptySearchTitle: "لا توجد أصناف مطابقة للبحث",
+        emptySearchSub: "جرب البحث بكلمة أخرى مثل: قهوة، شاي، حلى، أو ساندوتش",
+        cartTitle: "سلة الطلبات",
+        cartReview: "مراجعة",
+        cartSheetTitle: "مراجعة سلة الطلب",
+        cartEmpty: "سلة طلبك فارغة",
+        cartEmptySub: "اختر مشروباتك ووجباتك المفضلة من المنيو",
+        currency: "ج.م",
+        tableSheetTitle: "حدد رقم طاولتك للطلب",
+        tableSheetSub: "اختر الطاولة التي تجلس عليها لتوجيه الطلب لكاشير الصالة فوراً",
+        tableNotSelected: "طاولة: غير محددة",
+        guestDetails: "بيانات العميل (اختياري)",
+        guestNamePlaceholder: "الاسم",
+        guestPhonePlaceholder: "رقم الهاتف",
+        subtotal: "المجموع الفرعي:",
+        vatLabel: "ضريبة القيمة المضافة",
+        serviceLabel: "خدمة الصالة",
+        total: "الإجمالي النهائي:",
+        inclusiveNote: "الأسعار شاملة ضريبة القيمة المضافة",
+        soldOut: "غير متوفر حالياً",
+        sendOrderBtn: "تأكيد وإرسال الطلب للكاشير",
+        sendingOrderBtn: "جاري إرسال الطلب للكاشير...",
+        cupChoice: "نوع الكوب",
+        required: "مطلوب",
+        cupPaper: "كوب ورقي",
+        cupPlastic: "كوب بلاستيك",
+        cupGlass: "زجاجي للصالة",
+        sweetness: "درجة السكر",
+        sugarNone: "بدون سكر",
+        sugarLight: "خفيف",
+        sugarRegular: "مضبوط",
+        sugarExtra: "زيادة",
+        specialNotes: "ملاحظات خاصة للتحضير",
+        specialNotesPlaceholder: "مثال: بدون ثلج، حليب نباتي، تسوية خاصة...",
+        quantity: "الكمية المطلوبة",
+        addToOrder: "إضافة إلى الطلب",
+        trackerSheetTitle: "متابعة حالة الطلب",
+        trackerSuccessHeadline: "تم إرسال طلبك بنجاح",
+        trackerApprovedHeadline: "تم اعتماد الطلب وجاري التحضير بالمطبخ والبار",
+        trackerReadyHeadline: "تم تجهيز الطلب وتقديمه على طاولتك",
+        trackerRejectedHeadline: "تم الاعتذار عن الطلب من قِبل الكاشير",
+        step1Title: "قيد الاعتماد لدى الكاشير",
+        step1Desc: "تم توجيه الطلب لنقطة البيع وبانتظار اعتماد الكاشير",
+        step2Title: "جاري التحضير في المطبخ والبار",
+        step2Desc: "يقوم فريق العمل بتجهيز طلبك الآن بأعلى دقة",
+        step3Title: "تم التجهيز والتقديم على الطاولة",
+        step3Desc: "طلبك جاهز وفي طريقه إليك، نتمنى لك تجربة ممتعة",
+        recapTitle: "تفاصيل الأصناف بالطلب:",
+        backToMenu: "العودة للمنيو",
+        reasonPrefix: "السبب:"
+      }
+    };
+
+    // Category translations dictionary
+    const CATEGORY_MAP = {
+      "ساخن": "Hot Drinks",
+      "فرابيه": "Frappé & Blended",
+      "سموزي": "Smoothies & Shakes",
+      "مشروبات ساخنة وقهوة": "Hot Coffee & Tea",
+      "مشروبات باردة ومثلجات": "Cold Brew & Iced Drinks",
+      "ساندوتشات ووجبات": "Artisan Sandwiches & Mains",
+      "بيتزا وباستا": "Stone Pizza & Pasta",
+      "حلويات ومخبوزات": "Bakery & Desserts",
+      "ايس كريم": "Gelato & Ice Cream"
+    };
+
+    // Product translations dictionary (keyed by Item ID)
+    const PRODUCT_MAP = {
+      1: "Traditional Turkish Coffee",
+      2: "Artisan Espresso (Single / Double)",
+      6: "Karak Chai with Cardamom & Saffron",
+      4: "Vanilla Caramel Latte",
+      5: "Australian Flat White",
+      8: "Special Turkish Coffee with Cardamom",
+      3: "Classic Italian Cappuccino",
+      7: "Velvet Hot Chocolate with Marshmallow",
+      9: "Iced Spanish Latte",
+      12: "Oreo Whipped Frappé",
+      11: "Mango Passion Fruit Smoothie",
+      13: "Freshly Squeezed Orange Juice",
+      10: "Strawberry Mint Mojito",
+      15: "Smoked Crispy Chicken Sandwich",
+      17: "Grilled Ribeye Steak with Mushroom Sauce",
+      18: "Stuffed Cheese Cordon Bleu Platter",
+      14: "Classic Angus Cheeseburger",
+      16: "Supreme Club Sandwich",
+      22: "Spicy Penne all'Arrabbiata",
+      21: "Creamy Chicken Fettuccine Alfredo",
+      20: "Supreme Pepperoni Stone Pizza",
+      19: "Neapolitan Margherita Pizza",
+      23: "New York Blueberry Cheesecake",
+      26: "French Almond Butter Croissant",
+      24: "Molten Chocolate Fudge Lava Cake",
+      25: "Belgian Waffle with Nutella & Fruits",
+      27: "Artisan Pistachio Gelato"
+    };
+
+    const TABLE_MAP = {
+      "ترابيزة 1": "Table 1",
+      "ترابيزة 2": "Table 2",
+      "ترابيزة 3": "Table 3",
+      "ترابيزة 4": "Table 4",
+      "عائلية 1": "Family Booth 1",
+      "عائلية 2": "Family Booth 2",
+      "تراس 1": "Terrace 1",
+      "تراس 2": "Terrace 2",
+      "صالة VIP 1": "VIP Lounge 1",
+      "صالة VIP 2": "VIP Lounge 2"
+    };
+
+    // State
+    let currentLang = 'en';
+    let allCategories = [];
+    let allServices = [];
+    let allTables = [];
+    let shopSettings = {};
+    let selectedTable = null;
+    let activeCategoryId = 0;
+    let searchQuery = '';
+    let cart = [];
+    let customizerItem = null;
+    let customizerQty = 1;
+    let customizerCup = 'Paper Cup';
+    let customizerSugar = 'Regular';
+    let currentActiveOrder = null;
+    let menuRealtimeSource = null;
+
+    function getItemDisplayName(item) {
+      if (!item) return '';
+      if (currentLang === 'en') {
+        return PRODUCT_MAP[item.id] || item.name_en || item.name;
+      }
+      return item.name;
+    }
+
+    function getCategoryDisplayName(catName) {
+      if (!catName) return '';
+      if (currentLang === 'en') {
+        return CATEGORY_MAP[catName] || catName;
+      }
+      return catName;
+    }
+
+    function getTableDisplayName(tblName) {
+      if (!tblName) return '';
+      if (currentLang === 'en') {
+        if (TABLE_MAP[tblName]) return TABLE_MAP[tblName];
+        if (tblName.includes('ترابيزة') || tblName.includes('طاولة')) {
+          const num = tblName.replace(/[^0-9]/g, '');
+          return num ? `Table ${num}` : tblName;
+        }
+        return tblName;
+      }
+      return tblName;
+    }
+
+    // Minimal SVG Category Icons
+    function getCategorySVG(catName) {
+      const c = (catName || '').toLowerCase();
+      if (c.includes('ساخن') || c.includes('قهوة') || c.includes('coffee') || c.includes('tea') || c.includes('hot')) {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>`;
+      }
+      if (c.includes('بارد') || c.includes('فرابيه') || c.includes('سموزي') || c.includes('مثلجات') || c.includes('frapp') || c.includes('smoothie') || c.includes('cold') || c.includes('iced')) {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 17a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8L6 3Z"/><line x1="4" y1="3" x2="20" y2="3"/></svg>`;
+      }
+      if (c.includes('طبق') || c.includes('رئيسي') || c.includes('سندوتش') || c.includes('بيتزا') || c.includes('وجب') || c.includes('sandwich') || c.includes('pizza') || c.includes('pasta') || c.includes('main')) {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8"/></svg>`;
+      }
+      if (c.includes('حلو') || c.includes('مخبوز') || c.includes('كيك') || c.includes('تارت') || c.includes('ايس') || c.includes('ice') || c.includes('bakery') || c.includes('dessert') || c.includes('gelato')) {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 11 11 .9a1 1 0 0 1 .8 1.1l-.6 4.6a1 1 0 0 1-1.2.8L3 16.4a1 1 0 0 1-.8-1.2l.6-4.6a1 1 0 0 1 1.2-.8L10 11Z"/><path d="M12 2v4"/><path d="m4.9 7.1 2.9 2.8"/></svg>`;
+      }
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`;
+    }
+
+    function isItemDrink(item) {
+      if (!item) return false;
+      const c = ((item.category_name || '') + ' ' + (item.name || '')).toLowerCase();
+      return c.includes('قهوة') || c.includes('شاي') || c.includes('ساخن') || c.includes('بارد') ||
+             c.includes('فرابيه') || c.includes('سموزي') || c.includes('لاتيه') || c.includes('عصير') ||
+             c.includes('موهيتو') || c.includes('مشروب') || c.includes('coffee') || c.includes('tea') ||
+             c.includes('latte') || c.includes('espresso') || c.includes('juice') || c.includes('drink');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ─── Lifecycle Init ───
+    document.addEventListener('DOMContentLoaded', async () => {
+      const savedLang = localStorage.getItem('cafePro_lang');
+      if (savedLang === 'ar' || savedLang === 'en') {
+        currentLang = savedLang;
+      } else {
+        currentLang = 'en';
+      }
+
+      applyLanguage(currentLang, false);
+      parseUrlParameters();
+      await fetchMenuData();
+      checkExistingActiveOrder();
+    });
+
+    // ─── Language Switcher ───
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ar' : 'en';
+      localStorage.setItem('cafePro_lang', currentLang);
+      applyLanguage(currentLang, true);
+    }
+
+    function applyLanguage(lang, reRender = true) {
+      const t = I18N[lang];
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+      // Header Brand & Actions
+      document.getElementById('shopNameDisplay').textContent = t.shopName;
+      document.getElementById('shopTaglineDisplay').textContent = t.shopTagline;
+      document.getElementById('langSwitchLabel').textContent = t.langSwitchLabel;
+
+      // Search
+      const searchInp = document.getElementById('searchInput');
+      if (searchInp) searchInp.placeholder = t.searchPlaceholder;
+
+      // Cart Floating Pill
+      document.getElementById('floatCartTitleText').textContent = t.cartTitle;
+      document.getElementById('floatCartBtnText').textContent = t.cartReview;
+
+      // Table Sheet
+      document.getElementById('tableSheetTitleText').textContent = t.tableSheetTitle;
+      document.getElementById('tableSheetDescText').textContent = t.tableSheetSub;
+
+      // Customizer Sheet
+      document.getElementById('custCupTitleText').textContent = t.cupChoice;
+      document.getElementById('custRequiredText').textContent = t.required;
+      document.getElementById('cupOptPaper').textContent = t.cupPaper;
+      document.getElementById('cupOptPlastic').textContent = t.cupPlastic;
+      document.getElementById('cupOptGlass').textContent = t.cupGlass;
+      document.getElementById('custSugarTitleText').textContent = t.sweetness;
+      document.getElementById('sugarOptNone').textContent = t.sugarNone;
+      document.getElementById('sugarOptLight').textContent = t.sugarLight;
+      document.getElementById('sugarOptRegular').textContent = t.sugarRegular;
+      document.getElementById('sugarOptExtra').textContent = t.sugarExtra;
+      document.getElementById('custNotesTitleText').textContent = t.specialNotes;
+      document.getElementById('custSpecialNotes').placeholder = t.specialNotesPlaceholder;
+      document.getElementById('custQtyLabel').textContent = t.quantity;
+
+      // Cart Sheet
+      document.getElementById('cartSheetTitle').textContent = t.cartSheetTitle;
+      document.getElementById('guestDetailsTitle').textContent = t.guestDetails;
+      document.getElementById('custOrderName').placeholder = t.guestNamePlaceholder;
+      document.getElementById('custOrderPhone').placeholder = t.guestPhonePlaceholder;
+      document.getElementById('subtotalLabel').textContent = t.subtotal;
+      document.getElementById('totalLabel').textContent = t.total;
+      document.getElementById('btnSendOrderText').textContent = t.sendOrderBtn;
+
+      // Tracker Sheet
+      document.getElementById('trackerSheetTitle').textContent = t.trackerSheetTitle;
+      document.getElementById('step1Title').textContent = t.step1Title;
+      document.getElementById('step1Desc').textContent = t.step1Desc;
+      document.getElementById('step2Title').textContent = t.step2Title;
+      document.getElementById('step2Desc').textContent = t.step2Desc;
+      document.getElementById('step3Title').textContent = t.step3Title;
+      document.getElementById('step3Desc').textContent = t.step3Desc;
+      document.getElementById('trackerItemsRecapTitle').textContent = t.recapTitle;
+      document.getElementById('btnBackToMenu').textContent = t.backToMenu;
+
+      updateTableHeaderDisplay();
+      if (reRender) {
+        renderCategoriesStrip();
+        renderProductsGrid();
+        renderTablesPickerGrid();
+        updateCartUI();
+        if (customizerItem) {
+          updateCustomizerSubmitBtn();
+        }
+      }
+    }
+
+    function parseUrlParameters() {
+      const params = new URLSearchParams(window.location.search);
+      const tblId = params.get('table_id') || params.get('tableId');
+      const tblName = params.get('table') || params.get('table_name');
+      if (tblId || tblName) {
+        selectedTable = {
+          id: tblId ? parseInt(tblId) : null,
+          name: tblName ? decodeURIComponent(tblName) : `Table ${tblId}`
+        };
+        updateTableHeaderDisplay();
+      }
+    }
+
+    function updateTableHeaderDisplay() {
+      const t = I18N[currentLang];
+      const disp = document.getElementById('headerTableNameDisplay');
+      const cartDisp = document.getElementById('cartSheetTableDisplay');
+      if (selectedTable) {
+        const displayName = getTableDisplayName(selectedTable.name);
+        if (disp) disp.textContent = displayName;
+        if (cartDisp) cartDisp.textContent = `${t.tablePrefix}: ${displayName}`;
+      } else {
+        if (disp) disp.textContent = t.selectTable;
+        if (cartDisp) cartDisp.textContent = t.tableNotSelected;
+      }
+    }
+
+    async function fetchMenuData() {
+      try {
+        const res = await fetch('/api/qr-menu/data');
+        const json = await res.json();
+        if (json && json.success) {
+          const data = json.data;
+          allCategories = data.categories || [];
+          allServices = data.services || [];
+          allTables = data.tables || [];
+          shopSettings = data.settings || {};
+
+          if (shopSettings.company_name) {
+            const el = document.getElementById('shopNameDisplay');
+            if (el && currentLang === 'ar') el.textContent = shopSettings.company_name;
+          }
+
+          if (selectedTable && selectedTable.id) {
+            const match = allTables.find(tb => tb.id === selectedTable.id);
+            if (match) selectedTable = match;
+          }
+
+          renderCategoriesStrip();
+          renderProductsGrid();
+          renderTablesPickerGrid();
+          updateCartUI();
+        }
+      } catch (err) {
+        console.error('Failed to load menu data:', err);
+      }
+    }
+
+    // ─── Categories Strip ───
+    function renderCategoriesStrip() {
+      const container = document.getElementById('categoriesStrip');
+      if (!container) return;
+      const t = I18N[currentLang];
+
+      let html = `
+        <button type="button" class="cat-pill ${activeCategoryId === 0 ? 'active' : ''}" onclick="selectCategory(0, '${t.allCategory}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>${t.allCategory}</span>
+        </button>
+      `;
+
+      allCategories.forEach(cat => {
+        const svgIcon = getCategorySVG(cat.name);
+        const isActive = activeCategoryId === cat.id;
+        const displayName = getCategoryDisplayName(cat.name);
+        html += `
+          <button type="button" class="cat-pill ${isActive ? 'active' : ''}" onclick="selectCategory(${cat.id}, '${escapeHtml(displayName)}')">
+            ${svgIcon}
+            <span>${escapeHtml(displayName)}</span>
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function selectCategory(catId, catName) {
+      activeCategoryId = catId;
+      const t = I18N[currentLang];
+      const titleEl = document.getElementById('activeCategoryTitle');
+      if (titleEl) {
+        titleEl.textContent = catId === 0 ? t.allMenuTitle : catName;
+      }
+      renderCategoriesStrip();
+      renderProductsGrid();
+    }
+
+    // ─── Products Grid (Clean 2-Column Food Cards) ───
+    function renderProductsGrid() {
+      const container = document.getElementById('productsGrid');
+      const countEl = document.getElementById('activeItemsCount');
+      if (!container) return;
+      const t = I18N[currentLang];
+
+      let filtered = allServices;
+      if (activeCategoryId !== 0) {
+        filtered = filtered.filter(s => s.category_id === activeCategoryId);
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(s => {
+          const arName = (s.name || '').toLowerCase();
+          const enName = (PRODUCT_MAP[s.id] || '').toLowerCase();
+          const arCat = (s.category_name || '').toLowerCase();
+          const enCat = (CATEGORY_MAP[s.category_name] || '').toLowerCase();
+          return arName.includes(q) || enName.includes(q) || arCat.includes(q) || enCat.includes(q);
+        });
+      }
+
+      if (countEl) countEl.textContent = `${filtered.length} ${t.itemsCountSuffix}`;
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="empty-state-title">${t.emptySearchTitle}</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${t.emptySearchSub}</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        let imgSrc = item.image;
+        if (!imgSrc) {
+          imgSrc = '../assets/items/espresso.jpg';
+        } else if (imgSrc.startsWith('assets/')) {
+          imgSrc = '../' + imgSrc;
+        }
+
+        const price = Number(item.sell_price || item.price || 0);
+        const itemName = getItemDisplayName(item);
+        const catName = getCategoryDisplayName(item.category_name);
+
+        // Check if item is Out of Stock (track_inventory = 1 and quantity <= 0)
+        const isOutOfStock = (item.track_inventory === 1 && (item.quantity === null || Number(item.quantity) <= 0));
+
+        // In-cart indicator (only if item is in cart)
+        const inCartItem = cart.find(c => (c.service_id || c.id) === item.id);
+        const inCartHtml = (inCartItem && !isOutOfStock) ? `
+          <div class="card-in-cart-pill">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>${inCartItem.quantity} ${t.inCartSuffix}</span>
+          </div>
+        ` : '';
+
+        const soldOutBadgeHtml = isOutOfStock ? `<span class="sold-out-badge">${t.soldOut}</span>` : '';
+        const clickHandler = isOutOfStock ? '' : `onclick="openItemCustomizer(${item.id})"`;
+
+        return `
+          <div class="product-card ${isOutOfStock ? 'is-sold-out' : ''}" ${clickHandler}>
+            <div class="product-img-box">
+              ${soldOutBadgeHtml}
+              ${inCartHtml}
+              <img src="${imgSrc}" alt="${escapeHtml(itemName)}" onerror="this.src='../assets/logo.png'" loading="lazy" />
+            </div>
+            <div class="product-body">
+              <div>
+                <div class="product-cat-tag">${escapeHtml(catName || 'Menu')}</div>
+                <div class="product-name">${escapeHtml(itemName)}</div>
+              </div>
+              <div class="product-footer">
+                <div class="product-price">
+                  <span>${price}</span>
+                  <span class="curr">${t.currency}</span>
+                </div>
+                <button type="button" class="product-add-btn" title="${isOutOfStock ? t.soldOut : 'Add'}" ${isOutOfStock ? 'disabled' : ''}>
+                  ${isOutOfStock ? '✕' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ─── Search ───
+    function onSearchInput(val) {
+      searchQuery = val;
+      const clearBtn = document.getElementById('searchClearBtn');
+      if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+      renderProductsGrid();
+    }
+
+    function clearSearch() {
+      const inp = document.getElementById('searchInput');
+      if (inp) inp.value = '';
+      onSearchInput('');
+    }
+
+    // ─── Table Picker ───
+    function openTablePickerSheet() {
+      renderTablesPickerGrid();
+      openSheet('tablePickerSheet');
+    }
+
+    function renderTablesPickerGrid() {
+      const container = document.getElementById('tablesPickerGrid');
+      if (!container) return;
+
+      container.innerHTML = allTables.map(tb => {
+        const isSelected = selectedTable && selectedTable.id === tb.id;
+        const displayName = getTableDisplayName(tb.name);
+        return `
+          <div class="cust-chip ${isSelected ? 'active' : ''}" style="padding:12px 6px; font-size:13px;" onclick="pickTable(${tb.id}, '${escapeHtml(tb.name)}')">
+            ${escapeHtml(displayName)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function pickTable(id, name) {
+      selectedTable = { id, name };
+      updateTableHeaderDisplay();
+      closeSheet('tablePickerSheet');
+    }
+
+    // ─── Item Customizer ───
+    function openItemCustomizer(serviceId) {
+      const item = allServices.find(s => s.id === serviceId);
+      if (!item) return;
+
+      // Prevent opening customizer if out of stock
+      if (item.track_inventory === 1 && (item.quantity === null || Number(item.quantity) <= 0)) {
+        return;
+      }
+
+      const t = I18N[currentLang];
+      customizerItem = item;
+      customizerQty = 1;
+      customizerCup = currentLang === 'en' ? 'Paper Cup' : 'كوب ورقي';
+      customizerSugar = currentLang === 'en' ? 'Regular' : 'سكر مضبوط';
+
+      document.getElementById('custItemName').textContent = getItemDisplayName(item);
+      const price = Number(item.sell_price || item.price || 0);
+      document.getElementById('custItemBasePrice').textContent = `${price} ${t.currency}`;
+      document.getElementById('custQtyVal').textContent = '1';
+      document.getElementById('custSpecialNotes').value = '';
+
+      const isDrink = isItemDrink(item);
+      const cupGrp = document.getElementById('groupCupChoice');
+      const sugarGrp = document.getElementById('groupSugarChoice');
+      if (cupGrp) cupGrp.style.display = isDrink ? 'block' : 'none';
+      if (sugarGrp) sugarGrp.style.display = isDrink ? 'block' : 'none';
+
+      // Reset options
+      document.querySelectorAll('#groupCupChoice .cust-option-card').forEach((el, idx) => {
+        el.classList.toggle('active', idx === 0);
+      });
+      document.querySelectorAll('#groupSugarChoice .cust-chip').forEach(el => {
+        el.classList.toggle('active', el.id === 'sugarOptRegular');
+      });
+
+      updateCustomizerSubmitBtn();
+      openSheet('itemCustomizerSheet');
+    }
+
+    function selectCustomizerCup(cup, el) {
+      customizerCup = cup;
+      document.querySelectorAll('#groupCupChoice .cust-option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function selectCustomizerSugar(sugar, el) {
+      customizerSugar = sugar;
+      document.querySelectorAll('#groupSugarChoice .cust-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function adjustCustomizerQty(delta) {
+      customizerQty = Math.max(1, customizerQty + delta);
+      document.getElementById('custQtyVal').textContent = customizerQty;
+      updateCustomizerSubmitBtn();
+    }
+
+    function updateCustomizerSubmitBtn() {
+      if (!customizerItem) return;
+      const t = I18N[currentLang];
+      const basePrice = Number(customizerItem.sell_price || customizerItem.price || 0);
+      const total = basePrice * customizerQty;
+      document.getElementById('custSubmitBtnText').textContent = `${t.addToOrder} • ${total} ${t.currency}`;
+    }
+
+    function confirmAddToCart() {
+      if (!customizerItem) return;
+
+      const notesParts = [];
+      if (isItemDrink(customizerItem)) {
+        if (customizerCup) notesParts.push(`[${customizerCup}]`);
+        if (customizerSugar) notesParts.push(`[${customizerSugar}]`);
+      }
+      const special = document.getElementById('custSpecialNotes')?.value?.trim();
+      if (special) notesParts.push(special);
+
+      const price = Number(customizerItem.sell_price || customizerItem.price || 0);
+
+      cart.push({
+        id: customizerItem.id,
+        service_id: customizerItem.id,
+        name: getItemDisplayName(customizerItem),
+        name_raw: customizerItem.name,
+        price: price,
+        quantity: customizerQty,
+        notes: notesParts.join(' ')
+      });
+
+      closeSheet('itemCustomizerSheet');
+      updateCartUI();
+    }
+
+    // ─── Dynamic Tax & Service Charge Calculations ───
+    function calculateCartTotals() {
+      const subtotal = cart.reduce((s, it) => s + (it.price * it.quantity), 0);
+      let taxAmount = 0;
+      let serviceAmount = 0;
+
+      const isTaxEnabled = Number(shopSettings.tax_enabled) === 1;
+      const taxRate = Number(shopSettings.tax_rate) || 14;
+      const isExclusiveTax = shopSettings.tax_type === 'exclusive';
+
+      const isServiceEnabled = Number(shopSettings.service_charge_enabled) === 1;
+      const serviceRate = Number(shopSettings.service_charge_rate) || 12;
+
+      // Exclusive tax: added on top of subtotal
+      if (isTaxEnabled && isExclusiveTax) {
+        taxAmount = Math.round((subtotal * (taxRate / 100)) * 100) / 100;
+      }
+
+      // Service charge: added to dining tables
+      if (isServiceEnabled) {
+        serviceAmount = Math.round((subtotal * (serviceRate / 100)) * 100) / 100;
+      }
+
+      const grandTotal = Math.round((subtotal + taxAmount + serviceAmount) * 100) / 100;
+
+      return {
+        subtotal,
+        taxAmount,
+        taxRate,
+        isTaxEnabled,
+        isExclusiveTax,
+        serviceAmount,
+        serviceRate,
+        isServiceEnabled,
+        grandTotal
+      };
+    }
+
+    // ─── Cart Management ───
+    function updateCartUI() {
+      const t = I18N[currentLang];
+      const totalQty = cart.reduce((s, it) => s + it.quantity, 0);
+      const totals = calculateCartTotals();
+
+      const pill = document.getElementById('floatingCartPill');
+      if (totalQty > 0) {
+        pill.classList.add('show');
+        document.getElementById('floatCartCount').textContent = totalQty;
+        document.getElementById('floatCartTotal').textContent = `${totals.grandTotal} ${t.currency}`;
+      } else {
+        pill.classList.remove('show');
+      }
+
+      renderCartSheetItems();
+      renderProductsGrid();
+    }
+
+    function openCartSheet() {
+      updateCartUI();
+      openSheet('cartSheet');
+    }
+
+    function renderCartSheetItems() {
+      const container = document.getElementById('cartItemsList');
+      if (!container) return;
+      const t = I18N[currentLang];
+
+      if (!cart.length) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 10px; color:var(--text-muted);">
+            <div style="font-size:13px; font-weight:700;">${t.cartEmpty}</div>
+            <div style="font-size:11.5px; margin-top:4px;">${t.cartEmptySub}</div>
+          </div>
+        `;
+        document.getElementById('cartSubtotalText').textContent = `0 ${t.currency}`;
+        document.getElementById('cartTotalText').textContent = `0 ${t.currency}`;
+        document.getElementById('cartTaxRow').style.display = 'none';
+        document.getElementById('cartServiceRow').style.display = 'none';
+        document.getElementById('cartTaxInclusiveNote').style.display = 'none';
+        return;
+      }
+
+      const totals = calculateCartTotals();
+
+      // Subtotal
+      document.getElementById('cartSubtotalText').textContent = `${totals.subtotal} ${t.currency}`;
+
+      // Tax Row
+      const taxRow = document.getElementById('cartTaxRow');
+      if (totals.isTaxEnabled && totals.isExclusiveTax && totals.taxAmount > 0) {
+        taxRow.style.display = 'flex';
+        document.getElementById('cartTaxLabel').textContent = `${t.vatLabel} (${totals.taxRate}%):`;
+        document.getElementById('cartTaxText').textContent = `+${totals.taxAmount} ${t.currency}`;
+      } else {
+        taxRow.style.display = 'none';
+      }
+
+      // Service Charge Row
+      const srvRow = document.getElementById('cartServiceRow');
+      if (totals.isServiceEnabled && totals.serviceAmount > 0) {
+        srvRow.style.display = 'flex';
+        document.getElementById('cartServiceLabel').textContent = `${t.serviceLabel} (${totals.serviceRate}%):`;
+        document.getElementById('cartServiceText').textContent = `+${totals.serviceAmount} ${t.currency}`;
+      } else {
+        srvRow.style.display = 'none';
+      }
+
+      // Grand Total
+      document.getElementById('cartTotalText').textContent = `${totals.grandTotal} ${t.currency}`;
+
+      // Note if Tax is Inclusive
+      const inclusiveNote = document.getElementById('cartTaxInclusiveNote');
+      if (totals.isTaxEnabled && !totals.isExclusiveTax) {
+        inclusiveNote.style.display = 'block';
+        inclusiveNote.textContent = t.inclusiveNote;
+      } else {
+        inclusiveNote.style.display = 'none';
+      }
+
+      container.innerHTML = cart.map((item, idx) => `
+        <div class="cart-item-row">
+          <div class="cart-item-details">
+            <div class="cart-item-name">${escapeHtml(item.name)}</div>
+            ${item.notes ? `<div class="cart-item-notes">${escapeHtml(item.notes)}</div>` : ''}
+            <div class="cart-item-price">${item.price * item.quantity} ${t.currency} <span style="font-size:10px; color:var(--text-muted);">(${item.price} × ${item.quantity})</span></div>
+          </div>
+          <div class="cart-qty-ctrl">
+            <button type="button" class="cart-qty-btn" onclick="modifyCartQty(${idx}, -1)">−</button>
+            <span class="cart-qty-val">${item.quantity}</span>
+            <button type="button" class="cart-qty-btn" onclick="modifyCartQty(${idx}, 1)">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function modifyCartQty(index, delta) {
+      if (!cart[index]) return;
+      cart[index].quantity += delta;
+      if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+      }
+      updateCartUI();
+    }
+
+    // ─── Order Submission ───
+    async function submitCustomerOrder() {
+      if (!selectedTable) {
+        openTablePickerSheet();
+        return;
+      }
+      if (!cart.length) {
+        return;
+      }
+
+      const t = I18N[currentLang];
+      const btn = document.getElementById('btnSendOrder');
+      btn.disabled = true;
+      btn.innerHTML = `<span>${t.sendingOrderBtn}</span>`;
+
+      const totals = calculateCartTotals();
+
+      const payload = {
+        table_id: selectedTable.id,
+        table_name: selectedTable.name,
+        customer_name: document.getElementById('custOrderName')?.value?.trim() || 'Guest',
+        customer_phone: document.getElementById('custOrderPhone')?.value?.trim() || '',
+        subtotal: totals.subtotal,
+        tax_amount: totals.taxAmount,
+        tax_rate: totals.taxRate,
+        service_amount: totals.serviceAmount,
+        service_rate: totals.serviceRate,
+        total: totals.grandTotal,
+        items: cart.map(it => ({
+          service_id: it.service_id,
+          service_name: it.name_raw || it.name,
+          display_name: it.name,
+          price: it.price,
+          quantity: it.quantity,
+          notes: it.notes
+        }))
+      };
+
+      try {
+        const res = await fetch('/api/qr-menu/submit-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data && data.success) {
+          currentActiveOrder = data;
+          localStorage.setItem('cafePro_active_order_id', data.order_id);
+
+          // Save cart items recap for tracker
+          const recapItems = [...cart];
+          cart = [];
+          updateCartUI();
+          closeSheet('cartSheet');
+
+          // Directly open calm live order tracker
+          openLiveTrackerSheet(data, recapItems);
+        } else {
+          alert('Could not place order: ' + (data?.error || ''));
+        }
+      } catch (err) {
+        alert('Error placing order: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span id="btnSendOrderText">${t.sendOrderBtn}</span>`;
+      }
+    }
+
+    // ─── Real-Time Live Order Tracker (Server-Sent Events / SSE) ───
+    function openLiveTrackerSheet(orderData, recapItems) {
+      const t = I18N[currentLang];
+      const orderId = orderData.id || orderData.order_id;
+      const orderNum = orderData.order_number || `QR-${String(orderId).padStart(4, '0')}`;
+      const tableName = getTableDisplayName((selectedTable && selectedTable.name) || orderData.table_name || 'Table');
+      
+      document.getElementById('trackerOrderNumberBadge').textContent = `#${orderNum}`;
+      document.getElementById('trackerTableSub').textContent = `${tableName} • CafePro`;
+
+      const recapEl = document.getElementById('trackerItemsRecap');
+      if (recapEl && recapItems) {
+        recapEl.innerHTML = recapItems.map(it => `
+          <div style="display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-secondary);">
+            <div>
+              <span style="font-weight:700; color:var(--text-primary);">${escapeHtml(it.display_name || it.name || it.service_name)}</span>
+              <span style="font-size:11px; color:var(--text-muted); margin-left:4px;">(${it.quantity}×)</span>
+              ${it.notes ? `<div style="font-size:10.5px; color:var(--text-muted);">${escapeHtml(it.notes)}</div>` : ''}
+            </div>
+            <div style="font-weight:700; font-variant-numeric:tabular-nums;">${it.price * it.quantity} ${t.currency}</div>
+          </div>
+        `).join('');
+      }
+
+      updateStepperUI(orderData.status || 'pending', orderData);
+      openSheet('trackerSheet');
+
+      // Connect to true Real-Time SSE Stream
+      setupOrderRealtimeListener(orderId);
+    }
+
+    function setupOrderRealtimeListener(orderId) {
+      if (menuRealtimeSource) {
+        try { menuRealtimeSource.close(); } catch(e) {}
+        menuRealtimeSource = null;
+      }
+
+      try {
+        const streamUrl = `/api/realtime/stream?client=menu&order_id=${encodeURIComponent(orderId)}`;
+        menuRealtimeSource = new EventSource(streamUrl);
+
+        menuRealtimeSource.addEventListener('order_status_changed', (evt) => {
+          try {
+            const payload = JSON.parse(evt.data);
+            if (payload && Number(payload.order_id) === Number(orderId)) {
+              console.log('[RealTime SSE] Instant Status Update:', payload.status);
+              updateStepperUI(payload.status, payload);
+            }
+          } catch(e) {
+            console.error('[SSE Parse Error]', e);
+          }
+        });
+      } catch (err) {
+        console.warn('[SSE Connection Init Error]', err);
+      }
+    }
+
+    function updateStepperUI(status, extraData) {
+      const t = I18N[currentLang];
+      const s1 = document.getElementById('stepNode1');
+      const s2 = document.getElementById('stepNode2');
+      const s3 = document.getElementById('stepNode3');
+      const headline = document.getElementById('trackerHeadline');
+      const tableSub = document.getElementById('trackerTableSub');
+
+      if (status === 'approved') {
+        if (s1) {
+          s1.className = 'timeline-step completed';
+          const m1 = s1.querySelector('.step-marker');
+          if (m1) m1.textContent = '✓';
+        }
+        if (s2) {
+          s2.className = 'timeline-step active';
+          const m2 = s2.querySelector('.step-marker');
+          if (m2) m2.textContent = '2';
+        }
+        if (s3) {
+          s3.className = 'timeline-step';
+          const m3 = s3.querySelector('.step-marker');
+          if (m3) m3.textContent = '3';
+        }
+        if (headline) headline.textContent = t.trackerApprovedHeadline;
+      } else if (status === 'completed' || status === 'ready') {
+        if (s1) {
+          s1.className = 'timeline-step completed';
+          const m1 = s1.querySelector('.step-marker');
+          if (m1) m1.textContent = '✓';
+        }
+        if (s2) {
+          s2.className = 'timeline-step completed';
+          const m2 = s2.querySelector('.step-marker');
+          if (m2) m2.textContent = '✓';
+        }
+        if (s3) {
+          s3.className = 'timeline-step completed';
+          const m3 = s3.querySelector('.step-marker');
+          if (m3) m3.textContent = '✓';
+        }
+        if (headline) headline.textContent = t.trackerReadyHeadline;
+      } else if (status === 'rejected') {
+        if (s1) {
+          s1.className = 'timeline-step rejected';
+          const m1 = s1.querySelector('.step-marker');
+          if (m1) m1.textContent = '✕';
+        }
+        if (headline) headline.textContent = t.trackerRejectedHeadline;
+        if (tableSub && extraData && extraData.reason) {
+          tableSub.textContent = `${t.reasonPrefix} ${extraData.reason}`;
+        }
+      } else {
+        // Pending
+        if (s1) {
+          s1.className = 'timeline-step active';
+          const m1 = s1.querySelector('.step-marker');
+          if (m1) m1.textContent = '1';
+        }
+        if (s2) {
+          s2.className = 'timeline-step';
+          const m2 = s2.querySelector('.step-marker');
+          if (m2) m2.textContent = '2';
+        }
+        if (s3) {
+          s3.className = 'timeline-step';
+          const m3 = s3.querySelector('.step-marker');
+          if (m3) m3.textContent = '3';
+        }
+        if (headline) headline.textContent = t.trackerSuccessHeadline;
+      }
+    }
+
+    async function checkExistingActiveOrder() {
+      const activeId = localStorage.getItem('cafePro_active_order_id');
+      if (activeId) {
+        try {
+          const res = await fetch(`/api/qr-menu/order-status?order_id=${activeId}`);
+          const json = await res.json();
+          if (json && json.success && json.data) {
+            const ord = json.data;
+            if (ord.status === 'pending' || ord.status === 'approved') {
+              currentActiveOrder = ord;
+              openLiveTrackerSheet(ord, ord.items || []);
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // ─── Sheet Helpers ───
+    function openSheet(id) {
+      const sheet = document.getElementById(id);
+      if (sheet) sheet.classList.add('active');
+    }
+
+    function closeSheet(id) {
+      const sheet = document.getElementById(id);
+      if (sheet) sheet.classList.remove('active');
+    }
+
+    function handleOverlayClick(event, id) {
+      if (event.target.id === id) {
+        closeSheet(id);
+      }
+    }
+  </script>
+</body>
+</html>

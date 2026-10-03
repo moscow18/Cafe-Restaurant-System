@@ -1,0 +1,11 @@
+{
+  "name": "cafepro-qr-cloud-menu",
+  "version": "1.0.0",
+  "description": "Standalone Multi-Tenant Cloud QR Menu and Real-Time SSE Relay for CafePro POS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {},
+  "private": true
+}

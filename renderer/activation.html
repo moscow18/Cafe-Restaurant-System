@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>CafePro POS — تفعيل النظام</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,160,86,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(28,20,16,0.04) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* ─── Card ─── */
+    .activation-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      width: 620px;
+      max-width: 95vw;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .logo-badge {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-light);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .header-info .shop-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .header-info .page-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .back-btn {
+      margin-right: auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: all var(--transition);
+    }
+    .back-btn:hover {
+      background: var(--card);
+      border-color: var(--accent);
+      color: var(--primary);
+    }
+
+    /* ─── Status Banner ─── */
+    .status-banner {
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: var(--success-light);
+      border: 1px solid var(--success-border);
+    }
+    .status-banner.expired {
+      background: var(--danger-light);
+      border-color: var(--danger-border);
+    }
+    .status-banner.trial {
+      background: var(--warning-light);
+      border-color: var(--warning-border);
+    }
+    .status-banner .s-icon { font-size: 18px; flex-shrink: 0; display: flex; align-items: center; }
+    .status-banner .s-msg { font-size: 13px; font-weight: 700; color: #065F46; }
+    .status-banner.expired .s-msg { color: #991B1B; }
+    .status-banner.trial .s-msg { color: #92400E; }
+
+    /* ─── Section ─── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+
+    /* ─── Code Cards (2 codes side by side) ─── */
+    .codes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .code-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .code-card .code-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .code-card .code-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 1.5px;
+      direction: ltr;
+      margin-bottom: 8px;
+    }
+
+    .copy-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      justify-content: center;
+      transition: all var(--transition);
+      font-family: var(--font);
+    }
+    .copy-btn:hover { background: var(--bg-secondary); border-color: var(--accent); color: var(--primary); }
+    .copy-btn.copied { background: var(--success-light); border-color: var(--success-border); color: var(--success); }
+
+    /* ─── Divider ─── */
+    .divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 18px 0;
+    }
+
+    /* ─── Contact Cards ─── */
+    .contact-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .contact-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .contact-card:hover { border-color: var(--accent); background: var(--card); }
+    .contact-card .cc-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-light);
+      border: 1px solid var(--accent-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .contact-card .cc-label { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-bottom: 1px; }
+    .contact-card .cc-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary);
+      direction: ltr;
+    }
+
+    /* ─── Serial Input ─── */
+    .serial-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .serial-group { display: flex; flex-direction: column; gap: 4px; }
+    .serial-group label { font-size: 10px; color: var(--text-muted); font-weight: 700; }
+
+    .serial-input {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 8px 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 1px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+      direction: ltr;
+    }
+    .serial-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .serial-input.error   { border-color: var(--danger); }
+    .serial-input.success { border-color: var(--success); }
+
+    .activate-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-on-accent);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 0 18px;
+      cursor: pointer;
+      transition: all var(--transition);
+      height: 38px;
+      white-space: nowrap;
+    }
+    .activate-btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .activate-btn:active { transform: translateY(0); }
+
+    .feedback-msg {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      display: none;
+    }
+    .feedback-msg.error   { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger-border); display: block; }
+    .feedback-msg.success { background: var(--success-light); color: var(--success); border: 1px solid var(--success-border); display: block; }
+  </style>
+</head>
+<body>
+
+<div class="activation-card">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-badge">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <div class="header-info">
+      <div class="shop-name" id="shopNameDisplay">كافيه ومطعم برو</div>
+      <div class="page-title" id="pageTitle">تفعيل ترخيص النظام</div>
+    </div>
+    <button class="back-btn" id="backBtn" onclick="goBack()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-left:4px;"><polyline points="15 18 9 12 15 6"/></svg>
+      رجوع للنظام
+    </button>
+  </div>
+
+  <!-- Status Banner -->
+  <div class="status-banner trial" id="statusBanner">
+    <div class="s-icon" id="bannerIcon"></div>
+    <div class="s-msg" id="bannerMsg">جاري فحص الحالة...</div>
+  </div>
+
+  <!-- Contact Phones -->
+  <div class="section-label">تواصل معنا لشراء النظام</div>
+  <div class="contact-cards" id="contactCards">
+    <div class="contact-card" id="phone1Card" onclick="callPhone('01129021377')">
+      <div class="cc-icon"></div>
+      <div class="cc-info">
+        <div class="cc-label">واتساب / اتصال</div>
+        <div class="cc-value" id="phone1Display">01129021377</div>
+      </div>
+    </div>
+    <div class="contact-card" id="phone2Card" onclick="callPhone('01204165586')">
+      <div class="cc-icon"></div>
+      <div class="cc-info">
+        <div class="cc-label">واتساب / اتصال</div>
+        <div class="cc-value" id="phone2Display">01204165586</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Two Codes -->
+  <div class="section-label">كودا جهازك (أرسلهما معاً للحصول على مفتاح التفعيل)</div>
+  <div class="codes-grid">
+    <!-- HW ID -->
+    <div class="code-card">
+      <div class="code-label">كود الجهاز (ثابت)</div>
+      <div class="code-value" id="hwIdDisplay">جاري التحميل...</div>
+      <button class="copy-btn" id="copyHwBtn" onclick="copyCode('hwIdDisplay','copyHwBtn')">نسخ كود الجهاز</button>
+    </div>
+    <!-- Install ID -->
+    <div class="code-card">
+      <div class="code-label">كود التثبيت (يتغير مع إعادة التثبيت)</div>
+      <div class="code-value" id="installIdDisplay">جاري التحميل...</div>
+      <button class="copy-btn" id="copyInstallBtn" onclick="copyCode('installIdDisplay','copyInstallBtn')">نسخ كود التثبيت</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Serial Input -->
+  <div class="section-label">إدخال مفتاح التفعيل</div>
+  <div class="serial-inputs">
+    <div class="serial-group">
+      <label>الكود 1</label>
+      <input type="text" class="serial-input" id="serial1" maxlength="5" placeholder="XXXXX" oninput="handleSerialInput(this,'serial2')" />
+    </div>
+    <div class="serial-group">
+      <label>الكود 2</label>
+      <input type="text" class="serial-input" id="serial2" maxlength="5" placeholder="XXXXX" oninput="handleSerialInput(this,'serial3')" />
+    </div>
+    <div class="serial-group">
+      <label>الكود 3</label>
+      <input type="text" class="serial-input" id="serial3" maxlength="5" placeholder="XXXXX" oninput="handleSerialInput(this,'serial4')" />
+    </div>
+    <div class="serial-group">
+      <label>الكود 4</label>
+      <input type="text" class="serial-input" id="serial4" maxlength="5" placeholder="XXXXX" oninput="handleSerialInput(this,'serial5')" />
+    </div>
+    <div class="serial-group">
+      <label style="color:var(--gold);">الكود 5 (مؤقت)</label>
+      <input type="text" class="serial-input" id="serial5" maxlength="5" placeholder="أيام" oninput="handleSerialInput(this,null)" style="opacity:0.75;" />
+    </div>
+    <button class="activate-btn" id="activateBtn" onclick="doActivate()">تفعيل</button>
+  </div>
+  <div class="feedback-msg" id="feedbackMsg"></div>
+
+</div>
+
+<script>
+  // ─── Init Data ────────────────────────────────────────────────────────────────
+  async function loadInitialData() {
+    try {
+      // 1. Shop name from settings
+      const settingsRes = await window.db.getSettings();
+      if (settingsRes.success && settingsRes.data) {
+        const s = settingsRes.data;
+        document.getElementById('shopNameDisplay').textContent = s.company_name || 'كافيه ومطعم برو';
+
+        // Contact phones are hardcoded in the HTML for activation support.
+      }
+
+      // 2. HW ID + Install ID
+      const [hwId, installId] = await Promise.all([
+        window.activation.getHwId(),
+        window.activation.getInstallId()
+      ]);
+      document.getElementById('hwIdDisplay').textContent      = hwId;
+      document.getElementById('installIdDisplay').textContent = installId;
+
+      // 3. Trial status
+      const status  = await window.activation.getStatus();
+      const banner  = document.getElementById('statusBanner');
+      const icon    = document.getElementById('bannerIcon');
+      const msg     = document.getElementById('bannerMsg');
+      const title   = document.getElementById('pageTitle');
+      const backBtn = document.getElementById('backBtn');
+
+      if (status.activated) {
+        title.textContent = 'النظام مفعّل';
+        banner.className = 'status-banner';
+        icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        if (status.isTimed && status.activationExpiry) {
+          const expiryDate = new Date(status.activationExpiry).toLocaleDateString('ar-EG');
+          msg.textContent = `النظام مفعّل مؤقتاً — ينتهي في ${expiryDate} (باقي ${status.daysLeft} يوم)`;
+        } else {
+          msg.textContent = 'النظام مفعّل بالكامل — شكراً لثقتك!';
+        }
+        backBtn.style.display = 'block';
+      } else if (status.trialExpired) {
+        title.textContent = 'تفعيل النظام';
+        banner.className = 'status-banner expired';
+        icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+        msg.textContent  = 'النظام غير مفعل. أرسل الكودين أعلاه للحصول على مفتاح التفعيل.';
+        backBtn.style.display = 'block'; // السماح بالرجوع للداشبورد (وضع القراءة فقط)
+      } else {
+        title.textContent = 'تفعيل النظام';
+        banner.className = 'status-banner trial';
+        icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+        msg.textContent  = `أنت في فترة التجربة المجانية — متبقي ${status.daysLeft} ${status.daysLeft === 1 ? 'يوم' : 'أيام'}. يمكنك التفعيل الآن في أي وقت.`;
+        backBtn.style.display = 'block';
+      }
+
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // ─── Copy Code ────────────────────────────────────────────────────────────────
+  async function copyCode(displayId, btnId) {
+    const text = document.getElementById(displayId).textContent;
+    if (!text || text === 'جاري التحميل...') return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById(btnId);
+      const orig = btn.textContent;
+      btn.textContent = 'تم النسخ';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+    } catch (e) { /* ignore */ }
+  }
+
+  // ─── Auto focus next serial field ────────────────────────────────────────────
+  function handleSerialInput(input, nextId) {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (input.value.length >= 5 && nextId) {
+      document.getElementById(nextId).focus();
+    }
+  }
+
+  // ─── Call/WhatsApp ────────────────────────────────────────────────────────────
+  function callPhone(phone) {
+    if (!phone) return;
+    const clean = phone.replace(/\D/g, '');
+    window.electron.openExternal(`https://wa.me/2${clean}`);
+  }
+
+  // ─── Activate ────────────────────────────────────────────────────────────────
+  async function doActivate() {
+    const s1 = document.getElementById('serial1').value.trim();
+    const s2 = document.getElementById('serial2').value.trim();
+    const s3 = document.getElementById('serial3').value.trim();
+    const s4 = document.getElementById('serial4').value.trim();
+    const s5 = document.getElementById('serial5').value.trim();
+
+    if (!s1 || !s2 || !s3 || !s4) {
+      showFeedback('يرجى إدخال مفتاح التفعيل كاملاً في الخانات الأربع على الأقل', 'error');
+      return;
+    }
+
+    // لو الكود الخامس موجود → تفعيل مؤقت (5 أجزاء)، وإلا → تفعيل دائم (4 أجزاء)
+    const serial = s5 ? `${s1}-${s2}-${s3}-${s4}-${s5}` : `${s1}-${s2}-${s3}-${s4}`;
+    const btn    = document.getElementById('activateBtn');
+    btn.disabled = true;
+    btn.textContent = 'جاري التحقق...';
+
+    try {
+      const result = await window.activation.activate(serial);
+      if (result.success) {
+        const msg = result.activatedDays
+          ? `تم التفعيل بنجاح! النظام مفعّل لمدة ${result.activatedDays} يوم. سيتم فتح البرنامج الآن...`
+          : 'تم التفعيل بنجاح! سيتم فتح البرنامج الآن...';
+        showFeedback(msg, 'success');
+        ['serial1','serial2','serial3','serial4','serial5'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('success');
+        });
+        setTimeout(() => window.electron.navigate('login.html'), 1800);
+      } else {
+        showFeedback(result.error || 'مفتاح التفعيل غير صحيح، يرجى التحقق من الكود', 'error');
+        ['serial1','serial2','serial3','serial4','serial5'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('error');
+            setTimeout(() => el.classList.remove('error'), 2000);
+          }
+        });
+        btn.disabled  = false;
+        btn.textContent = 'تفعيل';
+      }
+    } catch (e) {
+      showFeedback('حدث خطأ أثناء التحقق، حاول مرة أخرى', 'error');
+      btn.disabled  = false;
+      btn.textContent = 'تفعيل';
+    }
+  }
+
+  function showFeedback(msg, type) {
+    const el = document.getElementById('feedbackMsg');
+    el.textContent = msg;
+    el.className = `feedback-msg ${type}`;
+  }
+
+  function goBack() {
+    window.electron.navigate('login.html');
+  }
+
+  // ─── Init ────────────────────────────────────────────────────────────────────
+  loadInitialData();
+</script>
+</body>
+</html>

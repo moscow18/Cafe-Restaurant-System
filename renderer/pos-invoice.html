@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CafePro System — نقطة البيع السريعة (POS)</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <script src="../node_modules/sweetalert2/dist/sweetalert2.all.min.js"></script>
+  <style>
+    /* ─── POS Workstation Core Theme Variables (FoodAnalytics Inspired) ─── */
+    :root {
+      --pos-bg: #FBF9F6;
+      --pos-surface: #FFFFFF;
+      --pos-surface-card: #FFFFFF;
+      --pos-border: #EFE9E2;
+      --pos-border-subtle: #F7F3EE;
+      --pos-text: #1E1B18;
+      --pos-text-secondary: #585049;
+      --pos-text-muted: #8E847C;
+      --pos-espresso: #1E1B18;
+      --pos-espresso-light: #2D2825;
+      --pos-primary: #FF5B22;
+      --pos-primary-hover: #E64A19;
+      --pos-primary-light: #FFF5F0;
+      --pos-caramel: #FF5B22;
+      --pos-caramel-hover: #E64A19;
+      --pos-emerald: #10B981;
+      --pos-emerald-hover: #059669;
+      --pos-amber: #F59E0B;
+      --pos-red: #EF4444;
+      --pos-radius-sm: 8px;
+      --pos-radius: 16px;
+      --pos-radius-lg: 22px;
+      --pos-header-h: 62px;
+      --pos-shadow-sm: 0 2px 6px -1px rgba(45, 20, 10, 0.04);
+      --pos-shadow: 0 4px 20px -2px rgba(45, 20, 10, 0.06);
+      --pos-shadow-hover: 0 8px 30px -4px rgba(255, 91, 34, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--pos-bg);
+      color: var(--pos-text);
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      direction: rtl;
+    }
+
+    /* ─── 1. POS Topbar / Command Header ───────────────────────── */
+    .pos-topbar {
+      background: #FFFFFF;
+      color: var(--pos-text);
+      height: var(--pos-header-h);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--pos-border);
+      box-shadow: 0 2px 10px rgba(45, 20, 10, 0.03);
+      z-index: 30;
+      user-select: none;
+    }
+
+    .pos-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .pos-topbar-right::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pos-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      min-width: max-content;
+      z-index: 10;
+    }
+
+    .pos-brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--pos-text);
+      padding-left: 12px;
+      border-left: 1px solid var(--pos-border);
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: opacity 0.15s ease;
+    }
+    .pos-brand-group:hover {
+      opacity: 0.9;
+    }
+
+    .pos-brand-group .logo-text {
+      white-space: nowrap;
+      display: inline-block;
+      line-height: 1.2;
+    }
+
+    .pos-brand-icon {
+      width: 36px;
+      height: 36px;
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .pos-brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .btn-topbar-advance {
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+      border: 1.5px solid #F97316 !important;
+      color: #C2410C !important;
+      font-weight: 800 !important;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.18) !important;
+      flex-shrink: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    .btn-topbar-advance svg {
+      color: #EA580C !important;
+      stroke-width: 2.3 !important;
+    }
+
+    .btn-topbar-advance:hover {
+      background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%) !important;
+      border-color: #EA580C !important;
+      color: #9A3412 !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-topbar-qr {
+      background: #FFFFFF !important;
+      border: 1.5px solid #F43F5E !important;
+      color: #BE123C !important;
+      font-weight: 800 !important;
+      transition: all 0.15s ease !important;
+      position: relative;
+    }
+    .btn-topbar-qr svg {
+      color: #E11D48 !important;
+    }
+    .btn-topbar-qr:hover {
+      background: #FFF1F2 !important;
+      border-color: #E11D48 !important;
+      color: #9F1239 !important;
+      transform: translateY(-1px);
+    }
+    .btn-topbar-qr.has-pending {
+      background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%) !important;
+      border-color: #E11D48 !important;
+      color: #9F1239 !important;
+      box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2), 0 3px 10px rgba(225, 29, 72, 0.25) !important;
+      animation: qrPulse 2s infinite ease-in-out;
+    }
+    @keyframes qrPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    /* ─── Quick Takeaway / Delivery Cup Selector on Items ─── */
+    .quick-cup-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      vertical-align: middle;
+    }
+    .quick-cup-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      border: 1px solid #E2E8F0;
+      background: #F8FAFC;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .quick-cup-btn:hover {
+      border-color: #FF5B22;
+      color: #FF5B22;
+      background: #FFF5F0;
+    }
+    .quick-cup-btn.active {
+      border-color: #FF5B22 !important;
+      background: #FF5B22 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 2px 5px rgba(255, 91, 34, 0.25);
+    }
+
+    /* Order Type Segmented Control */
+    .order-type-tabs {
+      display: flex;
+      background: #F7F3EE;
+      border: 1px solid var(--pos-border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .order-type-btn {
+      border: none;
+      background: transparent;
+      color: var(--pos-text-secondary);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .order-type-btn:hover:not(.active) {
+      background: rgba(255, 91, 34, 0.08);
+      color: var(--pos-primary);
+    }
+
+    .order-type-btn.active {
+      background: var(--pos-primary);
+      color: #FFFFFF;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.35);
+    }
+
+    /* Context Control Blocks (Table, Delivery, Customer) */
+    .topbar-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      height: 36px;
+      box-shadow: var(--pos-shadow-sm);
+    }
+
+    .topbar-control label {
+      font-size: 11px;
+      color: var(--pos-text-muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .topbar-control select,
+    .topbar-control input {
+      background: #FBF9F6;
+      border: 1px solid var(--pos-border);
+      border-radius: 999px;
+      color: var(--pos-text);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 10px;
+      outline: none;
+      font-family: inherit;
+      height: 28px;
+    }
+
+    .topbar-control select:focus,
+    .topbar-control input:focus {
+      border-color: var(--pos-primary);
+    }
+
+    .topbar-control select option {
+      background: #FFFFFF;
+      color: var(--pos-text);
+    }
+
+    .topbar-btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1px solid var(--pos-border);
+      background: #FFFFFF;
+      color: var(--pos-text-secondary);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .topbar-btn:hover {
+      background: var(--pos-primary-light);
+      border-color: var(--pos-primary);
+      color: var(--pos-primary);
+    }
+
+    .topbar-btn.topbar-btn-accent {
+      background: var(--pos-primary);
+      color: #FFFFFF;
+      border-color: var(--pos-primary);
+      font-weight: 800;
+      box-shadow: 0 2px 6px rgba(255, 91, 34, 0.3);
+    }
+
+    .topbar-btn.topbar-btn-accent:hover {
+      background: var(--pos-primary-hover);
+    }
+
+    .btn-pos-exp-tab {
+      background: transparent;
+      color: #64748B;
+    }
+
+    .btn-pos-exp-tab.active {
+      background: #FFFFFF !important;
+      color: #FF5B22 !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+    }
+
+    /* ─── Topbar Action Buttons & Badges (Refined, Modern POS) ─── */
+    .invoice-tag-pill {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      padding: 0 12px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      color: #64748B;
+    }
+
+    .invoice-tag-pill .inv-label {
+      color: #64748B;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .invoice-tag-pill .inv-num {
+      color: #0F172A;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-topbar-action {
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-family: inherit;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      color: #334155;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      white-space: nowrap;
+    }
+
+    .btn-topbar-action svg {
+      color: #64748B;
+      transition: color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-topbar-action:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+      color: #0F172A;
+    }
+
+    .btn-topbar-action:hover svg {
+      color: #0F172A;
+    }
+
+    .btn-topbar-exit {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #DC2626;
+      border-radius: 8px;
+    }
+
+    .btn-topbar-exit svg {
+      color: #DC2626;
+      transition: color 0.15s ease;
+    }
+
+    .btn-topbar-exit:hover {
+      background: #DC2626;
+      border-color: #DC2626;
+      color: #FFFFFF;
+    }
+
+    .btn-topbar-exit:hover svg {
+      color: #FFFFFF;
+    }
+
+    /* ─── 2. POS Workstation Grid (2-Zone Natural RTL) ─────────── */
+    .pos-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      height: calc(100vh - var(--pos-header-h));
+    }
+
+    /* ─── Zone A: Products Panel (RIGHT side in RTL, 63% width) ─── */
+    .products-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--pos-bg);
+      border-left: 1px solid var(--pos-border);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* Categories Horizontal Bar */
+    .categories-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--pos-bg);
+      border-bottom: 1px solid var(--pos-border);
+      overflow-x: auto;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .categories-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .categories-bar::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+
+    .cat-btn {
+      flex: 0 0 auto;
+      padding: 7px 18px;
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: 999px;
+      color: var(--pos-text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      font-family: inherit;
+      box-shadow: 0 1px 3px rgba(45, 20, 10, 0.03);
+    }
+
+    .cat-btn:hover:not(.active) {
+      background: var(--pos-primary-light);
+      border-color: rgba(255, 91, 34, 0.3);
+      color: var(--pos-primary);
+      transform: translateY(-1px);
+    }
+
+    .cat-btn.active {
+      background: var(--pos-primary);
+      color: #FFFFFF;
+      border-color: var(--pos-primary);
+      box-shadow: 0 4px 14px rgba(255, 91, 34, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Search & Barcode Input Toolbar */
+    .search-filter-bar {
+      padding: 10px 18px;
+      background: var(--pos-bg);
+      border-bottom: 1px solid var(--pos-border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon-svg {
+      position: absolute;
+      right: 14px;
+      width: 16px;
+      height: 16px;
+      color: var(--pos-text-muted);
+      pointer-events: none;
+    }
+
+    .barcode-input-wrap {
+      width: 220px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .barcode-icon-svg {
+      position: absolute;
+      right: 14px;
+      width: 16px;
+      height: 16px;
+      color: var(--pos-text-muted);
+      pointer-events: none;
+    }
+
+    .pos-input-field {
+      width: 100%;
+      height: 40px;
+      padding: 0 38px 0 14px;
+      border: 1px solid var(--pos-border);
+      border-radius: 999px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #FFFFFF;
+      color: var(--pos-text);
+      outline: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 4px rgba(45, 20, 10, 0.02);
+    }
+
+    .pos-input-field:focus {
+      border-color: var(--pos-primary);
+      box-shadow: 0 0 0 3px rgba(255, 91, 34, 0.15);
+    }
+
+    /* Product Grid & Item Tiles */
+    .svc-grid {
+      flex: 1;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      grid-auto-rows: min-content;
+      gap: 14px;
+      overflow-y: auto;
+      background: var(--pos-bg);
+    }
+
+    .svc-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: var(--pos-radius);
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 172px;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(45, 20, 10, 0.03);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .svc-btn:hover {
+      border-color: var(--pos-primary);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(255, 91, 34, 0.14);
+    }
+
+    .svc-btn:active {
+      transform: scale(0.98);
+    }
+
+    .svc-btn .s-img-wrap {
+      width: 100%;
+      height: 94px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #F7F3EE;
+      position: relative;
+    }
+
+    .svc-btn .s-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+      transition: transform 0.25s ease;
+    }
+
+    .svc-btn:hover .s-img {
+      transform: scale(1.08);
+    }
+
+    .svc-btn .s-icon {
+      font-size: 32px;
+      margin-bottom: 4px;
+      line-height: 1;
+      opacity: 0.85;
+    }
+
+    .svc-btn .s-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--pos-text);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    .svc-btn .s-price {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--pos-primary);
+      background: var(--pos-primary-light);
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-variant-numeric: tabular-nums;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* ─── Zone B: Cart / Order Ticket Panel (LEFT side in RTL, 37% width) ─── */
+    .cart-panel {
+      width: clamp(390px, 36vw, 480px);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: -4px 0 24px rgba(45, 20, 10, 0.05);
+      border-right: 1px solid var(--pos-border);
+      position: relative;
+      height: 100%;
+    }
+
+    /* Cart Header */
+    .cart-header {
+      padding: 14px 18px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--pos-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .cart-header-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--pos-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ─── Cart Header Clear Button ─── */
+    .btn-clear-cart {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      color: #64748B;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-clear-cart svg {
+      color: #94A3B8;
+      transition: color 0.15s ease;
+    }
+
+    .btn-clear-cart:hover {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #DC2626;
+    }
+
+    .btn-clear-cart:hover svg {
+      color: #DC2626;
+    }
+
+    /* Cart Items Table Container */
+    .cart-items-container {
+      flex: 1;
+      overflow-y: auto;
+      background: #FFFFFF;
+    }
+
+    .cart-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .cart-table thead th {
+      background: #FBF9F6;
+      color: var(--pos-text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--pos-border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      text-align: right;
+    }
+
+    .cart-table thead th:nth-child(3) { text-align: center; }
+    .cart-table thead th:nth-child(4) { text-align: right; }
+    .cart-table thead th:nth-child(5) { text-align: right; }
+    .cart-table thead th:last-child   { text-align: center; }
+
+    .cart-table tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--pos-border-subtle);
+      color: var(--pos-text);
+      vertical-align: middle;
+    }
+
+    .cart-table tbody tr:hover td {
+      background: #FAF8F5;
+    }
+
+    /* Quantity Controls inside Cart Row */
+    .qty-control-btn {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--pos-border);
+      border-radius: 8px;
+      background: #FBF9F6;
+      color: var(--pos-text);
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+
+    .qty-control-btn:hover {
+      background: var(--pos-primary);
+      color: #FFFFFF;
+      border-color: var(--pos-primary);
+    }
+
+    .qty-display-input {
+      width: 34px;
+      height: 26px;
+      text-align: center;
+      font-weight: 800;
+      border: 1px solid var(--pos-border);
+      border-radius: 8px;
+      font-size: 13px;
+      margin: 0 3px;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+      background: #FFFFFF;
+    }
+
+    .delete-row-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94A3B8;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      transition: all 0.12s ease;
+    }
+
+    .delete-row-btn:hover {
+      background: #FEF2F2;
+      color: var(--pos-red);
+      border-color: #FECACA;
+    }
+
+    /* Item Notes & Modifiers */
+    .item-notes-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      color: #334155;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 3px;
+      transition: all 0.12s ease;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .item-notes-badge:hover {
+      background: #E2E8F0;
+      border-color: #94A3B8;
+      color: #0F172A;
+    }
+
+    .btn-item-note-add {
+      display: none !important;
+    }
+
+    .btn-item-note-add:hover {
+      color: var(--pos-primary-hover);
+    }
+
+    /* Cart Summary & Actions */
+    .cart-footer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--pos-border);
+      padding: 14px 18px;
+      flex-shrink: 0;
+      box-shadow: 0 -4px 16px rgba(45, 20, 10, 0.02);
+    }
+
+    .cart-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: var(--pos-text-secondary);
+      font-weight: 600;
+    }
+
+    /* ─── Total Banner (Clean, Minimal, High-Contrast) ─── */
+    .cart-total-banner {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .cart-total-banner .total-label-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .cart-total-banner .val {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0F172A;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    /* ─── Harmonious Cart Action Buttons (Engineered POS Workstation) ─── */
+    .cart-action-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .cart-secondary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-pos-action {
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      user-select: none;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .btn-pos-action:active {
+      transform: translateY(1px);
+    }
+
+    /* F-Key Shortcut Badges */
+    .pos-kbd-badge {
+      font-size: 10px;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      padding: 1px 6px;
+      border-radius: 4px;
+      line-height: 1.3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.5px;
+    }
+
+    /* 1. Kitchen Button: Clean Structured Neutral */
+    .btn-kitchen {
+      height: 44px;
+      background: #FFFFFF;
+      color: #334155;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-kitchen svg {
+      color: #64748B;
+      transition: color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-kitchen .pos-kbd-badge {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #CBD5E1;
+    }
+
+    .btn-kitchen:hover {
+      background: #F8FAFC;
+      border-color: #94A3B8;
+      color: #0F172A;
+    }
+
+    .btn-kitchen:hover svg {
+      color: #0F172A;
+    }
+
+    /* 2. Fast Cash Button: Sleek Refined Emerald */
+    .btn-fast-cash {
+      height: 44px;
+      background: #FFFFFF;
+      color: #047857;
+      border: 1.5px solid #10B981;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(16, 185, 129, 0.06);
+    }
+
+    .btn-fast-cash svg {
+      color: #059669;
+      flex-shrink: 0;
+    }
+
+    .btn-fast-cash .pos-kbd-badge {
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+    }
+
+    .btn-fast-cash:hover {
+      background: #ECFDF5;
+      border-color: #059669;
+      color: #065F46;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
+    }
+
+    /* 3. Primary Checkout Button: Authoritative Solid Brand Action */
+    .btn-checkout {
+      height: 48px;
+      background: #FF5B22;
+      color: #FFFFFF;
+      border: 1px solid #E64A19;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(255, 91, 34, 0.22);
+    }
+
+    .btn-checkout svg {
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+
+    .btn-checkout .pos-kbd-badge {
+      background: rgba(255, 255, 255, 0.22);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-checkout:hover {
+      background: #E64A19;
+      border-color: #D84315;
+      box-shadow: 0 4px 12px rgba(255, 91, 34, 0.35);
+    }
+
+    /* ─── Modals Design & Styling ──────────────────────────────── */
+    .pay-methods-pills {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .pay-pill-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--pos-text-secondary);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      user-select: none;
+      font-family: inherit;
+      box-shadow: 0 1px 3px rgba(45, 20, 10, 0.02);
+    }
+
+    .pay-pill-btn:hover {
+      background: var(--pos-primary-light);
+      border-color: var(--pos-primary);
+      color: var(--pos-primary);
+    }
+
+    .pay-pill-btn.active {
+      background: var(--pos-primary-light);
+      border-color: var(--pos-primary);
+      color: var(--pos-primary);
+      box-shadow: 0 0 0 2px rgba(255, 91, 34, 0.2);
+    }
+
+    .denom-btn {
+      flex: 1 1 auto;
+      min-width: 56px;
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: 8px;
+      padding: 8px 4px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--pos-text);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+
+    .denom-btn:hover {
+      background: var(--pos-primary-light);
+      border-color: var(--pos-primary);
+      color: var(--pos-primary);
+    }
+
+    .denom-btn.exact {
+      background: #ECFDF5;
+      border-color: var(--pos-emerald);
+      color: #065F46;
+      font-weight: 900;
+    }
+
+    .change-alert-banner {
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      font-weight: 800;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+
+    .change-alert-banner.give-change {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    .change-alert-banner.exact {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+    }
+
+    .change-alert-banner.remaining-debt {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+    }
+
+    /* Mod Chips in Item Customization */
+    .mod-group {
+      margin-bottom: 10px;
+    }
+
+    .mod-group-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--pos-text-muted);
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Item Modifier Modal Styling (Clean, structured hospitality POS) */
+    #itemModifierModal .modal {
+      max-width: 560px;
+      width: 92%;
+      max-height: 84vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+    }
+
+    #itemModifierModal .modal-header {
+      flex-shrink: 0;
+      background: #FFFFFF;
+      border-bottom: 1px solid #EFE9E2;
+      padding: 14px 20px;
+    }
+
+    #itemModifierModal .modal-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px 18px;
+    }
+
+    #itemModifierModal .modal-footer {
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      background: #F8FAFC;
+      border-top: 1px solid var(--pos-border);
+      padding: 12px 18px;
+    }
+
+    .mod-group {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .mod-group-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mod-group-title::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #FF5B22;
+    }
+
+    .mod-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mod-chip {
+      background: #FFFFFF;
+      border: 1.5px solid #CBD5E1;
+      color: #334155;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mod-chip:hover {
+      border-color: #FF5B22;
+      background: #FFF7ED;
+      color: #EA580C;
+    }
+
+    .mod-chip.active {
+      background: #FFF7ED !important;
+      border-color: #FF5B22 !important;
+      color: #C2410C !important;
+      font-weight: 800 !important;
+      box-shadow: 0 1px 3px rgba(255, 91, 34, 0.15) !important;
+    }
+
+    .mod-chip.active::before {
+      content: '✓';
+      font-size: 11px;
+      font-weight: 900;
+      color: #FF5B22;
+    }
+
+    /* Order Gate Cards */
+    .order-gate-card {
+      background: #FFFFFF;
+      border: 1px solid var(--pos-border);
+      border-radius: var(--pos-radius);
+      padding: 18px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(45, 20, 10, 0.03);
+    }
+
+    .order-gate-card:hover {
+      border-color: var(--pos-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(255, 91, 34, 0.16);
+    }
+
+    /* Table Picker Cards */
+    .table-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .table-picker-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--pos-border);
+      border-radius: var(--pos-radius);
+      padding: 12px 10px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 96px;
+    }
+
+    .table-picker-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .table-picker-card.status-empty {
+      border-color: #10B981;
+      background: #F0FDF4;
+    }
+
+    .table-picker-card.status-busy {
+      border-color: #EF4444;
+      background: #FEF2F2;
+    }
+
+    .table-picker-card.status-reserved {
+      border-color: #F59E0B;
+      background: #FFFBEB;
+    }
+
+    /* Print Templates (hidden on screen) */
+    .receipt-print, .kitchen-print, .pos-thermal-print, #posThermalPrintContainer, #receiptPrint, #kitchenPrint {
+      display: none !important;
+    }
+
+    @media print {
+      @page {
+        margin: 0 !important;
+        size: auto;
+      }
+      html {
+        width: 72mm !important;
+        max-width: 72mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      body {
+        display: block !important;
+        width: 72mm !important;
+        max-width: 72mm !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+        direction: rtl !important;
+      }
+      body > * {
+        display: none !important;
+      }
+      body.printing-kitchen #kitchenPrint {
+        display: block !important;
+        position: static !important;
+        width: 70mm !important;
+        max-width: 70mm !important;
+        margin: 0 !important;
+        padding: 1mm 1.5mm !important;
+        box-sizing: border-box !important;
+        direction: rtl !important;
+        text-align: right !important;
+        overflow: visible !important;
+        font-family: 'Cairo', Arial, sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body.printing-receipt #receiptPrint,
+      body:not(.printing-kitchen) #receiptPrint,
+      #posThermalPrintContainer {
+        display: block !important;
+        position: static !important;
+        width: 70mm !important;
+        max-width: 70mm !important;
+        margin: 0 !important;
+        padding: 1mm 1.5mm !important;
+        box-sizing: border-box !important;
+        direction: rtl !important;
+        text-align: right !important;
+        overflow: visible !important;
+        font-family: 'Cairo', Arial, sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── TOPBAR / EXECUTIVE POS COMMAND HEADER ──────────────────────────────── -->
+  <header class="pos-topbar">
+    <div class="pos-topbar-right">
+      <!-- Brand Logo / POS Title (Clickable to return to dashboard) -->
+      <div class="pos-brand-group" id="posLogoContainer" onclick="handlePosBackOrLogout()" style="cursor:pointer;" title="اضغط للعودة إلى لوحة التحكم الرئيسية">
+        <div class="pos-brand-icon" id="posLogoIcon" style="background:#FFF5F0; border:1px solid #FED7AA; transition:transform 0.15s ease;">
+          <img src="../assets/logo.png" alt="Logo" style="width:30px; height:30px; object-fit:contain; border-radius:6px;" onerror="this.src='assets/logo.png'" />
+        </div>
+        <span class="logo-text">CafePro POS</span>
+      </div>
+
+      <!-- Order Type Selector -->
+      <div class="order-type-tabs">
+        <button class="order-type-btn active" id="typeDineInBtn" onclick="setOrderType('صالة')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="6" y1="16" x2="6" y2="20"/><line x1="18" y1="16" x2="18" y2="20"/></svg>
+          <span>صالة</span>
+        </button>
+        <button class="order-type-btn" id="typeTakeawayBtn" onclick="setOrderType('تيك أواي')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>تيك أواي</span>
+        </button>
+        <button class="order-type-btn" id="typeDeliveryBtn" onclick="setOrderType('دليفري')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+          <span>دليفري</span>
+        </button>
+      </div>
+
+      <!-- DINE-IN: Table Context Group -->
+      <div class="topbar-control" id="tableControlGroup">
+        <label>الترابيزة:</label>
+        <select id="posTableSelect" onchange="onTableSelectChange()">
+          <option value="">اختر ترابيزة</option>
+        </select>
+        <button class="topbar-btn topbar-btn-accent" onclick="openTablePickerModal()" title="فتح خريطة الترابيزات">الخريطة</button>
+        <button class="topbar-btn" onclick="openReserveModalFromPOS()" title="حجز ترابيزة لعميل">حجز</button>
+      </div>
+
+      <!-- DELIVERY: Driver & Delivery Fee Group -->
+      <div class="topbar-control" id="deliveryControlGroup" style="display:none;">
+        <label>الطيار:</label>
+        <select id="posDriverSelect">
+          <option value="">اختر الدليفري</option>
+        </select>
+        <label>التوصيل:</label>
+        <input type="number" id="posDeliveryFee" value="15" step="1" style="width:50px; text-align:center;" oninput="recalcTotals()" />
+        <span style="font-size:10px; opacity:0.8;">ج.م</span>
+      </div>
+
+      <!-- CUSTOMER: Search & Selection Group -->
+      <div class="topbar-control" id="customerControlGroup">
+        <label>العميل:</label>
+        <div style="position:relative; display:inline-flex; align-items:center;">
+          <input list="customersList" id="customerSearchInput" placeholder="اسم أو هاتف العميل..." style="width:140px; font-weight:700;" onchange="handleCustomerSelect()" oninput="handleCustomerInput(this)" />
+          <button type="button" id="btnClearCustomer" onclick="clearSelectedCustomer()" title="إلغاء تحديد العميل" style="display:none; position:absolute; left:6px; background:none; border:none; color:#EF4444; font-weight:900; font-size:12px; cursor:pointer; padding:2px;">✕</button>
+        </div>
+        <datalist id="customersList"></datalist>
+        <input type="hidden" id="customerSelect" value="" />
+        <button class="topbar-btn topbar-btn-accent" onclick="openNewCustomerModal()" title="إضافة عميل جديد">+ جديد</button>
+      </div>
+    </div>
+
+    <!-- Topbar Left Actions (Invoice Number, Active Delivery, Expenses, History) -->
+    <div class="pos-topbar-left">
+      <!-- Active Invoice Number Badge -->
+      <div class="invoice-tag-pill">
+        <span class="inv-label">فاتورة:</span>
+        <span id="invoiceNumberDisplay" class="inv-num tnum">0001</span>
+      </div>
+
+      <!-- Live QR Orders Button & Animated Counter Badge -->
+      <button class="btn-topbar-action btn-topbar-qr" id="btnQrOrdersBadge" onclick="openQrOrdersModal()" title="طلبات الزبائن الواردة عبر المنيو الإلكتروني QR" style="display:inline-flex; align-items:center; gap:6px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <span>طلبات QR</span>
+        <span class="qr-badge-counter" id="qrPendingBadge" style="display:none; background:#E11D48; color:#FFFFFF; border-radius:999px; padding:1px 6px; font-size:10px; font-weight:900;">0</span>
+      </button>
+
+      <!-- Active Delivery Orders Button -->
+      <button class="btn-topbar-action" id="btnActiveDelivery" onclick="openActiveDeliveryModal()" style="display:none;" title="عرض ومتابعة طلبات الدليفري النشطة">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+        <span>طلبات التوصيل</span>
+      </button>
+
+      <!-- Petty Expense & Advances (High Prominence) -->
+      <button class="btn-topbar-action btn-topbar-advance" onclick="openPosExpenseAdvanceModal()" title="تسجيل مصروف نثريات أو سلفة موظف من الدرج">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="2"/></svg>
+        <span>سلفة / مصروف درج</span>
+      </button>
+
+      <!-- Invoices History -->
+      <button class="btn-topbar-action" onclick="openHistoryModal()" title="عرض ومراجعة الفواتير السابقة">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>سجل الفواتير</span>
+      </button>
+
+      <!-- Hidden compatibility inputs -->
+      <div style="display:none;">
+        <select id="employeeSelect"></select>
+      </div>
+      <input type="hidden" id="invoiceDate" />
+    </div>
+  </header>
+
+  <!-- ─── 2. MAIN POS WORKSPACE (2-ZONE NATURAL RTL) ────────────────────────── -->
+  <main class="pos-workspace">
+
+    <!-- ═══ ZONE A: PRODUCTS PANEL (RIGHT SIDE IN RTL, ~63% WIDTH) ═══ -->
+    <section class="products-panel">
+      <!-- Category Navigation Bar -->
+      <div class="categories-bar" id="categoryBtns">
+        <button class="cat-btn active" onclick="selectCategory(0, this)">الكل</button>
+      </div>
+
+      <!-- Search & Barcode Input Toolbar -->
+      <div class="search-filter-bar">
+        <div class="search-input-wrap">
+          <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="svcSearchInput" class="pos-input-field" placeholder="بحث سريع عن صنف..." oninput="filterServicesBySearch(this.value)" />
+        </div>
+
+        <div class="barcode-input-wrap">
+          <svg class="barcode-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="5" x2="3" y2="19"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="11" y1="5" x2="11" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/><line x1="19" y1="5" x2="19" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/></svg>
+          <input type="text" id="itemBarcode" class="pos-input-field" placeholder="مسح باركود [Enter]..." onkeydown="if(event.key==='Enter') lookupBarcode()" />
+        </div>
+
+        <!-- Hidden inputs for compatibility -->
+        <input type="hidden" id="itemPrice" />
+        <input type="hidden" id="itemQty" value="1" />
+        <input type="hidden" id="itemDiscount" value="0" />
+        <select id="itemCategory" style="display:none;"></select>
+        <select id="itemService" style="display:none;"></select>
+      </div>
+
+      <!-- High-Density Product Grid -->
+      <div class="svc-grid" id="servicesGrid">
+        <!-- Dynamically injected via pos-invoice.js -->
+      </div>
+    </section>
+
+    <!-- ═══ ZONE B: CART / ORDER TICKET PANEL (LEFT SIDE IN RTL, ~37% WIDTH) ═══ -->
+    <aside class="cart-panel">
+      <!-- Order Ticket Header -->
+      <div class="cart-header">
+        <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+          <div class="cart-header-title">
+            <span id="cartOrderTypeIcon" style="display:inline-flex; align-items:center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+            </span>
+            <span id="cartOrderTitle">طلب صالة — ترابيزة جديدة</span>
+          </div>
+          <div id="cartCustomerDisplay" style="display:none; font-size:12px; font-weight:800; color:var(--pos-primary); margin-right:24px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+        </div>
+        <button class="btn-clear-cart" onclick="resetInvoice()" title="مسح السلة وبدء طلب جديد">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>مسح السلة</span>
+        </button>
+      </div>
+
+      <!-- Order Ticket Items Table -->
+      <div class="cart-items-container">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th style="width:24px;">#</th>
+              <th>الصنف</th>
+              <th style="width:84px; text-align:center;">الكمية</th>
+              <th style="width:60px; text-align:right;">السعر</th>
+              <th style="width:72px; text-align:right;">الإجمالي</th>
+              <th style="width:28px; text-align:center;"></th>
+            </tr>
+          </thead>
+          <tbody id="invoiceItemsBody">
+            <tr id="emptyRow">
+              <td colspan="6" style="padding:40px 16px; text-align:center;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#D1C7BD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px; display:inline-block;">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                  <line x1="6" y1="1" x2="6" y2="4"></line>
+                  <line x1="10" y1="1" x2="10" y2="4"></line>
+                  <line x1="14" y1="1" x2="14" y2="4"></line>
+                </svg>
+                <div style="font-weight:700; color:var(--pos-text-muted); font-size:13px;">السلة فارغة</div>
+                <div style="font-size:11px; color:#94A3B8; margin-top:2px;">اضغط على الأصناف لإضافتها للطلب</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Order Ticket Footer & Totals -->
+      <div class="cart-footer">
+        <!-- Order Notes (Optional & Compact) -->
+        <div style="margin-bottom:6px;">
+          <input type="text" id="invoiceNotes" class="form-control" placeholder="ملاحظات الطلب أو الفاتورة..." style="height:28px; font-size:11px; font-weight:600; background:#FFFFFF;" />
+        </div>
+
+        <div class="cart-summary-row">
+          <span>عدد الأصناف: <b id="totalQtyDisplay" class="tnum">0</b></span>
+          <span>المجموع الفرعي: <b id="subtotalDisplay" class="tnum">0.00</b> ج.م</span>
+        </div>
+
+        <!-- Discounts Inputs Row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:4px 0;">
+          <input type="number" id="discountPercent" class="form-control" placeholder="خصم %" min="0" max="100" oninput="recalcTotals()" style="height:28px; font-size:11px; text-align:center;" />
+          <input type="number" id="discountAmount" class="form-control" placeholder="خصم (جنيه)" min="0" oninput="recalcTotals()" style="height:28px; font-size:11px; text-align:center;" />
+        </div>
+
+        <!-- Conditional Delivery Fee Row -->
+        <div class="cart-summary-row" id="cartDeliveryFeeRow" style="display:none; color:var(--pos-espresso); font-weight:700;">
+          <span>خدمة التوصيل:</span>
+          <span>+ <b id="cartDeliveryFeeDisplay" class="tnum">0.00</b> ج.م</span>
+        </div>
+
+        <!-- Conditional Service Charge Row -->
+        <div class="cart-summary-row" id="cartServiceChargeRow" style="display:none; color:#7C3AED; font-weight:700;">
+          <span>خدمة الصالة:</span>
+          <span>+ <b id="cartServiceChargeDisplay" class="tnum">0.00</b> ج.م</span>
+        </div>
+
+        <!-- Conditional VAT Tax Row -->
+        <div class="cart-summary-row" id="cartTaxRow" style="display:none; color:#B45309; font-weight:700;">
+          <span id="cartTaxLabel">ضريبة القيمة المضافة:</span>
+          <span>+ <b id="cartTaxDisplay" class="tnum">0.00</b> ج.م</span>
+        </div>
+
+        <!-- Discount Summary Row -->
+        <div class="cart-summary-row" style="color:var(--pos-red);">
+          <span>الخصم الإجمالي:</span>
+          <span>- <b id="discountDisplay" class="tnum">0.00</b> ج.م</span>
+        </div>
+
+        <!-- Prominent Total Banner -->
+        <div class="cart-total-banner">
+          <div class="total-label-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>المبلغ المطلوب:</span>
+          </div>
+          <div class="val" id="netTotalDisplay">0.00 ج.م</div>
+        </div>
+
+        <!-- Action Buttons Container (Harmonious 2-Tier Ergonomic Architecture) -->
+        <div class="cart-action-group">
+          <!-- Secondary Actions: Equal 50/50 Grid -->
+          <div class="cart-secondary-grid">
+            <button type="button" class="btn-pos-action btn-kitchen" id="btnSendToKitchen" onclick="sendOrderToKitchen()" title="إرسال الأصناف لمطبعة المطبخ [F3]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+              <span>إرسال للمطبخ</span>
+              <kbd class="pos-kbd-badge">F3</kbd>
+            </button>
+            <button type="button" class="btn-pos-action btn-fast-cash" id="btnFastCash" onclick="fastCashCheckout()" title="دفع نقدي فوري بالمبلغ المطلوب بالضبط [F2]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <span>كاش سريع</span>
+              <kbd class="pos-kbd-badge pos-kbd-green">F2</kbd>
+            </button>
+          </div>
+
+          <!-- Primary Checkout Action: Full Width -->
+          <button type="button" class="btn-pos-action btn-checkout" id="btnCheckout" onclick="saveAndPrint()" title="فتح نافذة التحصيل والدفع [F1]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <span>الدفع / محاسبة</span>
+            <kbd class="pos-kbd-badge pos-kbd-primary">F1</kbd>
+          </button>
+        </div>
+
+        <!-- Hidden compatibility values -->
+        <input type="hidden" id="amountPaid" value="0" />
+        <span id="paidDisplay" style="display:none;">0.00</span>
+        <span id="remainingDisplay" style="display:none;">0.00</span>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ─── 3. MODAL: STREAMLINED CHECKOUT MODAL ──────────────────────────────── -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal modal-md" style="max-width:480px; border-radius:12px; overflow:hidden; box-shadow:0 15px 35px rgba(0,0,0,0.25); border:1px solid var(--pos-border);">
+      <div class="modal-header" style="background:var(--pos-espresso); color:#FFFFFF; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div class="modal-title" style="color:#FFFFFF; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <span>إتمام الحساب والتحصيل</span>
+        </div>
+        <button class="modal-close" style="color:#FFFFFF;" onclick="closeModal('checkoutModal')">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:16px 18px;">
+        <!-- Compact Summary Card -->
+        <div style="background:#1E293B; color:#FFFFFF; border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px; opacity:0.75; font-weight:600;">المبلغ المطلوب سداده</div>
+            <div style="font-size:24px; font-weight:900; color:#34D399; font-variant-numeric:tabular-nums;" id="checkoutNetTotal">0.00 ج.م</div>
+          </div>
+          <div style="text-align:left;">
+            <div style="font-size:10px; opacity:0.75; font-weight:600;">نوع الطلب</div>
+            <div style="font-size:13px; font-weight:800; color:#F8FAFC;" id="checkoutOrderTypeBadge">طلب صالة</div>
+          </div>
+        </div>
+
+        <!-- Payment Methods Segmented Pills -->
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px; font-weight:800; color:var(--pos-text-muted); margin-bottom:4px; display:block;">طريقة الدفع والخزينة:</label>
+          <div class="pay-methods-pills">
+            <button type="button" class="pay-pill-btn active" id="methodCard-cash" onclick="selectPaymentMethodCard('نقدي')">
+              نقدي
+            </button>
+            <button type="button" class="pay-pill-btn" id="methodCard-visa" onclick="selectPaymentMethodCard('فيزا')">
+              فيزا
+            </button>
+            <button type="button" class="pay-pill-btn" id="methodCard-vodafone" onclick="selectPaymentMethodCard('فودافون كاش')">
+              فودافون كاش
+            </button>
+            <button type="button" class="pay-pill-btn" id="methodCard-instapay" onclick="selectPaymentMethodCard('إنستا باي')">
+              إنستا باي
+            </button>
+          </div>
+          <input type="hidden" id="selectedPaymentMethod" value="نقدي" />
+        </div>
+
+        <!-- Received Amount Input -->
+        <div style="margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="font-size:12px; font-weight:800; color:var(--pos-text);" id="checkoutAmountLabel">المبلغ المستلم من العميل (ج.م):</label>
+            <button type="button" class="btn btn-sm btn-outline" onclick="setCheckoutPaidExact()" style="font-size:11px; padding:2px 8px; font-weight:700; color:var(--pos-espresso); border-color:var(--pos-espresso);">المبلغ بالضبط</button>
+          </div>
+          <input type="number" id="checkoutAmountPaid" class="form-control" style="height:42px; font-size:22px; font-weight:900; text-align:center; color:var(--pos-espresso); border:2px solid var(--pos-espresso); border-radius:8px;"
+            step="0.5" min="0" value="0" oninput="onCheckoutPaidChange()" onkeydown="if(event.key==='Enter') executeConfirmedCheckout(true)" />
+        </div>
+
+        <!-- Quick Cash Denominations -->
+        <div id="cashDenominationsSection" style="margin-bottom:10px;">
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+            <button type="button" class="denom-btn" onclick="setCheckoutPaidDenom(50)">50 ج.م</button>
+            <button type="button" class="denom-btn" onclick="setCheckoutPaidDenom(100)">100 ج.م</button>
+            <button type="button" class="denom-btn" onclick="setCheckoutPaidDenom(200)">200 ج.م</button>
+            <button type="button" class="denom-btn" onclick="setCheckoutPaidDenom(500)">500 ج.م</button>
+            <button type="button" class="denom-btn" onclick="addCheckoutPaidDelta(10)">+10</button>
+            <button type="button" class="denom-btn" onclick="addCheckoutPaidDelta(20)">+20</button>
+            <button type="button" class="denom-btn" onclick="addCheckoutPaidDelta(50)">+50</button>
+            <button type="button" class="denom-btn exact" onclick="setCheckoutPaidExact()">المضبوط ✓</button>
+          </div>
+        </div>
+
+        <!-- Live Change / Remaining Banner -->
+        <div id="checkoutChangeBanner" class="change-alert-banner exact">
+          <span id="checkoutChangeLabel">المبلغ مسدد بالكامل</span>
+          <span id="checkoutChangeAmount" style="font-size:15px; font-weight:900; font-variant-numeric:tabular-nums;">0.00 ج.م</span>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:12px 18px; display:flex; justify-content:space-between; gap:8px; background:#F8FAFC; border-top:1px solid var(--pos-border);">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('checkoutModal')">إلغاء [Esc]</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" onclick="executeConfirmedCheckout(false)" style="font-weight:700; font-size:13px;" title="حفظ وإغلاق الحساب دون طباعة">
+            حفظ فقط [F1]
+          </button>
+          <button class="btn btn-success" id="btnConfirmCheckout" onclick="executeConfirmedCheckout(true)" style="padding:0 18px; font-size:13px; font-weight:800;" title="تأكيد وطباعة إيصال العميل">
+            تأكيد وطباعة [Enter]
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 4. MODAL: ITEM SIZE PICKER MODAL ──────────────────────────────────── -->
+  <div class="modal-overlay" id="sizePickerModal" style="z-index:9999; backdrop-filter:blur(3px);">
+    <div class="modal modal-sm" style="max-width:440px; border-radius:14px; overflow:hidden; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
+      <div class="modal-header" style="background:#FFFFFF; border-bottom:1px solid #EFE9E2; padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#FFF5F0; display:flex; align-items:center; justify-content:center; color:#FF5B22;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          </div>
+          <div>
+            <div class="modal-title" style="color:#1E1B18; font-size:16px; font-weight:900;" id="sizePickerTitle">اختر حجم الصنف</div>
+            <div style="font-size:12px; color:#8E847C; margin-top:2px;">حدد الحجم المطلوب لإضافته للطلب</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('sizePickerModal')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div id="sizePickerGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px;">
+          <!-- Populated by pos-invoice.js -->
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:10px 16px; background:#F8FAFC; border-top:1px solid var(--pos-border); display:flex; justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('sizePickerModal')">إلغاء [Esc]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 5. MODAL: POS INVOICE DETAILS VIEWER (THERMAL RECEIPT PREVIEW) ─── -->
+  <div class="modal-overlay" id="posInvoiceViewModal" style="z-index:9999; backdrop-filter:blur(4px);">
+    <div class="modal" style="max-width:440px; width:95%; border-radius:14px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); background:#F1F5F9;">
+      <div class="modal-header" style="background:var(--pos-espresso); color:#FFFFFF; padding:12px 18px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div>
+            <div class="modal-title" style="color:#FFFFFF; font-size:15px; font-weight:800;" id="posViewInvoiceNumber">معاينة الإيصال الحراري</div>
+            <div style="font-size:11px; opacity:0.85;" id="posViewInvoiceSubtitle">مطابق تماماً لما يُطبع على الطابعة الحرارية</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('posInvoiceViewModal')">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:16px; max-height:75vh; overflow-y:auto; background:#F1F5F9; display:flex; justify-content:center;">
+        <!-- Real Thermal Paper Card -->
+        <div id="posThermalReceiptContainer" style="background:#FFFFFF; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.08); padding:16px 14px; width:100%; max-width:320px; font-family:'Cairo',Arial,sans-serif; color:#000;">
+          <!-- Populated by viewPastInvoice(invId) -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:12px 18px; background:#F8FAFC; border-top:1px solid var(--pos-border); display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('posInvoiceViewModal')">إغلاق</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="printInvoiceFromPosView()" style="font-weight:800; color:var(--pos-espresso); border-color:var(--pos-espresso);">
+            طباعة الإيصال
+          </button>
+          <button class="btn btn-success btn-sm" onclick="sendWhatsAppFromPosView()" style="font-weight:800;">
+            إرسال واتساب
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 6. MODAL: POS PETTY EXPENSE OR ADVANCE (MODERNIZED CAFEPRO DESIGN) ────────────────────────────── -->
+  <div class="modal-overlay" id="posExpenseAdvanceModal" style="z-index:9999; backdrop-filter:blur(5px); background:rgba(15,23,42,0.5);">
+    <div class="modal" style="max-width:490px; width:94%; border-radius:20px; overflow:hidden; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 25px 60px rgba(15,23,42,0.22); font-family:inherit;">
+      
+      <!-- Modern Card Header -->
+      <div style="background:linear-gradient(180deg, #FBF9F6 0%, #FFFFFF 100%); border-bottom:1px solid var(--pos-border); padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); border:1px solid #FED7AA; display:flex; align-items:center; justify-content:center; color:#EA580C; box-shadow:0 2px 8px rgba(234,88,12,0.15);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="2"/></svg>
+          </div>
+          <div>
+            <div style="font-size:16px; font-weight:800; color:var(--pos-text);">تسجيل سلفة أو مصروف درج</div>
+            <div style="font-size:11px; font-weight:600; color:var(--pos-text-muted);">خصم مباشر وتوثيق في تقرير الوردية الحالية</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('posExpenseAdvanceModal')" style="width:32px; height:32px; border-radius:10px; border:1px solid var(--pos-border); background:#FFFFFF; color:var(--pos-text-muted); cursor:pointer; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; transition:all 0.15s ease;">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:18px 22px;">
+        <!-- Apple-style Segmented Switch -->
+        <div style="display:flex; background:#F1F5F9; border-radius:12px; padding:4px; gap:4px; margin-bottom:16px; border:1px solid #E2E8F0;">
+          <button type="button" id="posTabExpenseBtn" onclick="switchPosExpenseTab('expense')" style="flex:1; padding:9px 12px; border:none; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.15s ease; background:#FFFFFF; color:#FF5B22; box-shadow:0 2px 6px rgba(0,0,0,0.06); font-family:inherit;">
+            💸 مصروف نثريات (بضاعة / خامات)
+          </button>
+          <button type="button" id="posTabAdvanceBtn" onclick="switchPosExpenseTab('advance')" style="flex:1; padding:9px 12px; border:none; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.15s ease; background:transparent; color:#64748B; font-family:inherit;">
+            👤 سلفة موظف (خصم راتب)
+          </button>
+        </div>
+
+        <!-- Form: Expense -->
+        <div id="posFormExpense">
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">بند المصروف *</label>
+            <select id="posExpType" style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:700; color:var(--pos-text); outline:none; font-family:inherit;"></select>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">المبلغ المطلوب خصمه *</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="number" id="posExpAmount" placeholder="0.00" step="0.5" style="width:100%; height:44px; border-radius:10px; border:2px solid #FED7AA; background:#FFFBF7; padding:0 50px 0 14px; font-size:18px; font-weight:900; color:#1E1B18; outline:none; font-family:inherit;" />
+              <span style="position:absolute; left:14px; font-size:12px; font-weight:800; color:#EA580C; background:#FFEDD5; padding:3px 8px; border-radius:6px;">ج.م</span>
+            </div>
+            <!-- Quick Denomination Chips -->
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <button type="button" onclick="document.getElementById('posExpAmount').value='20'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">+20</button>
+              <button type="button" onclick="document.getElementById('posExpAmount').value='50'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">+50</button>
+              <button type="button" onclick="document.getElementById('posExpAmount').value='100'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">+100</button>
+              <button type="button" onclick="document.getElementById('posExpAmount').value='200'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">+200</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">بيان وتفاصيل المصروف</label>
+            <input type="text" id="posExpDesc" placeholder="مثال: شراء بن، نعناع، ثلج، سكر، نظافة..." style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:600; color:var(--pos-text); outline:none; font-family:inherit;" />
+            <!-- Quick Description Tags -->
+            <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
+              <span onclick="document.getElementById('posExpDesc').value='شراء ثلج ومياه'" style="background:#F1F5F9; border-radius:999px; padding:2px 9px; font-size:10px; font-weight:700; cursor:pointer; color:#475569;">+ ثلج ومياه</span>
+              <span onclick="document.getElementById('posExpDesc').value='شراء بن ونعناع خامات'" style="background:#F1F5F9; border-radius:999px; padding:2px 9px; font-size:10px; font-weight:700; cursor:pointer; color:#475569;">+ خامات بار وبن</span>
+              <span onclick="document.getElementById('posExpDesc').value='أدوات نظافة ومناديل'" style="background:#F1F5F9; border-radius:999px; padding:2px 9px; font-size:10px; font-weight:700; cursor:pointer; color:#475569;">+ نظافة ومناديل</span>
+              <span onclick="document.getElementById('posExpDesc').value='مشتريات طارئة'" style="background:#F1F5F9; border-radius:999px; padding:2px 9px; font-size:10px; font-weight:700; cursor:pointer; color:#475569;">+ مشتريات طارئة</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">جهة الخصم *</label>
+            <select id="posExpSource" style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:700; color:var(--pos-text); outline:none; font-family:inherit;">
+              <option value="الخزينة">درج الكاشير النقدي (الخزينة)</option>
+              <option value="فودافون كاش">محفظة فودافون كاش</option>
+              <option value="إنستا باي">حساب إنستا باي</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Form: Advance -->
+        <div id="posFormAdvance" style="display:none;">
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">الموظف المستلف *</label>
+            <select id="posAdvEmp" style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:700; color:var(--pos-text); outline:none; font-family:inherit;"></select>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">مبلغ السلفة (ج.م) *</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="number" id="posAdvAmount" placeholder="0.00" step="0.5" style="width:100%; height:44px; border-radius:10px; border:2px solid #FED7AA; background:#FFFBF7; padding:0 50px 0 14px; font-size:18px; font-weight:900; color:#1E1B18; outline:none; font-family:inherit;" />
+              <span style="position:absolute; left:14px; font-size:12px; font-weight:800; color:#EA580C; background:#FFEDD5; padding:3px 8px; border-radius:6px;">ج.م</span>
+            </div>
+            <!-- Quick Advance Presets -->
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <button type="button" onclick="document.getElementById('posAdvAmount').value='50'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">50 ج.م</button>
+              <button type="button" onclick="document.getElementById('posAdvAmount').value='100'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">100 ج.م</button>
+              <button type="button" onclick="document.getElementById('posAdvAmount').value='200'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">200 ج.م</button>
+              <button type="button" onclick="document.getElementById('posAdvAmount').value='500'" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#475569;">500 ج.م</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">ملاحظات / سبب السلفة</label>
+            <input type="text" id="posAdvNotes" placeholder="مثال: سلفة نقدية طارئة، مواصلات، جزء من الراتب..." style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:600; color:var(--pos-text); outline:none; font-family:inherit;" />
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:var(--pos-text-secondary); margin-bottom:5px;">جهة الخصم *</label>
+            <select id="posAdvSource" style="width:100%; height:38px; border-radius:10px; border:1px solid var(--pos-border); background:#FBF9F6; padding:0 12px; font-size:13px; font-weight:700; color:var(--pos-text); outline:none; font-family:inherit;">
+              <option value="الخزينة">درج الكاشير النقدي (الخزينة)</option>
+              <option value="فودافون كاش">محفظة فودافون كاش</option>
+              <option value="إنستا باي">حساب إنستا باي</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Shift Deduction Notice Alert -->
+        <div style="display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; padding:9px 12px; border-radius:10px; margin-top:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>سيتم خصم هذا المبلغ فوراً من عهدة الدرج وتوثيقه في كشف إغلاق الوردية الحالية.</span>
+        </div>
+      </div>
+
+      <!-- Modern Footer Actions -->
+      <div style="padding:14px 22px; background:#FAF8F5; border-top:1px solid var(--pos-border); display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <button type="button" onclick="closeModal('posExpenseAdvanceModal')" style="background:#FFFFFF; border:1px solid #CBD5E1; color:#475569; font-weight:700; font-size:13px; padding:9px 18px; border-radius:10px; cursor:pointer; font-family:inherit; transition:all 0.15s ease;">إلغاء</button>
+        <button type="button" onclick="savePosExpenseOrAdvance()" style="background:linear-gradient(135deg, #FF5B22 0%, #EA580C 100%); border:none; color:#FFFFFF; font-weight:800; font-size:13px; padding:10px 22px; border-radius:10px; cursor:pointer; box-shadow:0 4px 14px rgba(255,91,34,0.3); display:inline-flex; align-items:center; gap:6px; font-family:inherit; transition:all 0.15s ease;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>تسجيل وخصم من الدرج</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── 7. MODAL: ITEM CUSTOMIZATION / MODIFIERS ──────────────────────────── -->
+  <div class="modal-overlay" id="itemModifierModal">
+    <div class="modal">
+      <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#FFF5F0; display:flex; align-items:center; justify-content:center; color:#FF5B22;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div>
+            <div class="modal-title" style="color:#1E1B18; font-size:16px; font-weight:900; display:flex; align-items:center; gap:6px;">
+              <span>تخصيص وملاحظات:</span>
+              <span id="modifierItemTitle" style="color:#FF5B22;"></span>
+            </div>
+            <div style="font-size:12px; color:#8E847C; margin-top:2px;">اختر الإضافات أو اكتب ملاحظة خاصة للصنف</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('itemModifierModal')">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Dynamic Category-Specific Modifier Groups Container -->
+        <div id="dynamicModifierGroupsContainer"></div>
+
+        <!-- Free Text Custom Note Input -->
+        <div class="form-group" style="margin-top:14px; margin-bottom:4px;">
+          <label class="form-label" style="font-size:11.5px; font-weight:800; color:var(--pos-text); display:flex; align-items:center; gap:5px;">
+            <span>ملاحظة إضافية مخصصة أو تعديل نصي:</span>
+          </label>
+          <input type="text" id="modifierFreeTextInput" class="form-control" placeholder="اكتب أي ملاحظة خاصة للصنف هنا..."
+            style="font-size:12.5px; font-weight:700; height:38px; border-radius:8px;" onkeydown="if(event.key==='Enter') saveItemModifier()" />
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn btn-hairline-danger btn-sm" onclick="clearItemModifiers()" style="font-weight:700;">مسح الملاحظات</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('itemModifierModal')">إلغاء</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveItemModifier()" style="padding:0 20px; font-weight:800; height:36px; border-radius:8px;">
+            حفظ التخصيص [Enter]
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 8. MODAL: ACTIVE DELIVERY ORDERS TRACKING ──────────────────────────── -->
+  <div class="modal-overlay" id="deliveryOrdersModal">
+    <div class="modal" style="max-width:720px; width:95%; border-radius:12px;">
+      <div class="modal-header" style="background:var(--pos-espresso); color:#FFFFFF; padding:12px 16px;">
+        <div class="modal-title" style="color:#FFFFFF;">متابعة طلبات الدليفري الحالية</div>
+        <button class="modal-close" style="color:#FFFFFF;" onclick="closeModal('deliveryOrdersModal')">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:60vh; overflow-y:auto; padding:0;">
+        <table class="data-table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>الفاتورة</th>
+              <th>العميل والعنوان</th>
+              <th>الطيار</th>
+              <th style="text-align:right;">الإجمالي + التوصيل</th>
+              <th style="text-align:center;">الحالة الحالية</th>
+              <th style="text-align:center;">تحديث الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="deliveryOrdersBody">
+            <tr><td colspan="6" class="table-empty">لا توجد طلبات دليفري قيد التوصيل الآن</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 9. MODAL: NEW CUSTOMER MODAL ──────────────────────────────────────── -->
+  <div class="modal-overlay" id="newCustomerModal">
+    <div class="modal modal-sm" style="border-radius:10px;">
+      <div class="modal-header">
+        <div class="modal-title">إضافة عميل جديد</div>
+        <button class="modal-close" onclick="closeModal('newCustomerModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-2">
+          <label class="form-label">الاسم *</label>
+          <input type="text" id="nc_name" class="form-control" placeholder="اسم العميل" />
+        </div>
+        <div class="form-group mb-2">
+          <label class="form-label">التليفون / رقم الواتساب</label>
+          <input type="text" id="nc_phone" class="form-control" placeholder="01xxxxxxxxx" />
+        </div>
+        <div class="form-group mb-2">
+          <label class="form-label">العنوان</label>
+          <input type="text" id="nc_address" class="form-control" placeholder="العنوان بالتفصيل" />
+        </div>
+        <div class="form-group mb-2">
+          <label class="form-label">الرصيد الافتتاحي (جنيه)</label>
+          <input type="number" id="nc_balance" class="form-control" value="0" placeholder="0" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('newCustomerModal')">إلغاء</button>
+        <button class="btn btn-success btn-sm" onclick="saveNewCustomer()">حفظ العميل</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 10. MODAL: INVOICES HISTORY MODAL ─────────────────────────────────── -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal modal-md" style="max-width:750px; border-radius:12px;">
+      <div class="modal-header" style="background:var(--pos-espresso); color:#FFFFFF; padding:12px 16px;">
+        <div class="modal-title" style="color:#FFFFFF;">سجل الفواتير السابقة</div>
+        <button class="modal-close" onclick="closeModal('historyModal')">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:60vh; overflow-y:auto; padding:0;">
+        <div style="padding:8px 12px; background:#F8FAFC; border-bottom:1px solid var(--pos-border); position:sticky; top:0; z-index:10;">
+          <input type="text" id="posHistorySearch" class="form-control" placeholder="بحث برقم الفاتورة أو اسم العميل..." oninput="filterPosHistory()" style="height:34px; font-size:12px;" />
+          <input type="hidden" id="posHistoryPhone" />
+        </div>
+        <table class="data-table" style="font-size:12px; width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:#F8FAFC;">
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:right;">رقم الفاتورة</th>
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:right;">العميل / النوع</th>
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:right;">الإجمالي</th>
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:right;">التاريخ والوقت</th>
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:center;">الحالة</th>
+              <th style="padding:10px 12px; color:var(--pos-espresso); border-bottom:2px solid var(--pos-border); text-align:center;">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 11. MODAL: MANDATORY ORDER TYPE GATE MODAL ─────────────────────────── -->
+  <div class="modal-overlay" id="orderTypeGateModal" style="z-index:9999; backdrop-filter:blur(4px); background:rgba(15,23,42,0.75);">
+    <div class="modal modal-md" style="max-width:590px; text-align:center; padding:0; overflow:hidden; position:relative; border-radius:12px;">
+      <button type="button" class="modal-close" style="position:absolute; top:14px; left:14px;" onclick="closeOrderTypeGateModal()" title="إغلاق والرجوع للشاشة">✕</button>
+      <div style="padding:22px 20px 12px; background:#F8FAFC; border-bottom:1px solid var(--pos-border);">
+        <div style="width:40px; height:40px; margin:0 auto 8px; background:rgba(212,160,86,0.15); border:1px solid var(--pos-caramel); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--pos-caramel);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        </div>
+        <h2 style="font-size:18px; font-weight:800; color:var(--pos-espresso); margin-bottom:2px;">بدء طلب جديد</h2>
+        <p style="font-size:12px; color:var(--pos-text-muted); margin:0;">اختر نوع الطلب لمتابعة تسجيل الأصناف على الفاتورة</p>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;">
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+          <!-- صالة -->
+          <div class="order-gate-card" onclick="selectOrderTypeFromGate('صالة')">
+            <div style="margin-bottom:6px; color:var(--pos-caramel);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="6" y1="16" x2="6" y2="20"/><line x1="18" y1="16" x2="18" y2="20"/></svg>
+            </div>
+            <div style="font-size:14px; font-weight:800; color:var(--pos-espresso); margin-bottom:2px;">طلب صالة</div>
+            <div style="font-size:11px; color:var(--pos-text-muted);">جلوس بالصالة وترابيزة</div>
+          </div>
+          <!-- تيك أواي -->
+          <div class="order-gate-card" onclick="selectOrderTypeFromGate('تيك أواي')">
+            <div style="margin-bottom:6px; color:var(--pos-caramel);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div style="font-size:14px; font-weight:800; color:var(--pos-espresso); margin-bottom:2px;">تيك أواي / سفري</div>
+            <div style="font-size:11px; color:var(--pos-text-muted);">استلام مباشر وسريع</div>
+          </div>
+          <!-- دليفري -->
+          <div class="order-gate-card" id="gateDeliveryBtn" onclick="selectOrderTypeFromGate('دليفري')">
+            <div style="margin-bottom:6px; color:var(--pos-caramel);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+            </div>
+            <div style="font-size:14px; font-weight:800; color:var(--pos-espresso); margin-bottom:2px;">توصيل دليفري</div>
+            <div style="font-size:11px; color:var(--pos-text-muted);">إرسال مع طيار خارجي</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 12. MODAL: VISUAL TABLE PICKER MODAL ──────────────────────────────── -->
+  <div class="modal-overlay" id="posTablePickerModal" style="z-index:9998; backdrop-filter:blur(3px);">
+    <div class="modal modal-lg" style="max-width:820px; border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--pos-border); padding:14px 18px;">
+        <div>
+          <div class="modal-title" style="font-size:15px; font-weight:800; color:var(--pos-espresso);">خريطة الترابيزات — اختر ترابيزة للطلب</div>
+          <div style="font-size:11px; color:var(--pos-text-muted); margin-top:2px;">اضغط على أي ترابيزة للانتقال إلى طلبها المفتوح أو بدء طلب جديد</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('posTablePickerModal')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:14px 18px; max-height:70vh; overflow-y:auto;">
+        <!-- Filters & Search -->
+        <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm btn-outline active table-filter-btn" id="filterBtnAll" onclick="filterTablePicker('all', this)">الكل (<span id="pickerCountAll">0</span>)</button>
+            <button class="btn btn-sm btn-outline table-filter-btn" id="filterBtnEmpty" onclick="filterTablePicker('فاضية', this)" style="color:#059669;">فاضية (<span id="pickerCountEmpty">0</span>)</button>
+            <button class="btn btn-sm btn-outline table-filter-btn" id="filterBtnBusy" onclick="filterTablePicker('مشغولة', this)" style="color:#DC2626;">مشغولة (<span id="pickerCountBusy">0</span>)</button>
+            <button class="btn btn-sm btn-outline table-filter-btn" id="filterBtnReserved" onclick="filterTablePicker('محجوزة', this)" style="color:#D97706;">محجوزة (<span id="pickerCountReserved">0</span>)</button>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="text" id="pickerSearchTable" class="form-control" style="max-width:180px; height:32px; font-size:12px;" placeholder="بحث برقم الترابيزة..." oninput="renderTablePickerGrid()" />
+            <button class="btn btn-warning btn-sm" onclick="openReserveModalFromPOS()" style="font-weight:700; white-space:nowrap; color:#FFFFFF;">حجز جديد</button>
+          </div>
+        </div>
+        <!-- Tables Grid -->
+        <div class="table-picker-grid" id="posTablePickerGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 13. MODAL: RESERVE TABLE FROM POS ─────────────────────────────────── -->
+  <div class="modal-overlay" id="posReserveTableModal" style="z-index:9999; backdrop-filter:blur(4px);">
+    <div class="modal modal-sm" style="max-width:440px; border-radius:12px; overflow:hidden;">
+      <div class="modal-header" style="background:var(--pos-espresso); color:#FFFFFF; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div class="modal-title" style="color:#FFFFFF;" id="posReserveModalTitle">حجز ترابيزة لعميل</div>
+        <button type="button" class="modal-close" style="color:#FFFFFF;" onclick="closeModal('posReserveTableModal')">✕</button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">الترابيزة المراد حجزها *</label>
+          <select id="posReserveTableSelect" class="form-control" style="height:38px; font-weight:700;"></select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">اختيار من العملاء المسجلين</label>
+          <select id="posReserveCustomerSelect" class="form-control" style="height:38px; font-weight:700;" onchange="onSelectExistingCustomerInPOS(this.value)">
+            <option value="">-- اختر عميل سابق أو اكتب أدناه --</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">اسم العميل *</label>
+          <input type="text" id="posReserveCustomerName" class="form-control" list="posReservationCustomersList" placeholder="اسم العميل أو ابحث في العملاء..." style="height:38px; font-weight:600;" oninput="onReservationCustomerNameInput(this.value, 'pos')" required />
+          <datalist id="posReservationCustomersList"></datalist>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">رقم الهاتف / الواتساب *</label>
+          <input type="tel" id="posReserveCustomerPhone" class="form-control" list="posReservationPhonesList" placeholder="مثال: 01012345678" style="height:38px; font-weight:600;" oninput="onReservationCustomerPhoneInput(this.value, 'pos')" required />
+          <datalist id="posReservationPhonesList"></datalist>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">موعد الحجز</label>
+          <input type="datetime-local" id="posReserveTime" class="form-control" style="height:38px; font-size:12px; font-weight:600;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:700; font-size:12px; margin-bottom:4px; display:block;">عدد الأفراد</label>
+          <input type="number" id="posReservePartySize" class="form-control" value="2" min="1" max="50" style="height:38px; font-weight:700;" />
+        </div>
+
+        <div style="font-size:11px; color:var(--pos-text-muted); background:var(--pos-border-subtle); padding:6px 10px; border-radius:6px;">
+          سيتم إرسال رسالة تأكيد الحجز تلقائياً عبر الواتساب فور التأكيد.
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:12px 20px; display:flex; justify-content:space-between;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('posReserveTableModal')">إلغاء</button>
+        <button class="btn btn-warning btn-sm" onclick="confirmReserveTableFromPOS()" style="font-weight:800; color:#FFFFFF;">تأكيد الحجز والإرسال</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 13.5 MODAL: INCOMING QR ORDERS (الطلبات الواردة عبر المنيو الإلكتروني) ─── -->
+  <div class="modal-overlay" id="posQrOrdersModal" style="z-index:9999; backdrop-filter:blur(6px); background:rgba(0,0,0,0.7);">
+    <div class="modal modal-lg" style="max-width:880px; width:95%; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; max-height:88vh; background:#131418; border:1px solid rgba(255,255,255,0.08); box-shadow:0 24px 60px rgba(0,0,0,0.55);">
+      <div class="modal-header" style="background:#17181D; color:#FFFFFF; border-bottom:1px solid rgba(255,255,255,0.07); padding:16px 22px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:rgba(224, 106, 59, 0.12); border:1px solid rgba(224, 106, 59, 0.25); display:flex; align-items:center; justify-content:center; color:#FF8F6B; flex-shrink:0;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="modal-title" style="color:#FFFFFF; font-size:15px; font-weight:800; display:flex; align-items:center; gap:10px;">
+              <span>طلبات المنيو الإلكتروني (QR)</span>
+              <span id="qrModalCountBadge" style="background:rgba(224, 106, 59, 0.16); color:#FF8F6B; border:1px solid rgba(224, 106, 59, 0.28); font-size:11px; padding:2px 10px; border-radius:999px; font-weight:800;">0 معلقة</span>
+              <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#10B981; background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.2); padding:2px 8px; border-radius:999px; font-weight:700;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#10B981; box-shadow:0 0 8px #10B981;"></span>
+                <span>بث فوري مباشر (SSE)</span>
+              </span>
+            </div>
+            <div style="font-size:11.5px; color:#94A3B8; margin-top:3px;">
+              الطلبات الواردة مباشرة من هواتف الزبائن على الطاولات • اعتماد الطلب يرسله فوراً لطابعة المطبخ
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-sm" onclick="fetchAndRenderQrOrders()" style="background:#1F2128; border:1px solid rgba(255,255,255,0.1); color:#E2E8F0; font-size:12px; font-weight:700; border-radius:8px; padding:6px 12px; display:flex; align-items:center; gap:6px; cursor:pointer; transition:background 0.15s ease;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>تحديث</span>
+          </button>
+          <button type="button" style="color:#94A3B8; font-size:16px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); cursor:pointer;" onclick="closeModal('posQrOrdersModal')">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="posQrOrdersBody" style="padding:18px 22px; overflow-y:auto; flex:1; background:#101114; min-height:280px;">
+        <!-- Dynamic list of QR orders populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 14. MODAL: POST-INVOICE SUCCESS / WHATSAPP DIALOG ─────────────────── -->
+  <div class="modal-overlay" id="savedModal">
+    <div class="modal modal-sm" style="max-width:400px; text-align:center; border-radius:12px;">
+      <div class="modal-header">
+        <div class="modal-title">تم حفظ الفاتورة بنجاح</div>
+        <button class="modal-close" onclick="closeModal('savedModal'); newInvoice();">✕</button>
+      </div>
+      <div class="modal-body" style="padding:18px;">
+        <div style="width:48px; height:48px; border-radius:50%; background:#D1FAE5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p style="font-size:13px; font-weight:700; color:var(--pos-text); margin-bottom:14px;">
+          تم تسجيل الفاتورة بنجاح. هل ترغب في إرسال تفاصيل الفاتورة للعميل عبر الواتساب؟
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="btn btn-success" id="savedModalWaBtn" onclick="sendWhatsApp()" style="width:100%; height:40px; font-weight:800;">
+            إرسال الفاتورة عبر الواتساب
+          </button>
+          <button class="btn btn-outline" onclick="closeModal('savedModal'); newInvoice();" style="width:100%; height:36px; font-weight:700;">
+            طلب جديد [Esc]
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 15. PRINT CONTAINERS (Customer Receipt + Kitchen Order Ticket) ─────── -->
+  <div class="receipt-print" id="receiptPrint"></div>
+  <div class="kitchen-print" id="kitchenPrint"></div>
+  <div class="pos-thermal-print" id="posThermalPrintContainer"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/shared/common.js"></script>
+  <script src="js/pos-invoice.js"></script>
+</body>
+</html>

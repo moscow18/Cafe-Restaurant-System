@@ -1,0 +1,36 @@
+Categories count: 8
+ - 5: ساخن
+ - 6: فرابيه
+ - 7: سموزي
+ - 8: مشروبات ساخنة وقهوة
+ - 9: مشروبات باردة ومثلجات
+ - 10: ساندوتشات ووجبات
+ - 11: بيتزا وباستا
+ - 12: حلويات ومخبوزات
+Services count: 26
+ - [سموزي] قهوة تركي (50 EGP) -> null
+ - [مشروبات ساخنة وقهوة] إسبريسو سينجل / دبل (35 EGP) -> ../assets/items/espresso.jpg
+ - [مشروبات ساخنة وقهوة] كابتشينو إيطالي كلاسيك (55 EGP) -> ../assets/items/cappuccino.jpg
+ - [مشروبات ساخنة وقهوة] فانيليا ولاتيه كاراميل (65 EGP) -> ../assets/items/latte.jpg
+ - [مشروبات ساخنة وقهوة] فلات وايت أسترالي (60 EGP) -> ../assets/items/flat-white.jpg
+ - [مشروبات ساخنة وقهوة] شاي كرك بالهيل والزعفران (40 EGP) -> ../assets/items/karak-tea.jpg
+ - [مشروبات ساخنة وقهوة] هوت شوكليت بالمارشميلو (60 EGP) -> ../assets/items/hot-chocolate.jpg
+ - [مشروبات ساخنة وقهوة] قهوة تركي مخصوص بالحبهان (30 EGP) -> ../assets/items/turkish-coffee.jpg
+ - [مشروبات باردة ومثلجات] آيس سبانش لاتيه (70 EGP) -> ../assets/items/iced-latte.jpg
+ - [مشروبات باردة ومثلجات] موهيتو فراولة وليمون نعناع (55 EGP) -> ../assets/items/mojito.jpg
+ - [مشروبات باردة ومثلجات] سموذي مانجو باشن فروت (65 EGP) -> ../assets/items/mango-smoothie.jpg
+ - [مشروبات باردة ومثلجات] أوريو فرابيه بالكريمة (75 EGP) -> ../assets/items/oreo-frappe.jpg
+ - [مشروبات باردة ومثلجات] عصير برتقال فريش طبيعي (45 EGP) -> ../assets/items/orange-juice.jpg
+ - [ساندوتشات ووجبات] كلاسيك بيف برجر تشيز (145 EGP) -> ../assets/items/burger.jpg
+ - [ساندوتشات ووجبات] ساندوتش كريسبي تشيكن مدخن (130 EGP) -> ../assets/items/crispy-chicken.jpg
+ - [ساندوتشات ووجبات] كلوب ساندوتش سوبريم (110 EGP) -> ../assets/items/club-sandwich.jpg
+ - [ساندوتشات ووجبات] ستيك ريب آي مشوي بصوص المشروم (280 EGP) -> ../assets/items/ribeye-steak.jpg
+ - [ساندوتشات ووجبات] طبق كوردون بلو محشي جبن (185 EGP) -> ../assets/items/cordon-bleu.jpg
+ - [بيتزا وباستا] بيتزا مارجريتا نابوليتان (120 EGP) -> ../assets/items/pizza-margherita.jpg
+ - [بيتزا وباستا] بيتزا بيبروني سوبريم (155 EGP) -> ../assets/items/pizza-pepperoni.jpg
+ - [بيتزا وباستا] باستا فوتشيني ألفريدو دجاج (140 EGP) -> ../assets/items/pasta-alfredo.jpg
+ - [بيتزا وباستا] باستا بيني أرابياتا حارة (95 EGP) -> ../assets/items/penne-arrabbiata.jpg
+ - [حلويات ومخبوزات] تشيز كيك بلوبيري نيويورك (85 EGP) -> ../assets/items/cheesecake.jpg
+ - [حلويات ومخبوزات] كيك لافا شوكولاتة فادج (90 EGP) -> ../assets/items/chocolate-lava.jpg
+ - [حلويات ومخبوزات] وافل بلجيكي بالنوتيلا والفواكه (80 EGP) -> ../assets/items/waffle.jpg
+ - [حلويات ومخبوزات] كرواسون زبدة فرنسي باللوز (50 EGP) -> ../assets/items/croissant.jpg
