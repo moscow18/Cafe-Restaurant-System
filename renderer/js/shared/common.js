@@ -1,4 +1,13 @@
 'use strict';
+// ─── Auto-repair duplicate folder nesting (e.g. /renderer/renderer/) ─────────
+(function() {
+  if (typeof window !== 'undefined' && window.location && window.location.pathname) {
+    if (window.location.pathname.includes('/renderer/renderer/')) {
+      const fixed = window.location.pathname.replace(/\/renderer\/renderer\//g, '/renderer/');
+      window.location.replace(fixed + window.location.search + window.location.hash);
+    }
+  }
+})();
 
 /**
  * دالة مشتركة لتوليد التاريخ المحلي بصيغة YYYY-MM-DD
@@ -63,18 +72,52 @@ function closeModal(id) {
 }
 
 /**
- * الانتقال لصفحة أخرى مع تأثير انتقال ناعم
+ * الانتقال لصفحة أخرى مع أمان كامل ضد تكرار المسارات
  * @param {string} page 
  */
 function navigate(page) {
   if (!page) return;
   if (window.electron && typeof window.electron.navigate === 'function') {
     window.electron.navigate(page).catch(() => {
-      window.location.href = page;
+      safeWebNavigate(page);
     });
   } else {
-    window.location.href = page;
+    safeWebNavigate(page);
   }
+}
+
+function safeWebNavigate(page) {
+  let target = String(page).trim();
+  const currentPath = window.location.pathname || '';
+  const inRenderer = currentPath.includes('/renderer/');
+
+  while (target.includes('renderer/renderer/')) {
+    target = target.replace('renderer/renderer/', 'renderer/');
+  }
+
+  if (target.startsWith('http://') || target.startsWith('https://')) {
+    window.location.href = target;
+    return;
+  }
+
+  if (target.startsWith('/')) {
+    window.location.href = target;
+    return;
+  }
+
+  if (target.startsWith('renderer/')) {
+    if (inRenderer) {
+      target = target.replace(/^renderer\//, '');
+    } else {
+      target = '/' + target;
+    }
+  } else {
+    if (!inRenderer && target !== 'index.html' && target !== 'qr-menu.html') {
+      target = '/renderer/' + target;
+    }
+  }
+
+  window.location.href = target;
 }
 
 /**

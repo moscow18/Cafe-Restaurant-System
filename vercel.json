@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "echo 'Skipping electron install on Vercel'",
-  "buildCommand": "echo 'Skipping electron build on Vercel'"
+  "buildCommand": "echo 'Skipping electron build on Vercel'",
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/renderer/renderer/:path*", "destination": "/renderer/:path*" },
+    { "source": "/main-dashboard.html", "destination": "/renderer/main-dashboard.html" },
+    { "source": "/pos-invoice.html", "destination": "/renderer/pos-invoice.html" },
+    { "source": "/tables.html", "destination": "/renderer/tables.html" },
+    { "source": "/reports.html", "destination": "/renderer/reports.html" },
+    { "source": "/inventory.html", "destination": "/renderer/inventory.html" },
+    { "source": "/finance.html", "destination": "/renderer/finance.html" },
+    { "source": "/settings.html", "destination": "/renderer/settings.html" },
+    { "source": "/login.html", "destination": "/renderer/login.html" }
+  ]
 }
