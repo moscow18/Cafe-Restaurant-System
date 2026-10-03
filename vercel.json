@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "echo 'Skipping electron install on Vercel'",
-  "buildCommand": "echo 'Skipping electron build on Vercel'",
-  "cleanUrls": true
+  "buildCommand": "echo 'Skipping electron build on Vercel'"
 }
