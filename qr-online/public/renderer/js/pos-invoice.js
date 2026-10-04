@@ -945,7 +945,7 @@ function setOrderType(type) {
   }
   recalcTotals();
   if (invoiceItems && invoiceItems.length > 0) {
-    renderInvoiceItems();
+    renderItemsTable();
   }
 }
 
@@ -1705,7 +1705,7 @@ function setItemQuickCup(i, cupType) {
     notes = notes ? `${newCupText} - ${notes}` : newCupText;
   }
   invoiceItems[i].notes = notes;
-  renderInvoiceItems();
+  renderItemsTable();
 }
 window.setItemQuickCup = setItemQuickCup;
 
@@ -2828,9 +2828,19 @@ async function doSaveInvoice(checkoutData, isPrint = false) {
       cash_received: cashReceived
     };
 
+    // Offline / Online resilience handling
+    const isOnline = typeof navigator !== 'undefined' && navigator.onLine;
+    if (!isOnline) {
+      queueOfflineInvoice(lastSavedInvoice);
+      updateOnlineStatusBadge();
+      showToast('تم حفظ الفاتورة محلياً بنجاح (وضع أوفلاين) ✓', 'success');
+    } else {
+      updateOnlineStatusBadge();
+      showToast('تم حفظ الفاتورة بنجاح ✓', 'success');
+    }
+
     await reloadServicesStock();
     await loadTables();
-    showToast('تم حفظ الفاتورة بنجاح', 'success');
 
     return true;
   } else {
@@ -4407,6 +4417,130 @@ function setupPosRealtimeSSE() {
   }
 }
 
+// ─── OFFLINE RESILIENCE & AUTOMATIC CLOUD SYNC ENGINE ────────────────────────
+function updateOnlineStatusBadge() {
+  const badge = document.getElementById('onlineStatusBadge');
+  const badgeText = document.getElementById('onlineStatusText');
+  const qBadge = document.getElementById('offlineQueueBadge');
+  if (!badge) return;
+
+  const isOnline = typeof navigator === 'undefined' || navigator.onLine;
+  const syncQueue = JSON.parse(localStorage.getItem('cafePro_offline_sync_queue') || '[]');
+  const invQueue = JSON.parse(localStorage.getItem('cafePro_offline_invoices_queue') || '[]');
+  const totalPending = syncQueue.length + invQueue.length;
+
+  if (isOnline) {
+    badge.className = 'pos-network-pill status-online';
+    if (badgeText) badgeText.textContent = totalPending > 0 ? 'متصل (معلق للمزامنة)' : 'متصل (أونلاين)';
+  } else {
+    badge.className = 'pos-network-pill status-offline';
+    if (badgeText) badgeText.textContent = 'أوفلاين (حفظ محلي)';
+  }
+
+  if (qBadge) {
+    if (totalPending > 0) {
+      qBadge.style.display = 'inline-block';
+      qBadge.textContent = totalPending;
+    } else {
+      qBadge.style.display = 'none';
+    }
+  }
+}
+
+function queueOfflineInvoice(inv) {
+  try {
+    const q = JSON.parse(localStorage.getItem('cafePro_offline_invoices_queue') || '[]');
+    q.push(inv);
+    localStorage.setItem('cafePro_offline_invoices_queue', JSON.stringify(q));
+  } catch(e) {}
+}
+
+function queueOfflineSyncAction(action) {
+  try {
+    const q = JSON.parse(localStorage.getItem('cafePro_offline_sync_queue') || '[]');
+    q.push(action);
+    localStorage.setItem('cafePro_offline_sync_queue', JSON.stringify(q));
+  } catch(e) {}
+}
+
+async function syncOfflineData() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    updateOnlineStatusBadge();
+    return;
+  }
+  const syncQueue = JSON.parse(localStorage.getItem('cafePro_offline_sync_queue') || '[]');
+  const invQueue = JSON.parse(localStorage.getItem('cafePro_offline_invoices_queue') || '[]');
+  
+  if (syncQueue.length === 0 && invQueue.length === 0) {
+    updateOnlineStatusBadge();
+    return;
+  }
+
+  const badge = document.getElementById('onlineStatusBadge');
+  const badgeText = document.getElementById('onlineStatusText');
+  if (badge) {
+    badge.className = 'pos-network-pill status-syncing';
+    if (badgeText) badgeText.textContent = 'جاري المزامنة...';
+  }
+
+  let syncedCount = 0;
+
+  // 1. Sync QR Statuses
+  if (syncQueue.length > 0 && window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+    const remainingSync = [];
+    for (const item of syncQueue) {
+      try {
+        const ok = await window.CafeSupabase.updateOrderStatus(item.orderId, item.status, item.reason || '');
+        if (ok) syncedCount++;
+        else remainingSync.push(item);
+      } catch(e) {
+        remainingSync.push(item);
+      }
+    }
+    localStorage.setItem('cafePro_offline_sync_queue', JSON.stringify(remainingSync));
+  }
+
+  // 2. Sync Offline Invoices
+  if (invQueue.length > 0) {
+    try {
+      if (window.CafeSupabase && typeof window.CafeSupabase.getClient === 'function') {
+        const sb = window.CafeSupabase.getClient();
+        if (sb) {
+          for (const inv of invQueue) {
+            try {
+              await sb.from('pos_invoices').insert([{
+                invoice_number: inv.invoiceNumber,
+                invoice_data: inv,
+                created_at: inv.saved_at || new Date().toISOString()
+              }]).catch(() => {});
+              syncedCount++;
+            } catch(e) {}
+          }
+        }
+      }
+      localStorage.setItem('cafePro_offline_invoices_queue', JSON.stringify([]));
+    } catch(e) {}
+  }
+
+  updateOnlineStatusBadge();
+  if (syncedCount > 0) {
+    showToast(`تمت استعادة الاتصال ومزامنة ${syncedCount} عملية أوفلاين بنجاح ✓`, 'success');
+  }
+}
+
+function triggerManualSync() {
+  showToast('جاري التحقق من الاتصال ومزامنة البيانات المحفوظة محلياً...', 'info');
+  syncOfflineData();
+}
+
+window.updateOnlineStatusBadge = updateOnlineStatusBadge;
+window.syncOfflineData = syncOfflineData;
+window.triggerManualSync = triggerManualSync;
+window.queueOfflineInvoice = queueOfflineInvoice;
+window.queueOfflineSyncAction = queueOfflineSyncAction;
+window.renderInvoiceItems = renderItemsTable;
+window.renderItemsTable = renderItemsTable;
+
 init().then(() => {
   // Start Real-Time push listener only if QR menu is enabled in settings
   if (settings.enable_qr_menu === undefined || Number(settings.enable_qr_menu) !== 0) {
@@ -4420,6 +4554,19 @@ init().then(() => {
     const qrBtn = document.getElementById('btnQrOrdersBadge');
     if (qrBtn) qrBtn.style.setProperty('display', 'none', 'important');
   }
+
+  // Network listeners for Offline / Online resilience
+  window.addEventListener('online', () => {
+    updateOnlineStatusBadge();
+    syncOfflineData();
+    showToast('تمت استعادة الاتصال بالإنترنت — جاري مزامنة البيانات تلقائياً ✓', 'success');
+  });
+  window.addEventListener('offline', () => {
+    updateOnlineStatusBadge();
+    showToast('انقطع الاتصال بالإنترنت — يعمل الكاشير الآن بكفاءة كاملة في وضع أوفلاين', 'warning');
+  });
+  updateOnlineStatusBadge();
+  setInterval(syncOfflineData, 25000);
 });
 
 // ─── Quit Confirmation ────────────────────────────────────────────────────────

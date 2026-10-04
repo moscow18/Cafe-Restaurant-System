@@ -437,58 +437,59 @@ if (typeof window !== 'undefined') {
   ];
 
   const DB_FALLBACK_SIZES = [
-    { service_id: 2, size_name: 'سينجل (Single)', price: 35, cost_price: 12, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 2, size_name: 'دوبل (Double)', price: 50, cost_price: 18, recipe_ratio: 1.8, is_default: 0 },
-    { service_id: 3, size_name: 'عادي (Regular)', price: 55, cost_price: 20, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 3, size_name: 'كبير (Large)', price: 70, cost_price: 26, recipe_ratio: 1.5, is_default: 0 },
-    { service_id: 4, size_name: 'عادي (Regular)', price: 65, cost_price: 24, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 4, size_name: 'كبير (Large)', price: 80, cost_price: 30, recipe_ratio: 1.5, is_default: 0 },
-    { service_id: 5, size_name: 'سينجل شوت', price: 60, cost_price: 22, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 5, size_name: 'دبل شوت', price: 75, cost_price: 28, recipe_ratio: 1.5, is_default: 0 },
-    { service_id: 8, size_name: 'سينجل', price: 30, cost_price: 10, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 8, size_name: 'مزدوج (دبل)', price: 45, cost_price: 15, recipe_ratio: 1.6, is_default: 0 },
-    { service_id: 16, size_name: 'سينجل (Single)', price: 145, cost_price: 75, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 16, size_name: 'دوبل (Double)', price: 195, cost_price: 105, recipe_ratio: 1.6, is_default: 0 },
-    { service_id: 21, size_name: 'صغير (Small)', price: 95, cost_price: 40, recipe_ratio: 0.8, is_default: 0 },
-    { service_id: 21, size_name: 'وسط (Medium)', price: 120, cost_price: 50, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 21, size_name: 'كبير (Large)', price: 160, cost_price: 70, recipe_ratio: 1.5, is_default: 0 },
-    { service_id: 22, size_name: 'صغير (Small)', price: 125, cost_price: 55, recipe_ratio: 0.8, is_default: 0 },
-    { service_id: 22, size_name: 'وسط (Medium)', price: 155, cost_price: 70, recipe_ratio: 1.0, is_default: 1 },
-    { service_id: 22, size_name: 'كبير (Large)', price: 205, cost_price: 95, recipe_ratio: 1.5, is_default: 0 }
+    { service_id: 1, size_name: 'سينجل (Single)', price: 35, cost_price: 12, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 1, size_name: 'دوبل (Double)', price: 50, cost_price: 18, recipe_ratio: 1.8, is_default: 0 },
+    { service_id: 2, size_name: 'عادي (Regular)', price: 55, cost_price: 20, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 2, size_name: 'كبير (Large)', price: 70, cost_price: 26, recipe_ratio: 1.5, is_default: 0 },
+    { service_id: 3, size_name: 'عادي (Regular)', price: 65, cost_price: 24, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 3, size_name: 'كبير (Large)', price: 80, cost_price: 30, recipe_ratio: 1.5, is_default: 0 },
+    { service_id: 4, size_name: 'سينجل شوت', price: 60, cost_price: 22, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 4, size_name: 'دبل شوت', price: 75, cost_price: 28, recipe_ratio: 1.5, is_default: 0 },
+    { service_id: 7, size_name: 'سينجل', price: 30, cost_price: 10, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 7, size_name: 'مزدوج (دبل)', price: 45, cost_price: 15, recipe_ratio: 1.6, is_default: 0 },
+    { service_id: 14, size_name: 'سينجل (Single)', price: 145, cost_price: 65, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 14, size_name: 'دوبل (Double)', price: 195, cost_price: 95, recipe_ratio: 1.6, is_default: 0 },
+    { service_id: 20, size_name: 'وسط (Medium)', price: 120, cost_price: 54, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 20, size_name: 'كبير (Large)', price: 160, cost_price: 75, recipe_ratio: 1.5, is_default: 0 },
+    { service_id: 21, size_name: 'وسط (Medium)', price: 155, cost_price: 70, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 21, size_name: 'كبير (Large)', price: 205, cost_price: 95, recipe_ratio: 1.5, is_default: 0 },
+    { service_id: 22, size_name: 'وسط (Medium)', price: 140, cost_price: 63, recipe_ratio: 1.0, is_default: 1 },
+    { service_id: 22, size_name: 'كبير (Large)', price: 185, cost_price: 85, recipe_ratio: 1.5, is_default: 0 }
   ];
 
   const DB_FALLBACK_SERVICES = [
-    { id: 1, category_id: 1, name: 'قهوة تركي', barcode: 'CF-100', sell_price: 50, cost_price: 15, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/turkish-coffee.jpg' },
-    { id: 8, category_id: 1, name: 'قهوة تركي مخصوص بالحبهان', barcode: 'CF-107', sell_price: 30, cost_price: 10, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/turkish-coffee.jpg', has_sizes: 1 },
-    { id: 2, category_id: 1, name: 'إسبريسو سينجل / دبل', barcode: 'CF-101', sell_price: 35, cost_price: 12, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/espresso.jpg', has_sizes: 1 },
-    { id: 3, category_id: 1, name: 'كابتشينو إيطالي كلاسيك', barcode: 'CF-102', sell_price: 55, cost_price: 20, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/cappuccino.jpg', has_sizes: 1 },
-    { id: 4, category_id: 1, name: 'فانيليا ولاتيه كاراميل', barcode: 'CF-103', sell_price: 65, cost_price: 24, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/latte.jpg', has_sizes: 1 },
-    { id: 5, category_id: 1, name: 'فلات وايت أسترالي', barcode: 'CF-104', sell_price: 60, cost_price: 22, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/flat-white.jpg', has_sizes: 1 },
-    { id: 6, category_id: 1, name: 'شاي كرك بالهيل والزعفران', barcode: 'CF-105', sell_price: 40, cost_price: 15, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/karak-tea.jpg' },
-    { id: 7, category_id: 1, name: 'هوت شوكليت بالمارشميلو', barcode: 'CF-106', sell_price: 60, cost_price: 25, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/hot-chocolate.jpg' },
-    { id: 14, category_id: 1, name: 'لاتيه', barcode: 'CF-108', sell_price: 60, cost_price: 20, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/latte.jpg' },
-    { id: 15, category_id: 1, name: 'ميكياتو', barcode: 'CF-109', sell_price: 55, cost_price: 18, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/espresso.jpg' },
+    { id: 1, category_id: 1, name: 'إسبريسو سينجل / دبل', barcode: 'CF-101', sell_price: 35, price: 35, cost_price: 12, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/espresso.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 2, category_id: 1, name: 'كابتشينو إيطالي كلاسيك', barcode: 'CF-102', sell_price: 55, price: 55, cost_price: 20, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/cappuccino.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 3, category_id: 1, name: 'فانيليا ولاتيه كاراميل', barcode: 'CF-103', sell_price: 65, price: 65, cost_price: 24, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/latte.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 4, category_id: 1, name: 'فلات وايت أسترالي', barcode: 'CF-104', sell_price: 60, price: 60, cost_price: 22, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/flat-white.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 5, category_id: 1, name: 'شاي كرك بالهيل والزعفران', barcode: 'CF-105', sell_price: 40, price: 40, cost_price: 14, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/karak-tea.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 6, category_id: 1, name: 'هوت شوكليت بالمارشميلو', barcode: 'CF-106', sell_price: 60, price: 60, cost_price: 22, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/hot-chocolate.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 7, category_id: 1, name: 'قهوة تركي مخصوص بالحبهان', barcode: 'CF-107', sell_price: 30, price: 30, cost_price: 10, current_stock: 100, quantity: 100, cat_name: 'مشروبات ساخنة وقهوة', category_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/turkish-coffee.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
 
-    { id: 9, category_id: 2, name: 'آيس سبانش لاتيه', barcode: 'CF-201', sell_price: 70, cost_price: 28, current_stock: 100, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/iced-latte.jpg' },
-    { id: 10, category_id: 2, name: 'موهيتو فراولة وليمون نعناع', barcode: 'CF-202', sell_price: 55, cost_price: 18, current_stock: 100, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mojito.jpg' },
-    { id: 11, category_id: 2, name: 'سموذي مانجو باشن فروت', barcode: 'CF-203', sell_price: 65, cost_price: 22, current_stock: 100, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mango-smoothie.jpg' },
-    { id: 12, category_id: 2, name: 'أوريو فرابيه بالكريمة', barcode: 'CF-204', sell_price: 75, cost_price: 30, current_stock: 100, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/oreo-frappe.jpg' },
-    { id: 13, category_id: 2, name: 'عصير برتقال فريش طبيعي', barcode: 'CF-205', sell_price: 45, cost_price: 16, current_stock: 100, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/orange-juice.jpg' },
+    { id: 8, category_id: 2, name: 'آيس سبانش لاتيه', barcode: 'CF-201', sell_price: 70, price: 70, cost_price: 26, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/iced-latte.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 9, category_id: 2, name: 'موهيتو فراولة وليمون نعناع', barcode: 'CF-202', sell_price: 55, price: 55, cost_price: 18, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mojito.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 10, category_id: 2, name: 'سموذي مانجو باشن فروت', barcode: 'CF-203', sell_price: 65, price: 65, cost_price: 22, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mango-smoothie.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 11, category_id: 2, name: 'أوريو فرابيه بالكريمة', barcode: 'CF-204', sell_price: 75, price: 75, cost_price: 28, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/oreo-frappe.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 12, category_id: 2, name: 'عصير برتقال فريش طبيعي', barcode: 'CF-205', sell_price: 45, price: 45, cost_price: 15, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/orange-juice.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 13, category_id: 2, name: 'آيس أمريكانو كلاسيك', barcode: 'CF-206', sell_price: 50, price: 50, cost_price: 16, current_stock: 80, quantity: 80, cat_name: 'مشروبات باردة ومثلجات', category_name: 'مشروبات باردة ومثلجات', image: '../assets/items/iced-latte.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
 
-    { id: 16, category_id: 3, name: 'كلاسيك بيف برجر تشيز', barcode: 'CF-301', sell_price: 145, cost_price: 75, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/burger.jpg', has_sizes: 1 },
-    { id: 17, category_id: 3, name: 'ساندوتش كريسبي تشيكن مدخن', barcode: 'CF-302', sell_price: 130, cost_price: 65, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/crispy-chicken.jpg' },
-    { id: 18, category_id: 3, name: 'كلوب ساندوتش سوبريم', barcode: 'CF-303', sell_price: 110, cost_price: 50, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/club-sandwich.jpg' },
-    { id: 19, category_id: 3, name: 'حواوشي بلدي مخصوص', barcode: 'CF-304', sell_price: 50, cost_price: 25, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/cordon-bleu.jpg' },
-    { id: 20, category_id: 3, name: 'طبق كوردون بلو محشي جبن', barcode: 'CF-305', sell_price: 185, cost_price: 95, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/cordon-bleu.jpg' },
+    { id: 14, category_id: 3, name: 'كلاسيك بيف برجر تشيز', barcode: 'CF-301', sell_price: 145, price: 145, cost_price: 65, current_stock: 50, quantity: 50, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/burger.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 15, category_id: 3, name: 'ساندوتش كريسبي تشيكن مدخن', barcode: 'CF-302', sell_price: 130, price: 130, cost_price: 55, current_stock: 50, quantity: 50, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/crispy-chicken.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 16, category_id: 3, name: 'كلوب ساندوتش سوبريم', barcode: 'CF-303', sell_price: 110, price: 110, cost_price: 45, current_stock: 50, quantity: 50, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/club-sandwich.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 17, category_id: 3, name: 'بطاطس مقلية كرانشي ومتبلة', barcode: 'CF-304', sell_price: 45, price: 45, cost_price: 15, current_stock: 100, quantity: 100, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/fries.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 18, category_id: 3, name: 'طبق كوردون بلو محشي جبن', barcode: 'CF-305', sell_price: 185, price: 185, cost_price: 80, current_stock: 50, quantity: 50, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/cordon-bleu.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 19, category_id: 3, name: 'حواوشي إسكندراني بالجبن', barcode: 'CF-306', sell_price: 65, price: 65, cost_price: 25, current_stock: 50, quantity: 50, cat_name: 'ساندوتشات ووجبات', category_name: 'ساندوتشات ووجبات', image: '../assets/items/burger.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
 
-    { id: 21, category_id: 4, name: 'بيتزا مارجريتا نابوليتان', barcode: 'CF-401', sell_price: 120, cost_price: 50, current_stock: 50, cat_name: 'بيتزا وباستا', image: '../assets/items/pizza-margherita.jpg', has_sizes: 1 },
-    { id: 22, category_id: 4, name: 'بيتزا بيبروني سوبريم', barcode: 'CF-402', sell_price: 155, cost_price: 70, current_stock: 50, cat_name: 'بيتزا وباستا', image: '../assets/items/pizza-pepperoni.jpg', has_sizes: 1 },
-    { id: 23, category_id: 4, name: 'باستا فوتشيني ألفريدو دجاج', barcode: 'CF-403', sell_price: 140, cost_price: 65, current_stock: 50, cat_name: 'بيتزا وباستا', image: '../assets/items/pasta-alfredo.jpg' },
+    { id: 20, category_id: 4, name: 'بيتزا مارجريتا نابوليتان', barcode: 'CF-401', sell_price: 120, price: 120, cost_price: 48, current_stock: 40, quantity: 40, cat_name: 'بيتزا وباستا', category_name: 'بيتزا وباستا', image: '../assets/items/pizza-margherita.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 21, category_id: 4, name: 'بيتزا بيبروني سوبريم', barcode: 'CF-402', sell_price: 155, price: 155, cost_price: 65, current_stock: 40, quantity: 40, cat_name: 'بيتزا وباستا', category_name: 'بيتزا وباستا', image: '../assets/items/pizza-pepperoni.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 22, category_id: 4, name: 'بيتزا مكس جبن كواترو', barcode: 'CF-403', sell_price: 140, price: 140, cost_price: 58, current_stock: 40, quantity: 40, cat_name: 'بيتزا وباستا', category_name: 'بيتزا وباستا', image: '../assets/items/pizza-pepperoni.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 1 },
+    { id: 23, category_id: 4, name: 'باستا ألفريدو تشيكن ومشروم', barcode: 'CF-404', sell_price: 135, price: 135, cost_price: 52, current_stock: 40, quantity: 40, cat_name: 'بيتزا وباستا', category_name: 'بيتزا وباستا', image: '../assets/items/pasta-alfredo.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 24, category_id: 4, name: 'باستا بيني أرابياتا حارة', barcode: 'CF-405', sell_price: 95, price: 95, cost_price: 35, current_stock: 40, quantity: 40, cat_name: 'بيتزا وباستا', category_name: 'بيتزا وباستا', image: '../assets/items/pasta-alfredo.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
 
-    { id: 25, category_id: 5, name: 'تشيز كيك بلوبيري نيويورك', barcode: 'CF-501', sell_price: 85, cost_price: 35, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/cheesecake.jpg' },
-    { id: 26, category_id: 5, name: 'كيك لافا شوكولاتة فادج', barcode: 'CF-502', sell_price: 90, cost_price: 40, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/chocolate-lava.jpg' },
-    { id: 27, category_id: 5, name: 'وافل بلجيكي بالنوتيلا والفواكه', barcode: 'CF-503', sell_price: 80, cost_price: 32, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/waffle.jpg' },
-    { id: 28, category_id: 5, name: 'كرواسون زبدة فرنسي باللوز', barcode: 'CF-504', sell_price: 50, cost_price: 20, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/croissant.jpg' }
+    { id: 25, category_id: 5, name: 'تشيز كيك بلوبيري نيويورك', barcode: 'CF-501', sell_price: 85, price: 85, cost_price: 35, current_stock: 40, quantity: 40, cat_name: 'حلويات ومخبوزات', category_name: 'حلويات ومخبوزات', image: '../assets/items/cheesecake.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 26, category_id: 5, name: 'كيك لافا شوكولاتة فادج', barcode: 'CF-502', sell_price: 90, price: 90, cost_price: 38, current_stock: 40, quantity: 40, cat_name: 'حلويات ومخبوزات', category_name: 'حلويات ومخبوزات', image: '../assets/items/chocolate-lava.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 27, category_id: 5, name: 'وافل بلجيكي بالنوتيلا والفواكه', barcode: 'CF-503', sell_price: 80, price: 80, cost_price: 32, current_stock: 40, quantity: 40, cat_name: 'حلويات ومخبوزات', category_name: 'حلويات ومخبوزات', image: '../assets/items/waffle.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 },
+    { id: 28, category_id: 5, name: 'كرواسون زبدة فرنسي باللوز', barcode: 'CF-504', sell_price: 50, price: 50, cost_price: 20, current_stock: 40, quantity: 40, cat_name: 'حلويات ومخبوزات', category_name: 'حلويات ومخبوزات', image: '../assets/items/croissant.jpg', track_inventory: 1, is_taxable: 1, has_sizes: 0 }
   ];
 
   const DB_FALLBACK_TABLES = [
@@ -505,7 +506,7 @@ if (typeof window !== 'undefined') {
   ];
 
   // ─── Reactive Client-Side Database Engine (for Web & Vercel Real Storage) ───
-  const DATA_VERSION = 'v2_unified';
+  const DATA_VERSION = 'v5_fully_unified_28_qr_pos';
   try {
     if (localStorage.getItem('cafePro_data_version') !== DATA_VERSION) {
       localStorage.setItem('cafePro_data_version', DATA_VERSION);
@@ -520,7 +521,7 @@ if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('cafePro_web_categories');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id <= 5) return parsed;
+          if (Array.isArray(parsed) && parsed.length === 5) return parsed;
         }
       } catch(e) {}
       localStorage.setItem('cafePro_web_categories', JSON.stringify(DB_FALLBACK_CATEGORIES));
@@ -531,7 +532,9 @@ if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('cafePro_web_services');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length >= 20) return parsed;
+          if (Array.isArray(parsed) && parsed.length === 28 && parsed[0].name === 'إسبريسو سينجل / دبل') {
+            return parsed;
+          }
         }
       } catch(e) {}
       localStorage.setItem('cafePro_web_services', JSON.stringify(DB_FALLBACK_SERVICES));

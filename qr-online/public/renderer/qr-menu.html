@@ -690,7 +690,7 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(4px);
-      z-index: 90;
+      z-index: 150;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
@@ -719,7 +719,8 @@
       border: 1px solid var(--hairline-strong);
       border-bottom: none;
       border-radius: 20px 20px 0 0;
-      max-height: 85vh;
+      max-height: 88dvh;
+      max-height: 88vh;
       display: flex;
       flex-direction: column;
       transform: translateY(100%);
@@ -732,11 +733,12 @@
     }
 
     .sheet-handle {
-      width: 36px;
+      width: 42px;
       height: 4px;
       background: var(--hairline-strong);
       border-radius: 2px;
       margin: 10px auto 4px auto;
+      cursor: pointer;
     }
 
     .sheet-header {
@@ -757,19 +759,29 @@
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 800;
       cursor: pointer;
-      width: 28px;
-      height: 28px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 50%;
+      transition: background 0.15s ease;
+    }
+    .sheet-close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFF;
     }
 
     .sheet-body {
-      padding: 16px 20px;
+      padding: 16px 20px 85px 20px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       flex: 1;
+      min-height: 0;
     }
 
     .sheet-footer {
@@ -1313,7 +1325,7 @@
   <!-- ─── 9. DRAWER: ARCHITECTURAL LIVE ORDER TRACKER ─── -->
   <div class="sheet-overlay" id="trackerSheet" onclick="handleOverlayClick(event, 'trackerSheet')">
     <div class="sheet-content">
-      <div class="sheet-handle"></div>
+      <div class="sheet-handle" onclick="closeSheet('trackerSheet')" title="إغلاق"></div>
       <div class="sheet-header">
         <div class="sheet-title" id="trackerSheetTitle">Order Status Tracker</div>
         <button type="button" class="sheet-close-btn" onclick="closeSheet('trackerSheet')">✕</button>
@@ -2654,6 +2666,11 @@
     }
 
     function reopenActiveOrderTracker() {
+      const trackerSheet = document.getElementById('trackerSheet');
+      if (trackerSheet && trackerSheet.classList.contains('active')) {
+        closeSheet('trackerSheet');
+        return;
+      }
       if (currentActiveOrder) {
         openLiveTrackerSheet(currentActiveOrder, currentActiveOrder.items || currentActiveOrder.recapItems || []);
       } else {
@@ -2719,6 +2736,10 @@
     function openSheet(id) {
       const sheet = document.getElementById(id);
       if (sheet) sheet.classList.add('active');
+      if (id === 'trackerSheet') {
+        const pill = document.getElementById('floatingActiveOrderPill');
+        if (pill) pill.style.display = 'none';
+      }
     }
 
     function closeSheet(id) {
