@@ -252,7 +252,7 @@ function handleTableClick(tableId) {
   const table = allTables.find(t => t.id === tableId);
   if (!table) return;
 
-  if (table.status === 'مشغولة' && table.active_invoice_id) {
+  if (table.active_invoice_id || table.status === 'مشغولة') {
     openTableInPOS(table.id, table.active_invoice_id, table.name);
   } else {
     openNewOrderForTable(table.id, table.name);
@@ -261,9 +261,15 @@ function handleTableClick(tableId) {
 
 function openTableInPOS(tableId, invoiceId, tableName) {
   sessionStorage.setItem('pos_active_table_id', tableId);
-  sessionStorage.setItem('pos_active_table_name', tableName);
-  if (invoiceId) {
-    sessionStorage.setItem('pos_resume_invoice_id', invoiceId);
+  sessionStorage.setItem('pos_active_table_name', tableName || `ترابيزة ${tableId}`);
+  let invId = invoiceId;
+  if (!invId && window.WebDB && typeof window.WebDB.getInvoices === 'function') {
+    const invs = window.WebDB.getInvoices();
+    const match = invs.find(i => parseInt(i.table_id) === parseInt(tableId) && (i.status === 'مفتوحة' || i.status === 'مرسلة للمطبخ' || i.status === 'قيد الانتظار'));
+    if (match) invId = match.id;
+  }
+  if (invId) {
+    sessionStorage.setItem('pos_resume_invoice_id', invId);
   } else {
     sessionStorage.removeItem('pos_resume_invoice_id');
   }
@@ -272,7 +278,7 @@ function openTableInPOS(tableId, invoiceId, tableName) {
 
 function openNewOrderForTable(tableId, tableName) {
   sessionStorage.setItem('pos_active_table_id', tableId);
-  sessionStorage.setItem('pos_active_table_name', tableName);
+  sessionStorage.setItem('pos_active_table_name', tableName || `ترابيزة ${tableId}`);
   sessionStorage.removeItem('pos_resume_invoice_id');
   navigate('pos-invoice.html');
 }

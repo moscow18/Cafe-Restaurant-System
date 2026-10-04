@@ -136,20 +136,54 @@ const CafeSupabase = {
   /**
    * Update order status (approved, preparing, completed, rejected)
    */
-  async updateOrderStatus(orderId, newStatus) {
+  async updateOrderStatus(orderId, newStatus, reason = '') {
     const sb = getSupabase();
     if (!sb || !orderId) return false;
 
     try {
-      const { error } = await sb
+      const updateData = { status: newStatus };
+      if (reason) {
+        updateData.rejection_reason = reason;
+        updateData.notes = reason;
+      }
+      
+      let res = await sb
         .from('qr_orders')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', orderId);
 
-      return !error;
+      // If updating with rejection_reason threw error due to schema column missing, fallback to notes
+      if (res.error && reason) {
+        res = await sb
+          .from('qr_orders')
+          .update({ status: newStatus, notes: reason })
+          .eq('id', orderId);
+      }
+
+      return !res.error;
     } catch (e) {
       console.warn('[Supabase updateOrderStatus Error]', e);
       return false;
+    }
+  },
+
+  /**
+   * Get single order status and details by ID
+   */
+  async getOrderStatus(orderId) {
+    const sb = getSupabase();
+    if (!sb || !orderId) return null;
+    try {
+      const { data, error } = await sb
+        .from('qr_orders')
+        .select('*')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (error) return null;
+      return data;
+    } catch(e) {
+      return null;
     }
   },
 

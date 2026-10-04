@@ -1356,6 +1356,17 @@
           </div>
         </div>
 
+        <!-- Prominent Rejection Alert Box -->
+        <div id="trackerRejectionAlert" style="display:none; background:rgba(239, 68, 68, 0.12); border:1.5px solid #EF4444; border-radius:12px; padding:14px; margin-top:14px;">
+          <div style="display:flex; align-items:center; gap:8px; color:#EF4444; font-weight:800; font-size:13.5px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="trackerRejectionTitle">تم رفض الطلب من قِبل الكاشير</span>
+          </div>
+          <div id="trackerRejectionReasonBox" style="font-size:13px; color:#FCA5A5; font-weight:600; margin-top:8px; line-height:1.5; background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:8px;">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
         <!-- Items Summary List -->
         <div style="background:#17181C; border:1px solid var(--hairline); border-radius:10px; padding:12px; margin-top:14px;">
           <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:8px;" id="trackerItemsRecapTitle">Order Items Recap:</div>
@@ -1370,6 +1381,21 @@
           <span id="btnBackToMenu">Back to Menu</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ─── FLOATING ACTIVE ORDER PILL (Persistent Return to Tracker) ─── -->
+  <div id="floatingActiveOrderPill" onclick="reopenActiveOrderTracker()" style="display:none; position:fixed; bottom:76px; left:16px; right:16px; max-width:440px; margin:0 auto; z-index:90; background:rgba(18, 20, 26, 0.94); border:1.5px solid #FF5B22; border-radius:999px; padding:10px 16px; box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 15px rgba(255,91,34,0.3); backdrop-filter:blur(12px); cursor:pointer; align-items:center; justify-content:space-between; gap:10px; transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+      <div style="width:10px; height:10px; border-radius:50%; background:#10B981; box-shadow:0 0 8px #10B981; flex-shrink:0;" id="pillStatusDot"></div>
+      <div style="display:flex; flex-direction:column; min-width:0;">
+        <span style="font-size:12.5px; font-weight:800; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="pillOrderTitle">متابعة طلبك #QR-0001</span>
+        <span style="font-size:10.5px; font-weight:700; color:#FDBA74; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="pillOrderStatusBadge">جاري التجهيز... (اضغط للعودة لحالة الطلب)</span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:4px; color:#FF5B22; font-size:11px; font-weight:800; flex-shrink:0; background:rgba(255,91,34,0.15); padding:4px 10px; border-radius:999px;">
+      <span id="pillActionText">حالة الطلب</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
     </div>
   </div>
 
@@ -1771,24 +1797,18 @@
       } catch(e) {}
 
       let json = null;
-      try {
-        const res = await fetch('/api/qr-menu/data');
-        if (res.ok) {
-          json = await res.json();
-        }
-      } catch (e) {
-        console.warn('API unavailable, trying fallback menu-data.json...');
-      }
-
-      if (!json || !json.success) {
+      const pathsToTry = ['/api/qr-menu/data', './menu-data.json', '/menu-data.json', '../menu-data.json', 'renderer/menu-data.json'];
+      for (const p of pathsToTry) {
         try {
-          const res = await fetch('./menu-data.json');
+          const res = await fetch(p);
           if (res.ok) {
-            json = await res.json();
+            const parsed = await res.json();
+            if (parsed && (parsed.success || parsed.data)) {
+              json = parsed;
+              break;
+            }
           }
-        } catch (err) {
-          console.error('Failed to load fallback menu data:', err);
-        }
+        } catch(e) {}
       }
 
       if (json && json.success) {
@@ -2398,22 +2418,10 @@
     }
 
     function simulateDemoFlow(orderData) {
-      setTimeout(() => {
-        if (currentActiveOrder && String(currentActiveOrder.order_id) === String(orderData.order_id)) {
-          currentActiveOrder.status = 'approved';
-          updateStepperUI('approved', orderData);
-        }
-      }, 3500);
-
-      setTimeout(() => {
-        if (currentActiveOrder && String(currentActiveOrder.order_id) === String(orderData.order_id)) {
-          currentActiveOrder.status = 'completed';
-          updateStepperUI('completed', orderData);
-        }
-      }, 8500);
+      // Real-time backend and Supabase active; demo auto-transitions disabled to preserve real cashier actions
     }
 
-    // ─── Real-Time Live Order Tracker (Server-Sent Events / SSE) ───
+    // ─── Real-Time Live Order Tracker (Server-Sent Events / SSE & Supabase) ───
     function openLiveTrackerSheet(orderData, recapItems) {
       const t = I18N[currentLang];
       const orderId = orderData.id || orderData.order_id;
@@ -2424,8 +2432,9 @@
       document.getElementById('trackerTableSub').textContent = `${tableName} • CafePro`;
 
       const recapEl = document.getElementById('trackerItemsRecap');
-      if (recapEl && recapItems) {
-        recapEl.innerHTML = recapItems.map(it => `
+      const itemsList = recapItems || orderData.items || (currentActiveOrder && currentActiveOrder.items) || [];
+      if (recapEl && itemsList.length > 0) {
+        recapEl.innerHTML = itemsList.map(it => `
           <div style="display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-secondary);">
             <div>
               <span style="font-weight:700; color:var(--text-primary);">${escapeHtml(it.display_name || it.name || it.service_name)}</span>
@@ -2437,10 +2446,16 @@
         `).join('');
       }
 
-      updateStepperUI(orderData.status || 'pending', orderData);
+      currentActiveOrder = { ...orderData, items: itemsList };
+      try {
+        localStorage.setItem('cafePro_active_order', JSON.stringify(currentActiveOrder));
+        localStorage.setItem('cafePro_active_order_id', orderId);
+      } catch(e) {}
+
+      updateStepperUI(orderData.status || 'pending', currentActiveOrder);
       openSheet('trackerSheet');
 
-      // Connect to true Real-Time SSE Stream
+      // Connect to true Real-Time SSE Stream & Supabase
       setupOrderRealtimeListener(orderId);
     }
 
@@ -2449,6 +2464,9 @@
       if (window.CafeSupabase && typeof window.CafeSupabase.subscribeToOrderStatus === 'function') {
         window.CafeSupabase.subscribeToOrderStatus(orderId, (updatedOrder) => {
           console.log('[Supabase Realtime Status Change]', updatedOrder.status);
+          if (currentActiveOrder) {
+            currentActiveOrder = { ...currentActiveOrder, ...updatedOrder };
+          }
           updateStepperUI(updatedOrder.status, updatedOrder);
         });
       }
@@ -2467,6 +2485,7 @@
             const payload = JSON.parse(evt.data);
             if (payload && Number(payload.order_id) === Number(orderId)) {
               console.log('[RealTime SSE] Instant Status Update:', payload.status);
+              if (currentActiveOrder) currentActiveOrder = { ...currentActiveOrder, ...payload };
               updateStepperUI(payload.status, payload);
             }
           } catch(e) {
@@ -2476,6 +2495,32 @@
       } catch (err) {
         console.warn('[SSE Connection Init Error]', err);
       }
+
+      // 3. Fallback Interval Poller (every 2.5s) to guarantee rejection and completion updates
+      if (window._orderStatusPoller) clearInterval(window._orderStatusPoller);
+      window._orderStatusPoller = setInterval(async () => {
+        try {
+          // Check local queue first
+          const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+          const localMatch = queue.find(o => String(o.id || o.order_id) === String(orderId));
+          if (localMatch && localMatch.status && (!currentActiveOrder || localMatch.status !== currentActiveOrder.status || localMatch.rejection_reason !== currentActiveOrder.rejection_reason)) {
+            currentActiveOrder = { ...(currentActiveOrder || {}), ...localMatch };
+            updateStepperUI(localMatch.status, localMatch);
+            return;
+          }
+
+          // Check Supabase
+          if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
+            const sbOrder = await window.CafeSupabase.getOrderStatus(orderId);
+            if (sbOrder && sbOrder.status) {
+              if (!currentActiveOrder || sbOrder.status !== currentActiveOrder.status || sbOrder.rejection_reason !== currentActiveOrder.rejection_reason) {
+                currentActiveOrder = { ...(currentActiveOrder || {}), ...sbOrder };
+                updateStepperUI(sbOrder.status, sbOrder);
+              }
+            }
+          }
+        } catch(e) {}
+      }, 2500);
     }
 
     function updateStepperUI(status, extraData) {
@@ -2485,8 +2530,11 @@
       const s3 = document.getElementById('stepNode3');
       const headline = document.getElementById('trackerHeadline');
       const tableSub = document.getElementById('trackerTableSub');
+      const rejectBox = document.getElementById('trackerRejectionAlert');
+      const rejectReasonBox = document.getElementById('trackerRejectionReasonBox');
 
       if (status === 'approved') {
+        if (rejectBox) rejectBox.style.display = 'none';
         if (s1) {
           s1.className = 'timeline-step completed';
           const m1 = s1.querySelector('.step-marker');
@@ -2504,6 +2552,7 @@
         }
         if (headline) headline.textContent = t.trackerApprovedHeadline;
       } else if (status === 'completed' || status === 'ready') {
+        if (rejectBox) rejectBox.style.display = 'none';
         if (s1) {
           s1.className = 'timeline-step completed';
           const m1 = s1.querySelector('.step-marker');
@@ -2526,12 +2575,18 @@
           const m1 = s1.querySelector('.step-marker');
           if (m1) m1.textContent = '✕';
         }
+        if (s2) s2.className = 'timeline-step';
+        if (s3) s3.className = 'timeline-step';
+
         if (headline) headline.textContent = t.trackerRejectedHeadline;
-        if (tableSub && extraData && extraData.reason) {
-          tableSub.textContent = `${t.reasonPrefix} ${extraData.reason}`;
-        }
+
+        const reason = (extraData && (extraData.rejection_reason || extraData.reason || extraData.notes)) || 'الصنف غير متوفر حالياً، يرجى طلب صنف آخر';
+        if (rejectBox) rejectBox.style.display = 'block';
+        if (rejectReasonBox) rejectReasonBox.textContent = reason;
+        if (tableSub) tableSub.textContent = `سبب الرفض: ${reason}`;
       } else {
         // Pending
+        if (rejectBox) rejectBox.style.display = 'none';
         if (s1) {
           s1.className = 'timeline-step active';
           const m1 = s1.querySelector('.step-marker');
@@ -2549,20 +2604,112 @@
         }
         if (headline) headline.textContent = t.trackerSuccessHeadline;
       }
+
+      updateFloatingPill(status, extraData || currentActiveOrder);
+    }
+
+    function updateFloatingPill(status, orderData) {
+      const pill = document.getElementById('floatingActiveOrderPill');
+      if (!pill) return;
+      const orderId = (orderData && (orderData.id || orderData.order_id)) || (currentActiveOrder && (currentActiveOrder.id || currentActiveOrder.order_id)) || localStorage.getItem('cafePro_active_order_id');
+      if (!orderId) {
+        pill.style.display = 'none';
+        return;
+      }
+
+      const orderNum = (orderData && orderData.order_number) || `QR-${String(orderId).padStart(4, '0')}`;
+      const titleEl = document.getElementById('pillOrderTitle');
+      const badgeEl = document.getElementById('pillOrderStatusBadge');
+      const dotEl = document.getElementById('pillStatusDot');
+
+      if (titleEl) titleEl.textContent = `طلبك #${orderNum}`;
+
+      if (status === 'approved') {
+        if (dotEl) { dotEl.style.background = '#3B82F6'; dotEl.style.boxShadow = '0 0 8px #3B82F6'; }
+        if (badgeEl) {
+          badgeEl.textContent = currentLang === 'ar' ? 'جاري التحضير في البار ☕ (اضغط للمتابعة)' : 'In Preparation ☕ (Tap to view)';
+          badgeEl.style.color = '#93C5FD';
+        }
+      } else if (status === 'completed' || status === 'ready') {
+        if (dotEl) { dotEl.style.background = '#10B981'; dotEl.style.boxShadow = '0 0 8px #10B981'; }
+        if (badgeEl) {
+          badgeEl.textContent = currentLang === 'ar' ? 'تم تقديم طلبك بنجاح! بالهناء والشفاء 🎉' : 'Served to Table! Enjoy 🎉';
+          badgeEl.style.color = '#6EE7B7';
+        }
+      } else if (status === 'rejected') {
+        if (dotEl) { dotEl.style.background = '#EF4444'; dotEl.style.boxShadow = '0 0 8px #EF4444'; }
+        if (badgeEl) {
+          badgeEl.textContent = currentLang === 'ar' ? 'تم رفض الطلب ⚠️ (اضغط لمعرفة السبب)' : 'Order Rejected ⚠️ (Tap for reason)';
+          badgeEl.style.color = '#FCA5A5';
+        }
+      } else {
+        if (dotEl) { dotEl.style.background = '#F59E0B'; dotEl.style.boxShadow = '0 0 8px #F59E0B'; }
+        if (badgeEl) {
+          badgeEl.textContent = currentLang === 'ar' ? 'في انتظار تأكيد الكاشير... ⏳ (اضغط للمتابعة)' : 'Awaiting Confirmation... ⏳ (Tap to view)';
+          badgeEl.style.color = '#FDE68A';
+        }
+      }
+
+      pill.style.display = 'flex';
+    }
+
+    function reopenActiveOrderTracker() {
+      if (currentActiveOrder) {
+        openLiveTrackerSheet(currentActiveOrder, currentActiveOrder.items || currentActiveOrder.recapItems || []);
+      } else {
+        const saved = localStorage.getItem('cafePro_active_order');
+        if (saved) {
+          try {
+            const ord = JSON.parse(saved);
+            currentActiveOrder = ord;
+            openLiveTrackerSheet(ord, ord.items || []);
+            return;
+          } catch(e) {}
+        }
+        const activeId = localStorage.getItem('cafePro_active_order_id');
+        if (activeId) {
+          checkExistingActiveOrder();
+        }
+      }
     }
 
     async function checkExistingActiveOrder() {
       const activeId = localStorage.getItem('cafePro_active_order_id');
       if (activeId) {
+        // Try local queue first
+        try {
+          const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+          const match = queue.find(o => String(o.id || o.order_id) === String(activeId));
+          if (match) {
+            currentActiveOrder = match;
+            updateFloatingPill(match.status || 'pending', match);
+            setupOrderRealtimeListener(activeId);
+            return;
+          }
+        } catch(e) {}
+
+        // Try Supabase
+        if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
+          try {
+            const sbOrder = await window.CafeSupabase.getOrderStatus(activeId);
+            if (sbOrder) {
+              currentActiveOrder = sbOrder;
+              updateFloatingPill(sbOrder.status || 'pending', sbOrder);
+              setupOrderRealtimeListener(activeId);
+              return;
+            }
+          } catch(e) {}
+        }
+
+        // Try API
         try {
           const res = await fetch(`/api/qr-menu/order-status?order_id=${activeId}`);
           const json = await res.json();
           if (json && json.success && json.data) {
             const ord = json.data;
-            if (ord.status === 'pending' || ord.status === 'approved') {
-              currentActiveOrder = ord;
-              openLiveTrackerSheet(ord, ord.items || []);
-            }
+            currentActiveOrder = ord;
+            updateFloatingPill(ord.status || 'pending', ord);
+            setupOrderRealtimeListener(activeId);
           }
         } catch (e) {}
       }
@@ -2577,6 +2724,9 @@
     function closeSheet(id) {
       const sheet = document.getElementById(id);
       if (sheet) sheet.classList.remove('active');
+      if (id === 'trackerSheet' && currentActiveOrder) {
+        updateFloatingPill(currentActiveOrder.status || 'pending', currentActiveOrder);
+      }
     }
 
     function handleOverlayClick(event, id) {

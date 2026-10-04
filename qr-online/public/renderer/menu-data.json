@@ -1,0 +1,450 @@
+{
+  "success": true,
+  "data": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 2,
+        "name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 3,
+        "name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 4,
+        "name": "بيتزا وباستا"
+      },
+      {
+        "id": 5,
+        "name": "حلويات ومخبوزات"
+      }
+    ],
+    "services": [
+      {
+        "id": 1,
+        "category_id": 1,
+        "name": "إسبريسو سينجل / دبل",
+        "barcode": "CF-101",
+        "sell_price": 35,
+        "image": "../assets/items/espresso.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 5,
+        "category_id": 1,
+        "name": "شاي كرك بالهيل والزعفران",
+        "barcode": "CF-105",
+        "sell_price": 40,
+        "image": "../assets/items/karak-tea.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 3,
+        "category_id": 1,
+        "name": "فانيليا ولاتيه كاراميل",
+        "barcode": "CF-103",
+        "sell_price": 65,
+        "image": "../assets/items/latte.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 4,
+        "category_id": 1,
+        "name": "فلات وايت أسترالي",
+        "barcode": "CF-104",
+        "sell_price": 60,
+        "image": "../assets/items/flat-white.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 7,
+        "category_id": 1,
+        "name": "قهوة تركي مخصوص بالحبهان",
+        "barcode": "CF-107",
+        "sell_price": 30,
+        "image": "../assets/items/turkish-coffee.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 2,
+        "category_id": 1,
+        "name": "كابتشينو إيطالي كلاسيك",
+        "barcode": "CF-102",
+        "sell_price": 55,
+        "image": "../assets/items/cappuccino.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 6,
+        "category_id": 1,
+        "name": "هوت شوكليت بالمارشميلو",
+        "barcode": "CF-106",
+        "sell_price": 60,
+        "image": "../assets/items/hot-chocolate.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "مشروبات ساخنة وقهوة"
+      },
+      {
+        "id": 13,
+        "category_id": 2,
+        "name": "آيس أمريكانو كلاسيك",
+        "barcode": "CF-206",
+        "sell_price": 50,
+        "image": "../assets/items/iced-latte.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 8,
+        "category_id": 2,
+        "name": "آيس سبانش لاتيه",
+        "barcode": "CF-201",
+        "sell_price": 70,
+        "image": "../assets/items/iced-latte.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 11,
+        "category_id": 2,
+        "name": "أوريو فرابيه بالكريمة",
+        "barcode": "CF-204",
+        "sell_price": 75,
+        "image": "../assets/items/oreo-frappe.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 10,
+        "category_id": 2,
+        "name": "سموذي مانجو باشن فروت",
+        "barcode": "CF-203",
+        "sell_price": 65,
+        "image": "../assets/items/mango-smoothie.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 12,
+        "category_id": 2,
+        "name": "عصير برتقال فريش طبيعي",
+        "barcode": "CF-205",
+        "sell_price": 45,
+        "image": "../assets/items/orange-juice.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 9,
+        "category_id": 2,
+        "name": "موهيتو فراولة وليمون نعناع",
+        "barcode": "CF-202",
+        "sell_price": 55,
+        "image": "../assets/items/mojito.jpg",
+        "track_inventory": 1,
+        "quantity": 80,
+        "is_taxable": 1,
+        "category_name": "مشروبات باردة ومثلجات"
+      },
+      {
+        "id": 17,
+        "category_id": 3,
+        "name": "بطاطس مقلية كرانشي ومتبلة",
+        "barcode": "CF-304",
+        "sell_price": 45,
+        "image": "../assets/items/fries.jpg",
+        "track_inventory": 1,
+        "quantity": 100,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 19,
+        "category_id": 3,
+        "name": "حواوشي إسكندراني بالجبن",
+        "barcode": "CF-306",
+        "sell_price": 65,
+        "image": "../assets/items/burger.jpg",
+        "track_inventory": 1,
+        "quantity": 50,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 15,
+        "category_id": 3,
+        "name": "ساندوتش كريسبي تشيكن مدخن",
+        "barcode": "CF-302",
+        "sell_price": 130,
+        "image": "../assets/items/crispy-chicken.jpg",
+        "track_inventory": 1,
+        "quantity": 50,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 18,
+        "category_id": 3,
+        "name": "طبق كوردون بلو محشي جبن",
+        "barcode": "CF-305",
+        "sell_price": 185,
+        "image": "../assets/items/cordon-bleu.jpg",
+        "track_inventory": 1,
+        "quantity": 50,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 14,
+        "category_id": 3,
+        "name": "كلاسيك بيف برجر تشيز",
+        "barcode": "CF-301",
+        "sell_price": 145,
+        "image": "../assets/items/burger.jpg",
+        "track_inventory": 1,
+        "quantity": 50,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 16,
+        "category_id": 3,
+        "name": "كلوب ساندوتش سوبريم",
+        "barcode": "CF-303",
+        "sell_price": 110,
+        "image": "../assets/items/club-sandwich.jpg",
+        "track_inventory": 1,
+        "quantity": 50,
+        "is_taxable": 1,
+        "category_name": "ساندوتشات ووجبات"
+      },
+      {
+        "id": 23,
+        "category_id": 4,
+        "name": "باستا ألفريدو تشيكن ومشروم",
+        "barcode": "CF-404",
+        "sell_price": 135,
+        "image": "../assets/items/pasta-alfredo.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "بيتزا وباستا"
+      },
+      {
+        "id": 24,
+        "category_id": 4,
+        "name": "باستا بيني أرابياتا حارة",
+        "barcode": "CF-405",
+        "sell_price": 95,
+        "image": "../assets/items/pasta-alfredo.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "بيتزا وباستا"
+      },
+      {
+        "id": 21,
+        "category_id": 4,
+        "name": "بيتزا بيبروني سوبريم",
+        "barcode": "CF-402",
+        "sell_price": 155,
+        "image": "../assets/items/pizza-pepperoni.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "بيتزا وباستا"
+      },
+      {
+        "id": 20,
+        "category_id": 4,
+        "name": "بيتزا مارجريتا نابوليتان",
+        "barcode": "CF-401",
+        "sell_price": 120,
+        "image": "../assets/items/pizza-margherita.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "بيتزا وباستا"
+      },
+      {
+        "id": 22,
+        "category_id": 4,
+        "name": "بيتزا مكس جبن كواترو",
+        "barcode": "CF-403",
+        "sell_price": 140,
+        "image": "../assets/items/pizza-pepperoni.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "بيتزا وباستا"
+      },
+      {
+        "id": 25,
+        "category_id": 5,
+        "name": "تشيز كيك بلوبيري نيويورك",
+        "barcode": "CF-501",
+        "sell_price": 85,
+        "image": "../assets/items/cheesecake.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "حلويات ومخبوزات"
+      },
+      {
+        "id": 28,
+        "category_id": 5,
+        "name": "كرواسون زبدة فرنسي باللوز",
+        "barcode": "CF-504",
+        "sell_price": 50,
+        "image": "../assets/items/croissant.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "حلويات ومخبوزات"
+      },
+      {
+        "id": 26,
+        "category_id": 5,
+        "name": "كيك لافا شوكولاتة فادج",
+        "barcode": "CF-502",
+        "sell_price": 90,
+        "image": "../assets/items/chocolate-lava.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "حلويات ومخبوزات"
+      },
+      {
+        "id": 27,
+        "category_id": 5,
+        "name": "وافل بلجيكي بالنوتيلا والفواكه",
+        "barcode": "CF-503",
+        "sell_price": 80,
+        "image": "../assets/items/waffle.jpg",
+        "track_inventory": 1,
+        "quantity": 40,
+        "is_taxable": 1,
+        "category_name": "حلويات ومخبوزات"
+      }
+    ],
+    "tables": [
+      {
+        "id": 7,
+        "name": "ترابيزة 1",
+        "section": "الصالة الرئيسية",
+        "seats": 4,
+        "status": "مشغولة"
+      },
+      {
+        "id": 8,
+        "name": "ترابيزة 2",
+        "section": "الصالة الرئيسية",
+        "seats": 4,
+        "status": "فاضية"
+      },
+      {
+        "id": 9,
+        "name": "ترابيزة 3",
+        "section": "الصالة الرئيسية",
+        "seats": 2,
+        "status": "فاضية"
+      },
+      {
+        "id": 10,
+        "name": "ترابيزة 4",
+        "section": "الصالة الرئيسية",
+        "seats": 6,
+        "status": "فاضية"
+      },
+      {
+        "id": 11,
+        "name": "عائلية 1",
+        "section": "ركن العائلات",
+        "seats": 8,
+        "status": "فاضية"
+      },
+      {
+        "id": 12,
+        "name": "عائلية 2",
+        "section": "ركن العائلات",
+        "seats": 6,
+        "status": "فاضية"
+      },
+      {
+        "id": 13,
+        "name": "تراس 1",
+        "section": "التراس الخارجي",
+        "seats": 4,
+        "status": "فاضية"
+      },
+      {
+        "id": 14,
+        "name": "تراس 2",
+        "section": "التراس الخارجي",
+        "seats": 4,
+        "status": "فاضية"
+      },
+      {
+        "id": 15,
+        "name": "صالة VIP 1",
+        "section": "قسم VIP",
+        "seats": 6,
+        "status": "فاضية"
+      },
+      {
+        "id": 16,
+        "name": "صالة VIP 2",
+        "section": "قسم VIP",
+        "seats": 4,
+        "status": "فاضية"
+      }
+    ],
+    "settings": {
+      "company_name": "كافيه ومطعم برو",
+      "logo_path": "assets/logo.png",
+      "phone": null,
+      "address": null,
+      "currency": "جنيه",
+      "tax_enabled": 0,
+      "tax_rate": 14,
+      "tax_type": "inclusive",
+      "tax_exempt_takeaway": 1,
+      "service_charge_enabled": 1,
+      "service_charge_rate": 12
+    }
+  }
+}

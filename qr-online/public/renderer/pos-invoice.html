@@ -1488,11 +1488,10 @@
         <span id="invoiceNumberDisplay" class="inv-num tnum">0001</span>
       </div>
 
-      <!-- Live QR Orders Button (Hidden from topbar; orders arrive via auto-panel/popup) -->
-      <button class="btn-topbar-action btn-topbar-qr" id="btnQrOrdersBadge" onclick="openQrOrdersModal()" title="طلبات الزبائن الواردة عبر المنيو الإلكتروني QR" style="display:none !important;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        <span>طلبات QR</span>
-        <span class="qr-badge-counter" id="qrPendingBadge" style="display:none; background:#E11D48; color:#FFFFFF; border-radius:999px; padding:1px 6px; font-size:10px; font-weight:900;">0</span>
+      <!-- Admin Only: Back to Main Dashboard Button -->
+      <button class="topbar-btn admin-only" id="btnAdminBackHome" onclick="navigate('main-dashboard.html')" title="العودة للشاشة الرئيسية للإدارة" style="display:none; background:#0F172A; color:#FFFFFF; font-weight:700; border:none; padding:7px 14px; border-radius:8px; font-size:12px; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
       </button>
 
       <!-- Active Delivery Orders Button -->
@@ -1609,11 +1608,6 @@
 
       <!-- Order Ticket Footer & Totals -->
       <div class="cart-footer">
-        <!-- Order Notes (Optional & Compact) -->
-        <div style="margin-bottom:6px;">
-          <input type="text" id="invoiceNotes" class="form-control" placeholder="ملاحظات الطلب أو الفاتورة..." style="height:28px; font-size:11px; font-weight:600; background:#FFFFFF;" />
-        </div>
-
         <div class="cart-summary-row">
           <span>عدد الأصناف: <b id="totalQtyDisplay" class="tnum">0</b></span>
           <span>المجموع الفرعي: <b id="subtotalDisplay" class="tnum">0.00</b> ج.م</span>
@@ -1673,6 +1667,12 @@
               <kbd class="pos-kbd-badge pos-kbd-green">F2</kbd>
             </button>
           </div>
+
+          <!-- Dedicated QR Order "تم تقديم الطلب للزبون" Button (Only displayed for QR orders) -->
+          <button type="button" class="btn-pos-action" id="btnMarkQrServed" onclick="markCurrentQrOrderServed()" style="display:none; background:#059669; color:#FFFFFF; border:1px solid #047857; font-weight:800; font-size:13.5px; padding:11px 14px; border-radius:10px; cursor:pointer; align-items:center; justify-content:center; gap:8px; box-shadow:0 3px 10px rgba(5,150,105,0.25); transition:all 0.15s ease;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>تم تقديم الطلب للزبون</span>
+          </button>
 
           <!-- Primary Checkout Action: Full Width -->
           <button type="button" class="btn-pos-action btn-checkout" id="btnCheckout" onclick="saveAndPrint()" title="فتح نافذة التحصيل والدفع [F1]">
@@ -1841,10 +1841,10 @@
 
   <!-- ─── 6. MODAL: POS PETTY EXPENSE OR ADVANCE (MODERNIZED CAFEPRO DESIGN) ────────────────────────────── -->
   <div class="modal-overlay" id="posExpenseAdvanceModal" style="z-index:9999; backdrop-filter:blur(5px); background:rgba(15,23,42,0.5);">
-    <div class="modal" style="max-width:490px; width:94%; border-radius:20px; overflow:hidden; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 25px 60px rgba(15,23,42,0.22); font-family:inherit;">
+    <div class="modal" style="max-width:490px; width:94%; border-radius:20px; overflow:hidden; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 25px 60px rgba(15,23,42,0.22); font-family:inherit; max-height:88vh; display:flex; flex-direction:column;">
       
       <!-- Modern Card Header -->
-      <div style="background:linear-gradient(180deg, #FBF9F6 0%, #FFFFFF 100%); border-bottom:1px solid var(--pos-border); padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+      <div style="background:linear-gradient(180deg, #FBF9F6 0%, #FFFFFF 100%); border-bottom:1px solid var(--pos-border); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); border:1px solid #FED7AA; display:flex; align-items:center; justify-content:center; color:#EA580C; box-shadow:0 2px 8px rgba(234,88,12,0.15);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="2"/></svg>
@@ -1857,14 +1857,14 @@
         <button class="modal-close" onclick="closeModal('posExpenseAdvanceModal')" style="width:32px; height:32px; border-radius:10px; border:1px solid var(--pos-border); background:#FFFFFF; color:var(--pos-text-muted); cursor:pointer; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; transition:all 0.15s ease;">✕</button>
       </div>
 
-      <div class="modal-body" style="padding:18px 22px;">
+      <div class="modal-body" style="padding:18px 22px; max-height:55vh; overflow-y:auto;">
         <!-- Apple-style Segmented Switch -->
         <div style="display:flex; background:#F1F5F9; border-radius:12px; padding:4px; gap:4px; margin-bottom:16px; border:1px solid #E2E8F0;">
           <button type="button" id="posTabExpenseBtn" onclick="switchPosExpenseTab('expense')" style="flex:1; padding:9px 12px; border:none; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.15s ease; background:#FFFFFF; color:#FF5B22; box-shadow:0 2px 6px rgba(0,0,0,0.06); font-family:inherit;">
-            💸 مصروف نثريات (بضاعة / خامات)
+            مصروف نثريات (بضاعة وخامات)
           </button>
           <button type="button" id="posTabAdvanceBtn" onclick="switchPosExpenseTab('advance')" style="flex:1; padding:9px 12px; border:none; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.15s ease; background:transparent; color:#64748B; font-family:inherit;">
-            👤 سلفة موظف (خصم راتب)
+            سلفة موظف (خصم راتب)
           </button>
         </div>
 

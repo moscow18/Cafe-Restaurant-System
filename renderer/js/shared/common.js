@@ -651,12 +651,71 @@ if (typeof window !== 'undefined') {
       return { success: true, data: { invoiceId: id, invoiceNumber: invNum } };
     },
     getTables() {
+      let tables = DB_FALLBACK_TABLES;
       try {
         const stored = localStorage.getItem('cafePro_web_tables');
-        if (stored) return JSON.parse(stored);
+        if (stored) tables = JSON.parse(stored);
       } catch(e) {}
-      localStorage.setItem('cafePro_web_tables', JSON.stringify(DB_FALLBACK_TABLES));
-      return DB_FALLBACK_TABLES;
+
+      // Cross-reference with open invoices to accurately reflect status, active_invoice_id, etc.
+      try {
+        const invs = this.getInvoices();
+        tables = tables.map(t => {
+          const openInv = invs.find(i => parseInt(i.table_id) === parseInt(t.id) && (i.status === 'مفتوحة' || i.status === 'مرسلة للمطبخ' || i.status === 'قيد الانتظار'));
+          if (openInv) {
+            return {
+              ...t,
+              status: 'مشغولة',
+              active_invoice_id: openInv.id,
+              active_invoice_number: openInv.invoice_number,
+              active_invoice_total: openInv.net_total || openInv.dynamic_net_total || 0,
+              customer_name: openInv.customer_name || ''
+            };
+          } else if (t.status === 'مشغولة' && !openInv) {
+            return { ...t, status: 'فاضية', active_invoice_id: null, active_invoice_number: null, active_invoice_total: 0 };
+          }
+          return t;
+        });
+      } catch(e) {}
+
+      return tables;
+    },
+    getEmployees() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_employees');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch(e) {}
+      const seeds = [
+        { id: 1, name: 'أحمد إبراهيم', role: 'كاشير', employee_type: 'كاشير', phone: '01011112222', salary: 4500, is_active: 1 },
+        { id: 2, name: 'محمود حسن', role: 'باريستا', employee_type: 'صالة', phone: '01022223333', salary: 4000, is_active: 1 },
+        { id: 3, name: 'علي خالد', role: 'شيف مطبخ', employee_type: 'مطبخ', phone: '01033334444', salary: 5000, is_active: 1 },
+        { id: 4, name: 'كريم مصطفى', role: 'طيار دليفري', employee_type: 'دليفري', phone: '01044445555', salary: 3500, is_active: 1 }
+      ];
+      localStorage.setItem('cafePro_web_employees', JSON.stringify(seeds));
+      return seeds;
+    },
+    getExpenseCategories() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_expense_categories');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch(e) {}
+      const seeds = [
+        { id: 1, name: 'مشتريات خامات ومواد غذائية (بن، لبن، ثلج، نعناع)' },
+        { id: 2, name: 'سلف موظفين ومسحوبات رواتب' },
+        { id: 3, name: 'كهرباء ومياه وغاز' },
+        { id: 4, name: 'أدوات نظافة ومناديل ومستهلكات' },
+        { id: 5, name: 'صيانة ماكينات ومعدات' },
+        { id: 6, name: 'إيجار ومصروفات إدارية' },
+        { id: 7, name: 'نثريات كافيه ومصاريف عامة' }
+      ];
+      localStorage.setItem('cafePro_web_expense_categories', JSON.stringify(seeds));
+      return seeds;
     },
     updateTableStatus(id, status, extra = {}) {
       const tables = this.getTables();
@@ -957,26 +1016,52 @@ if (typeof window !== 'undefined') {
         } catch(e) {}
 
         const sLower = (sql || '').toLowerCase().trim();
-        if (sLower.includes('from invoices')) {
-          return { success: true, data: WebDB.getInvoices() };
-        }
-        if (sLower.includes('from tables') && !sLower.includes('join')) {
+        if (sLower.includes('from tables')) {
           return { success: true, data: WebDB.getTables() };
+        }
+        if (sLower.includes('from services') && !sLower.includes('invoice_items')) {
+          return { success: true, data: WebDB.getServices() };
+        }
+        if (sLower.includes('from service_categories')) {
+          return { success: true, data: WebDB.getCategories() };
+        }
+        if (sLower.includes('from expense_categories') || sLower.includes('from expense_types')) {
+          return { success: true, data: WebDB.getExpenseCategories() };
         }
         if (sLower.includes('from expenses')) {
           return { success: true, data: WebDB.getExpenses() };
         }
-        if (sLower.includes('from service_categories') && !sLower.includes('join') && !sLower.includes('invoice_items')) {
-          return { success: true, data: WebDB.getCategories() };
+        if (sLower.includes('from employees')) {
+          return { success: true, data: WebDB.getEmployees() };
         }
-        if (sLower.includes('from services') && !sLower.includes('join') && !sLower.includes('invoice_items')) {
-          return { success: true, data: WebDB.getServices() };
+        if (sLower.includes('from invoice_items')) {
+          if (sLower.includes('invoice_id') && params.length > 0) {
+            const invId = parseInt(params[0]);
+            let items = [];
+            try {
+              const allItems = JSON.parse(localStorage.getItem('cafePro_web_invoice_items') || '[]');
+              items = allItems.filter(it => parseInt(it.invoice_id) === invId);
+            } catch(e) {}
+            if (items.length === 0) {
+              const invs = WebDB.getInvoices();
+              const foundInv = invs.find(i => parseInt(i.id) === invId);
+              if (foundInv && Array.isArray(foundInv.items)) items = foundInv.items;
+            }
+            return { success: true, data: items };
+          }
+          return { success: true, data: [] };
+        }
+        if (sLower.includes('from invoices')) {
+          const invs = WebDB.getInvoices();
+          if (sLower.includes('table_id') && params.length > 0) {
+            const tId = parseInt(params[0]);
+            const filtered = invs.filter(i => parseInt(i.table_id) === tId && (i.status === 'مفتوحة' || i.status === 'مرسلة للمطبخ' || i.status === 'قيد الانتظار'));
+            return { success: true, data: filtered };
+          }
+          return { success: true, data: invs };
         }
         if (sLower.includes('from customers')) {
           return { success: true, data: WebDB.getCustomers() };
-        }
-        if (sLower.includes('from employees')) {
-          return { success: true, data: [{ id: 1, name: 'مدير النظام' }, { id: 2, name: 'كاشير رئيسي' }] };
         }
         return { success: true, data: [] };
       },
@@ -996,11 +1081,23 @@ if (typeof window !== 'undefined') {
         const sLower = (sql || '').toLowerCase().trim();
         const today = getLocalISODate();
 
-        if (sLower.includes('from invoices') && sLower.includes('sum(net_total)')) {
+        if (sLower.includes('from invoices')) {
           const invs = WebDB.getInvoices();
-          const todayInvs = invs.filter(i => (i.invoice_date || '').startsWith(today));
-          const total = todayInvs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
-          return { success: true, data: { total: total, cnt: todayInvs.length } };
+          if (sLower.includes('sum(net_total)')) {
+            const todayInvs = invs.filter(i => (i.invoice_date || '').startsWith(today));
+            const total = todayInvs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
+            return { success: true, data: { total: total, cnt: todayInvs.length } };
+          }
+          if (sLower.includes('table_id') && params.length > 0) {
+            const tId = parseInt(params[0]);
+            const found = invs.find(i => parseInt(i.table_id) === tId && (i.status === 'مفتوحة' || i.status === 'مرسلة للمطبخ' || i.status === 'قيد الانتظار'));
+            return { success: true, data: found || null };
+          }
+          if ((sLower.includes('where id') || sLower.includes('where i.id')) && params.length > 0) {
+            const invId = parseInt(params[0]);
+            const found = invs.find(i => parseInt(i.id) === invId);
+            return { success: true, data: found || null };
+          }
         }
 
         if (sLower.includes('from expenses') && sLower.includes('sum(amount)')) {
@@ -1030,7 +1127,7 @@ if (typeof window !== 'undefined') {
           }
         }
 
-        return { success: true, data: { total: 0, cnt: 0, net: 0, sum: 0 } };
+        return { success: true, data: null };
       },
       run: async (sql, params = []) => {
         try {

@@ -466,12 +466,22 @@ async function init() {
     const tblSel = document.getElementById('posTableSelect');
     if (tblSel) tblSel.value = activeTableId;
     currentTableId = parseInt(activeTableId);
-    await onTableSelectChange();
+    if (resumeInvoiceId) {
+      await resumeInvoiceById(parseInt(resumeInvoiceId));
+    } else {
+      await onTableSelectChange();
+    }
   } else if (resumeInvoiceId) {
     await resumeInvoiceById(parseInt(resumeInvoiceId));
   } else {
     // Default directly to Dine-in (صالة) without blocking gate popup
     setOrderType('صالة');
+  }
+
+  // Toggle Admin Return Button based on user role
+  const adminBackBtn = document.getElementById('btnAdminBackHome');
+  if (adminBackBtn) {
+    adminBackBtn.style.display = (typeof checkAdmin === 'function' && checkAdmin()) ? 'inline-flex' : 'none';
   }
 }
 
@@ -845,8 +855,27 @@ async function onTableSelectChange() {
       `SELECT id FROM invoices WHERE table_id = ? AND status IN ('مفتوحة', 'مرسلة للمطبخ') ORDER BY id DESC LIMIT 1`,
       [tableId]
     );
-    if (checkRes.success && checkRes.data) {
+    if (checkRes && checkRes.success && checkRes.data && checkRes.data.id) {
       await resumeInvoiceById(checkRes.data.id);
+    } else {
+      // Table is empty: ensure clean fresh invoice state
+      currentInvoiceId = null;
+      invoiceItems = [];
+      renderItemsTable();
+      recalcTotals();
+      window._activeQrOrderId = null;
+      const servedBtn = document.getElementById('btnMarkQrServed');
+      if (servedBtn) servedBtn.style.display = 'none';
+      try {
+        if (window.db && typeof window.db.generateInvoiceNumber === 'function') {
+          const invRes = await window.db.generateInvoiceNumber().catch(() => null);
+          if (invRes && invRes.success && invRes.data) {
+            currentInvoiceNumber = invRes.data;
+            const disp = document.getElementById('invoiceNumberDisplay');
+            if (disp) disp.textContent = invRes.data;
+          }
+        }
+      } catch(e) {}
     }
   }
 }
@@ -1380,13 +1409,6 @@ function selectServiceSize(svcId, sz) {
 
   renderItemsTable();
   recalcTotals();
-
-  // Open item modifiers/notes modal immediately after selecting the size
-  if (targetIndex >= 0) {
-    setTimeout(() => {
-      openItemModifierModal(targetIndex);
-    }, 120);
-  }
 }
 
 function populateCategorySelect() {
@@ -3261,10 +3283,12 @@ function printReceipt(withWhatsApp = false, resetAfter = true) {
 async function reloadServicesStock() {
   try {
     const srvRes = await window.db.query('SELECT s.*, sc.name as cat_name FROM services s LEFT JOIN service_categories sc ON s.category_id=sc.id ORDER BY s.name', []);
-    if (srvRes.success && srvRes.data) {
+    if (srvRes.success && Array.isArray(srvRes.data) && srvRes.data.length > 0) {
       allServices = srvRes.data;
       populateServiceSelect(allServices);
-      renderServiceGrid(allServices);
+      loadCategoryServices();
+    } else {
+      loadCategoryServices();
     }
   } catch (e) {
     console.error('reloadServicesStock error:', e);
@@ -3277,6 +3301,10 @@ async function newInvoice() {
   lastSavedInvoice = null;
   currentInvoiceId = null;
   currentTableId = null;
+  window._activeQrOrderId = null;
+  const servedBtn = document.getElementById('btnMarkQrServed');
+  if (servedBtn) servedBtn.style.display = 'none';
+
   const tblSel = document.getElementById('posTableSelect');
   if (tblSel) tblSel.value = '';
   const cartTitle = document.getElementById('cartOrderTitle');
@@ -3619,36 +3647,49 @@ async function openPosExpenseAdvanceModal() {
   currentPosExpenseTab = 'expense';
   switchPosExpenseTab('expense');
 
-  // Load expense types
+  // Load expense types/categories dynamically from system
   const expTypeSel = document.getElementById('posExpType');
   if (expTypeSel) {
+    let catLoaded = false;
     try {
-      const res = await window.db.query('SELECT * FROM expense_types ORDER BY name', []);
-      if (res.success && res.data.length > 0) {
+      const res = await window.db.query('SELECT * FROM expense_categories ORDER BY name', []);
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         expTypeSel.innerHTML = res.data.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
-      } else {
-        expTypeSel.innerHTML = `
-          <option value="1">نثريات كافيه</option>
-          <option value="2">شراء خامات يومية (نعناع، لبن، ثلج، بن)</option>
-          <option value="3">صيانة ونظافة</option>
-          <option value="4">إكراميات ونقل</option>
-        `;
+        catLoaded = true;
       }
-    } catch(e) {
-      expTypeSel.innerHTML = `<option value="1">نثريات كافيه</option>`;
+    } catch(e) {}
+    if (!catLoaded) {
+      try {
+        const res2 = await window.db.query('SELECT * FROM expense_types ORDER BY name', []);
+        if (res2 && res2.success && Array.isArray(res2.data) && res2.data.length > 0) {
+          expTypeSel.innerHTML = res2.data.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+          catLoaded = true;
+        }
+      } catch(e) {}
+    }
+    if (!catLoaded && window.WebDB && typeof window.WebDB.getExpenseCategories === 'function') {
+      const cats = window.WebDB.getExpenseCategories();
+      expTypeSel.innerHTML = cats.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
     }
   }
 
-  // Load active employees for advances
+  // Load real active employees for advances dynamically from system
   const advEmpSel = document.getElementById('posAdvEmp');
   if (advEmpSel) {
+    let empLoaded = false;
     try {
       const empRes = await window.db.query('SELECT id, name FROM employees WHERE is_active = 1 ORDER BY name', []);
-      if (empRes.success && empRes.data) {
-        advEmpSel.innerHTML = '<option value="">اختر الموظف</option>' +
+      if (empRes && empRes.success && Array.isArray(empRes.data) && empRes.data.length > 0) {
+        advEmpSel.innerHTML = '<option value="">اختر الموظف المستلف</option>' +
           empRes.data.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+        empLoaded = true;
       }
     } catch(e) {}
+    if (!empLoaded && window.WebDB && typeof window.WebDB.getEmployees === 'function') {
+      const emps = window.WebDB.getEmployees();
+      advEmpSel.innerHTML = '<option value="">اختر الموظف المستلف</option>' +
+        emps.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+    }
   }
 
   // Clear inputs
@@ -4223,6 +4264,11 @@ async function approveAndDispatchQrOrder(orderId) {
     recalcTotals();
     renderServiceGrid(allServices);
 
+    // Set as active QR order and display "تم تقديم الطلب للزبون" button
+    window._activeQrOrderId = order.id || order.order_id;
+    const servedBtn = document.getElementById('btnMarkQrServed');
+    if (servedBtn) servedBtn.style.display = 'flex';
+
     // 6. Automatically dispatch order to kitchen printer
     await sendOrderToKitchen();
 
@@ -4270,7 +4316,7 @@ async function rejectQrOrder(orderId) {
     } catch(e) {}
 
     if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
-      try { await window.CafeSupabase.updateOrderStatus(orderId, 'rejected'); } catch(e) {}
+      try { await window.CafeSupabase.updateOrderStatus(orderId, 'rejected', reason); } catch(e) {}
     }
     if (window.qrOrders && typeof window.qrOrders.reject === 'function') {
       try { await window.qrOrders.reject(orderId, reason); } catch(e) {}
@@ -4281,6 +4327,31 @@ async function rejectQrOrder(orderId) {
   } catch (err) {
     showToast('خطأ: ' + err.message, 'error');
   }
+}
+
+async function markCurrentQrOrderServed() {
+  if (!window._activeQrOrderId) {
+    showToast('لا يوجد طلب QR نشط حالياً', 'warning');
+    return;
+  }
+  const orderId = window._activeQrOrderId;
+  try {
+    if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+      await window.CafeSupabase.updateOrderStatus(orderId, 'completed');
+    }
+  } catch(e) {}
+  try {
+    const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+    const qIdx = queue.findIndex(o => String(o.id || o.order_id) === String(orderId));
+    if (qIdx !== -1) {
+      queue[qIdx].status = 'completed';
+      localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(queue));
+    }
+  } catch(e) {}
+  showToast('تم تأكيد تقديم الطلب للزبون بنجاح ✓', 'success');
+  const btn = document.getElementById('btnMarkQrServed');
+  if (btn) btn.style.display = 'none';
+  window._activeQrOrderId = null;
 }
 
 let _posSseSource = null;
