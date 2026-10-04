@@ -704,6 +704,14 @@
       pointer-events: auto;
     }
 
+    #tablePickerSheet {
+      z-index: 200 !important;
+    }
+
+    #tablePickerSheet .sheet-content {
+      z-index: 201 !important;
+    }
+
     .sheet-content {
       width: 100%;
       max-width: 480px;
@@ -1195,28 +1203,6 @@
       </div>
 
       <div class="sheet-body">
-        <!-- Cup Choice Group (For drinks) -->
-        <div class="cust-group" id="groupCupChoice">
-          <div class="cust-group-title">
-            <span id="custCupTitleText">Cup Choice</span>
-            <span style="font-size:11px; color:var(--text-muted);" id="custRequiredText">Required</span>
-          </div>
-          <div class="cust-grid-3">
-            <div class="cust-option-card active" data-cup="Paper Cup" onclick="selectCustomizerCup('Paper Cup', this)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
-              <span class="opt-name" id="cupOptPaper">Paper Cup</span>
-            </div>
-            <div class="cust-option-card" data-cup="Iced Cup" onclick="selectCustomizerCup('Iced Cup', this)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 17a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8L6 3Z"/><line x1="4" y1="3" x2="20" y2="3"/></svg>
-              <span class="opt-name" id="cupOptPlastic">Iced Cup</span>
-            </div>
-            <div class="cust-option-card" data-cup="Dine-in Glass" onclick="selectCustomizerCup('Dine-in Glass', this)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l-1 9a4 4 0 0 1-4 3.5A4 4 0 0 1 7 11L8 2Z"/><line x1="12" y1="14.5" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
-              <span class="opt-name" id="cupOptGlass">Dine-in Glass</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Sugar Level Group (For drinks) -->
         <div class="cust-group" id="groupSugarChoice">
           <div class="cust-group-title">
@@ -1424,11 +1410,6 @@
         soldOut: "Sold Out",
         sendOrderBtn: "Confirm & Send Order to Kitchen ➔",
         sendingOrderBtn: "Sending to Kitchen...",
-        cupChoice: "Cup Choice",
-        required: "Required",
-        cupPaper: "Paper Cup",
-        cupPlastic: "Iced Cup",
-        cupGlass: "Dine-in Glass",
         sweetness: "Sweetness",
         sugarNone: "No Sugar",
         sugarLight: "Light",
@@ -1486,11 +1467,6 @@
         soldOut: "غير متوفر حالياً",
         sendOrderBtn: "تأكيد وإرسال الطلب للكاشير",
         sendingOrderBtn: "جاري إرسال الطلب للكاشير...",
-        cupChoice: "نوع الكوب",
-        required: "مطلوب",
-        cupPaper: "كوب ورقي",
-        cupPlastic: "كوب بلاستيك",
-        cupGlass: "زجاجي للصالة",
         sweetness: "درجة السكر",
         sugarNone: "بدون سكر",
         sugarLight: "خفيف",
@@ -1701,11 +1677,6 @@
       document.getElementById('tableSheetDescText').textContent = t.tableSheetSub;
 
       // Customizer Sheet
-      document.getElementById('custCupTitleText').textContent = t.cupChoice;
-      document.getElementById('custRequiredText').textContent = t.required;
-      document.getElementById('cupOptPaper').textContent = t.cupPaper;
-      document.getElementById('cupOptPlastic').textContent = t.cupPlastic;
-      document.getElementById('cupOptGlass').textContent = t.cupGlass;
       document.getElementById('custSugarTitleText').textContent = t.sweetness;
       document.getElementById('sugarOptNone').textContent = t.sugarNone;
       document.getElementById('sugarOptLight').textContent = t.sugarLight;
@@ -1775,6 +1746,30 @@
     }
 
     async function fetchMenuData() {
+      // 0. Sync directly from system database (WebDB / localStorage) if available on client
+      try {
+        const storedServices = localStorage.getItem('cafePro_web_services');
+        const storedCats = localStorage.getItem('cafePro_web_categories');
+        const storedTables = localStorage.getItem('cafePro_web_tables');
+        if (storedServices && storedCats) {
+          const s = JSON.parse(storedServices);
+          const c = JSON.parse(storedCats);
+          if (Array.isArray(s) && s.length >= 10 && Array.isArray(c) && c.length > 0) {
+            allCategories = c;
+            allServices = s.map(it => ({
+              ...it,
+              quantity: it.current_stock !== undefined ? it.current_stock : (it.quantity !== undefined ? it.quantity : 100),
+              track_inventory: 1
+            }));
+            if (storedTables) allTables = JSON.parse(storedTables);
+            renderCategoriesStrip();
+            renderProductsGrid();
+            renderTablesPickerGrid();
+            updateCartUI();
+          }
+        }
+      } catch(e) {}
+
       let json = null;
       try {
         const res = await fetch('/api/qr-menu/data');
@@ -1799,7 +1794,18 @@
       if (json && json.success) {
         const data = json.data;
         allCategories = data.categories || [];
-        allServices = data.services || [];
+        allServices = (data.services || []).map(s => {
+          // If system database has updated stock, merge it
+          try {
+            const stored = JSON.parse(localStorage.getItem('cafePro_web_services') || '[]');
+            const match = stored.find(x => x.id === s.id || x.name === s.name);
+            if (match && match.current_stock !== undefined) {
+              s.quantity = match.current_stock;
+              s.current_stock = match.current_stock;
+            }
+          } catch(e) {}
+          return s;
+        });
         allTables = data.tables || [];
         shopSettings = data.settings || {};
 
@@ -1907,8 +1913,9 @@
         const itemName = getItemDisplayName(item);
         const catName = getCategoryDisplayName(item.category_name);
 
-        // Check if item is Out of Stock (track_inventory = 1 and quantity <= 0)
-        const isOutOfStock = (item.track_inventory === 1 && (item.quantity === null || Number(item.quantity) <= 0));
+        // Check if item is Out of Stock
+        const stockQty = item.current_stock !== undefined ? Number(item.current_stock) : (item.quantity !== null && item.quantity !== undefined ? Number(item.quantity) : 100);
+        const isOutOfStock = stockQty <= 0;
 
         // In-cart indicator (only if item is in cart)
         const inCartItem = cart.find(c => (c.service_id || c.id) === item.id);
@@ -2003,7 +2010,6 @@
       const t = I18N[currentLang];
       customizerItem = item;
       customizerQty = 1;
-      customizerCup = currentLang === 'en' ? 'Paper Cup' : 'كوب ورقي';
       customizerSugar = currentLang === 'en' ? 'Regular' : 'سكر مضبوط';
 
       document.getElementById('custItemName').textContent = getItemDisplayName(item);
@@ -2013,27 +2019,16 @@
       document.getElementById('custSpecialNotes').value = '';
 
       const isDrink = isItemDrink(item);
-      const cupGrp = document.getElementById('groupCupChoice');
       const sugarGrp = document.getElementById('groupSugarChoice');
-      if (cupGrp) cupGrp.style.display = isDrink ? 'block' : 'none';
       if (sugarGrp) sugarGrp.style.display = isDrink ? 'block' : 'none';
 
       // Reset options
-      document.querySelectorAll('#groupCupChoice .cust-option-card').forEach((el, idx) => {
-        el.classList.toggle('active', idx === 0);
-      });
       document.querySelectorAll('#groupSugarChoice .cust-chip').forEach(el => {
         el.classList.toggle('active', el.id === 'sugarOptRegular');
       });
 
       updateCustomizerSubmitBtn();
       openSheet('itemCustomizerSheet');
-    }
-
-    function selectCustomizerCup(cup, el) {
-      customizerCup = cup;
-      document.querySelectorAll('#groupCupChoice .cust-option-card').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
     }
 
     function selectCustomizerSugar(sugar, el) {
@@ -2061,7 +2056,6 @@
 
       const notesParts = [];
       if (isItemDrink(customizerItem)) {
-        if (customizerCup) notesParts.push(`[${customizerCup}]`);
         if (customizerSugar) notesParts.push(`[${customizerSugar}]`);
       }
       const special = document.getElementById('custSpecialNotes')?.value?.trim();
@@ -2264,6 +2258,52 @@
           notes: it.notes
         }))
       };
+
+      // ── Auto-save Customer to Database / CRM ──
+      const cName = payload.customer_name;
+      const cPhone = payload.customer_phone;
+      if (cName && cName !== 'Guest') {
+        try {
+          if (window.WebDB && typeof window.WebDB.saveCustomer === 'function') {
+            window.WebDB.saveCustomer(cName, cPhone, `طلب كيو ار منيو (طاولة ${selectedTable.name || selectedTable.id})`);
+          } else {
+            const custs = JSON.parse(localStorage.getItem('cafePro_web_customers') || '[]');
+            const exists = custs.find(c => (cPhone && c.phone === cPhone) || c.name.trim().toLowerCase() === cName.toLowerCase());
+            if (!exists) {
+              custs.push({
+                id: Date.now(),
+                name: cName,
+                phone: cPhone || '',
+                address: `طلب كيو ار منيو (طاولة ${selectedTable.name || selectedTable.id})`,
+                opening_balance: 0,
+                current_balance: 0
+              });
+              localStorage.setItem('cafePro_web_customers', JSON.stringify(custs));
+            }
+          }
+        } catch(e) {}
+      }
+
+      // ── Update Table Status to 'محجوزة' upon QR order ──
+      if (selectedTable && selectedTable.id) {
+        try {
+          if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+            window.WebDB.updateTableStatus(selectedTable.id, 'محجوزة', {
+              reservation_name: cName || 'عميل كيو ار',
+              reservation_phone: cPhone || ''
+            });
+          } else {
+            const tbs = JSON.parse(localStorage.getItem('cafePro_web_tables') || '[]');
+            const t = tbs.find(x => String(x.id) === String(selectedTable.id));
+            if (t) {
+              t.status = 'محجوزة';
+              t.reservation_name = cName || 'عميل كيو ار';
+              t.reservation_phone = cPhone || '';
+              localStorage.setItem('cafePro_web_tables', JSON.stringify(tbs));
+            }
+          }
+        } catch(e) {}
+      }
 
       let orderData = null;
 

@@ -95,6 +95,11 @@
       z-index: 10;
     }
 
+    /* Ensure SweetAlert2 displays on top of all modals (especially posQrOrdersModal at 9999) */
+    .swal2-container {
+      z-index: 100000 !important;
+    }
+
     .pos-brand-group {
       display: flex;
       align-items: center;
@@ -1483,8 +1488,8 @@
         <span id="invoiceNumberDisplay" class="inv-num tnum">0001</span>
       </div>
 
-      <!-- Live QR Orders Button & Animated Counter Badge -->
-      <button class="btn-topbar-action btn-topbar-qr" id="btnQrOrdersBadge" onclick="openQrOrdersModal()" title="طلبات الزبائن الواردة عبر المنيو الإلكتروني QR" style="display:inline-flex; align-items:center; gap:6px;">
+      <!-- Live QR Orders Button (Hidden from topbar; orders arrive via auto-panel/popup) -->
+      <button class="btn-topbar-action btn-topbar-qr" id="btnQrOrdersBadge" onclick="openQrOrdersModal()" title="طلبات الزبائن الواردة عبر المنيو الإلكتروني QR" style="display:none !important;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         <span>طلبات QR</span>
         <span class="qr-badge-counter" id="qrPendingBadge" style="display:none; background:#E11D48; color:#FFFFFF; border-radius:999px; padding:1px 6px; font-size:10px; font-weight:900;">0</span>

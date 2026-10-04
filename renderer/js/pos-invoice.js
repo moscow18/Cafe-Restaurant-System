@@ -202,44 +202,47 @@ async function init() {
   if (dateEl) dateEl.value = getLocalISODate();
 
   // ─── Realistic Fallback Data Matching Real SQLite Database ──────────────────────
-  const defaultCategories = [
-    { id: 5, name: 'ساخن' },
-    { id: 6, name: 'فرابيه' },
-    { id: 7, name: 'سموزي' },
-    { id: 8, name: 'مشروبات ساخنة وقهوة' },
-    { id: 9, name: 'مشروبات باردة ومثلجات' },
-    { id: 10, name: 'ساندوتشات ووجبات' },
-    { id: 11, name: 'بيتزا وباستا' },
-    { id: 12, name: 'حلويات ومخبوزات' }
+  const defaultCategories = (window.WebDB && typeof window.WebDB.getCategories === 'function')
+    ? window.WebDB.getCategories()
+    : [
+    { id: 1, name: 'مشروبات ساخنة وقهوة' },
+    { id: 2, name: 'مشروبات باردة ومثلجات' },
+    { id: 3, name: 'ساندوتشات ووجبات' },
+    { id: 4, name: 'بيتزا وباستا' },
+    { id: 5, name: 'حلويات ومخبوزات' }
   ];
 
-  const defaultServices = [
-    { id: 9, category_id: 9, name: 'آيس سبانش لاتيه', barcode: 'CF-201', sell_price: 70, image: '../assets/items/iced-latte.jpg', cat_name: 'مشروبات باردة ومثلجات' },
-    { id: 12, category_id: 9, name: 'أوريو فرابيه بالكريمة', barcode: 'CF-204', sell_price: 75, image: '../assets/items/oreo-frappe.jpg', cat_name: 'مشروبات باردة ومثلجات' },
-    { id: 2, category_id: 8, name: 'إسبريسو سينجل / دبل', barcode: 'CF-101', sell_price: 35, image: '../assets/items/espresso.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 22, category_id: 11, name: 'بيتزا بيبروني سوبريم', barcode: 'CF-402', sell_price: 155, image: '../assets/items/pizza-pepperoni.jpg', cat_name: 'بيتزا وباستا' },
-    { id: 21, category_id: 11, name: 'بيتزا مارجريتا نابوليتان', barcode: 'CF-401', sell_price: 120, image: '../assets/items/pizza-margherita.jpg', cat_name: 'بيتزا وباستا' },
-    { id: 25, category_id: 12, name: 'تشيز كيك بلوبيري نيويورك', barcode: 'CF-501', sell_price: 85, image: '../assets/items/cheesecake.jpg', cat_name: 'حلويات ومخبوزات' },
-    { id: 19, category_id: 10, name: 'حواوشي', barcode: '', sell_price: 50, image: '', cat_name: 'ساندوتشات ووجبات' },
-    { id: 17, category_id: 10, name: 'ساندوتش كريسبي تشيكن مدخن', barcode: 'CF-302', sell_price: 130, image: '../assets/items/crispy-chicken.jpg', cat_name: 'ساندوتشات ووجبات' },
-    { id: 11, category_id: 9, name: 'سموذي مانجو باشن فروت', barcode: 'CF-203', sell_price: 65, image: '../assets/items/mango-smoothie.jpg', cat_name: 'مشروبات باردة ومثلجات' },
-    { id: 6, category_id: 8, name: 'شاي كرك بالهيل والزعفران', barcode: 'CF-105', sell_price: 40, image: '../assets/items/karak-tea.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 20, category_id: 10, name: 'طبق كوردون بلو محشي جبن', barcode: 'CF-305', sell_price: 185, image: '../assets/items/cordon-bleu.jpg', cat_name: 'ساندوتشات ووجبات' },
-    { id: 13, category_id: 9, name: 'عصير برتقال فريش طبيعي', barcode: 'CF-205', sell_price: 45, image: '../assets/items/orange-juice.jpg', cat_name: 'مشروبات باردة ومثلجات' },
-    { id: 4, category_id: 8, name: 'فانيليا ولاتيه كاراميل', barcode: 'CF-103', sell_price: 65, image: '../assets/items/latte.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 5, category_id: 8, name: 'فلات وايت أسترالي', barcode: 'CF-104', sell_price: 60, image: '../assets/items/flat-white.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 1, category_id: 5, name: 'قهوة تركي', barcode: '', sell_price: 50, image: '', cat_name: 'ساخن' },
-    { id: 8, category_id: 8, name: 'قهوة تركي مخصوص بالحبهان', barcode: 'CF-107', sell_price: 30, image: '../assets/items/turkish-coffee.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 3, category_id: 8, name: 'كابتشينو إيطالي كلاسيك', barcode: 'CF-102', sell_price: 55, image: '../assets/items/cappuccino.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 28, category_id: 12, name: 'كرواسون زبدة فرنسي باللوز', barcode: 'CF-504', sell_price: 50, image: '../assets/items/croissant.jpg', cat_name: 'حلويات ومخبوزات' },
-    { id: 16, category_id: 10, name: 'كلاسيك بيف برجر تشيز', barcode: 'CF-301', sell_price: 145, image: '../assets/items/burger.jpg', cat_name: 'ساندوتشات ووجبات' },
-    { id: 18, category_id: 10, name: 'كلوب ساندوتش سوبريم', barcode: 'CF-303', sell_price: 110, image: '../assets/items/club-sandwich.jpg', cat_name: 'ساندوتشات ووجبات' },
-    { id: 26, category_id: 12, name: 'كيك لافا شوكولاتة فادج', barcode: 'CF-502', sell_price: 90, image: '../assets/items/chocolate-lava.jpg', cat_name: 'حلويات ومخبوزات' },
-    { id: 14, category_id: 5, name: 'لاتيه', barcode: '', sell_price: 60, image: '', cat_name: 'ساخن' },
-    { id: 15, category_id: 5, name: 'ميكياتو', barcode: '', sell_price: 55, image: '', cat_name: 'ساخن' },
-    { id: 10, category_id: 9, name: 'موهيتو فراولة وليمون نعناع', barcode: 'CF-202', sell_price: 55, image: '../assets/items/mojito.jpg', cat_name: 'مشروبات باردة ومثلجات' },
-    { id: 7, category_id: 8, name: 'هوت شوكليت بالمارشميلو', barcode: 'CF-106', sell_price: 60, image: '../assets/items/hot-chocolate.jpg', cat_name: 'مشروبات ساخنة وقهوة' },
-    { id: 27, category_id: 12, name: 'وافل بلجيكي بالنوتيلا والفواكه', barcode: 'CF-503', sell_price: 80, image: '../assets/items/waffle.jpg', cat_name: 'حلويات ومخبوزات' }
+  const defaultServices = (window.WebDB && typeof window.WebDB.getServices === 'function')
+    ? window.WebDB.getServices()
+    : [
+    { id: 1, category_id: 1, name: 'إسبريسو سينجل / دبل', barcode: 'CF-101', sell_price: 35, cost_price: 12, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/espresso.jpg' },
+    { id: 2, category_id: 1, name: 'كابتشينو إيطالي كلاسيك', barcode: 'CF-102', sell_price: 55, cost_price: 20, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/cappuccino.jpg' },
+    { id: 3, category_id: 1, name: 'فانيليا ولاتيه كاراميل', barcode: 'CF-103', sell_price: 65, cost_price: 24, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/latte.jpg' },
+    { id: 4, category_id: 1, name: 'فلات وايت أسترالي', barcode: 'CF-104', sell_price: 60, cost_price: 22, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/flat-white.jpg' },
+    { id: 5, category_id: 1, name: 'شاي كرك بالهيل والزعفران', barcode: 'CF-105', sell_price: 40, cost_price: 14, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/karak-tea.jpg' },
+    { id: 6, category_id: 1, name: 'هوت شوكليت بالمارشميلو', barcode: 'CF-106', sell_price: 60, cost_price: 22, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/hot-chocolate.jpg' },
+    { id: 7, category_id: 1, name: 'قهوة تركي مخصوص بالحبهان', barcode: 'CF-107', sell_price: 30, cost_price: 10, current_stock: 100, cat_name: 'مشروبات ساخنة وقهوة', image: '../assets/items/turkish-coffee.jpg' },
+    { id: 8, category_id: 2, name: 'آيس سبانش لاتيه', barcode: 'CF-201', sell_price: 70, cost_price: 26, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/iced-latte.jpg' },
+    { id: 9, category_id: 2, name: 'موهيتو فراولة وليمون نعناع', barcode: 'CF-202', sell_price: 55, cost_price: 18, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mojito.jpg' },
+    { id: 10, category_id: 2, name: 'سموذي مانجو باشن فروت', barcode: 'CF-203', sell_price: 65, cost_price: 22, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/mango-smoothie.jpg' },
+    { id: 11, category_id: 2, name: 'أوريو فرابيه بالكريمة', barcode: 'CF-204', sell_price: 75, cost_price: 28, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/oreo-frappe.jpg' },
+    { id: 12, category_id: 2, name: 'عصير برتقال فريش طبيعي', barcode: 'CF-205', sell_price: 45, cost_price: 15, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/orange-juice.jpg' },
+    { id: 13, category_id: 2, name: 'آيس أمريكانو كلاسيك', barcode: 'CF-206', sell_price: 50, cost_price: 16, current_stock: 80, cat_name: 'مشروبات باردة ومثلجات', image: '../assets/items/iced-latte.jpg' },
+    { id: 14, category_id: 3, name: 'كلاسيك بيف برجر تشيز', barcode: 'CF-301', sell_price: 145, cost_price: 65, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/burger.jpg' },
+    { id: 15, category_id: 3, name: 'ساندوتش كريسبي تشيكن مدخن', barcode: 'CF-302', sell_price: 130, cost_price: 55, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/crispy-chicken.jpg' },
+    { id: 16, category_id: 3, name: 'كلوب ساندوتش سوبريم', barcode: 'CF-303', sell_price: 110, cost_price: 45, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/club-sandwich.jpg' },
+    { id: 17, category_id: 3, name: 'بطاطس مقلية كرانشي ومتبلة', barcode: 'CF-304', sell_price: 45, cost_price: 15, current_stock: 100, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/fries.jpg' },
+    { id: 18, category_id: 3, name: 'طبق كوردون بلو محشي جبن', barcode: 'CF-305', sell_price: 185, cost_price: 80, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/cordon-bleu.jpg' },
+    { id: 19, category_id: 3, name: 'حواوشي إسكندراني بالجبن', barcode: 'CF-306', sell_price: 65, cost_price: 25, current_stock: 50, cat_name: 'ساندوتشات ووجبات', image: '../assets/items/burger.jpg' },
+    { id: 20, category_id: 4, name: 'بيتزا مارجريتا نابوليتان', barcode: 'CF-401', sell_price: 120, cost_price: 48, current_stock: 40, cat_name: 'بيتزا وباستا', image: '../assets/items/pizza-margherita.jpg' },
+    { id: 21, category_id: 4, name: 'بيتزا بيبروني سوبريم', barcode: 'CF-402', sell_price: 155, cost_price: 65, current_stock: 40, cat_name: 'بيتزا وباستا', image: '../assets/items/pizza-pepperoni.jpg' },
+    { id: 22, category_id: 4, name: 'بيتزا مكس جبن كواترو', barcode: 'CF-403', sell_price: 140, cost_price: 58, current_stock: 40, cat_name: 'بيتزا وباستا', image: '../assets/items/pizza-pepperoni.jpg' },
+    { id: 23, category_id: 4, name: 'باستا ألفريدو تشيكن ومشروم', barcode: 'CF-404', sell_price: 135, cost_price: 52, current_stock: 40, cat_name: 'بيتزا وباستا', image: '../assets/items/pasta-alfredo.jpg' },
+    { id: 24, category_id: 4, name: 'باستا بيني أرابياتا حارة', barcode: 'CF-405', sell_price: 95, cost_price: 35, current_stock: 40, cat_name: 'بيتزا وباستا', image: '../assets/items/pasta-alfredo.jpg' },
+    { id: 25, category_id: 5, name: 'تشيز كيك بلوبيري نيويورك', barcode: 'CF-501', sell_price: 85, cost_price: 35, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/cheesecake.jpg' },
+    { id: 26, category_id: 5, name: 'كيك لافا شوكولاتة فادج', barcode: 'CF-502', sell_price: 90, cost_price: 38, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/chocolate-lava.jpg' },
+    { id: 27, category_id: 5, name: 'وافل بلجيكي بالنوتيلا والفواكه', barcode: 'CF-503', sell_price: 80, cost_price: 32, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/waffle.jpg' },
+    { id: 28, category_id: 5, name: 'كرواسون زبدة فرنسي باللوز', barcode: 'CF-504', sell_price: 50, cost_price: 20, current_stock: 40, cat_name: 'حلويات ومخبوزات', image: '../assets/items/croissant.jpg' }
   ];
 
   let invRes = null, setRes = null, catRes = null, srvRes = null, custRes = null, empRes = null, sizesRes = null;
@@ -467,19 +470,15 @@ async function init() {
   } else if (resumeInvoiceId) {
     await resumeInvoiceById(parseInt(resumeInvoiceId));
   } else {
-    // Open mandatory Order Type Gate Modal
-    openOrderTypeGateModal();
+    // Default directly to Dine-in (صالة) without blocking gate popup
+    setOrderType('صالة');
   }
 }
 
 // ─── Mandatory Order Type Gate Modal ──────────────────────────────────────────
 function openOrderTypeGateModal() {
-  const gateDel = document.getElementById('gateDeliveryBtn');
-  if (gateDel) {
-    gateDel.style.display = 'block';
-  }
-  const modal = document.getElementById('orderTypeGateModal');
-  if (modal) modal.classList.add('open');
+  // Gate modal disabled per user preference since order types are permanently accessible on topbar
+  return;
 }
 
 function closeOrderTypeGateModal() {
@@ -607,6 +606,7 @@ function renderTablePickerGrid() {
 
 async function selectTableFromPicker(tableId) {
   closeModal('posTablePickerModal');
+  setOrderType('صالة');
   const tblSel = document.getElementById('posTableSelect');
   if (tblSel) tblSel.value = tableId;
   await onTableSelectChange();
@@ -792,6 +792,11 @@ async function onTableSelectChange() {
   if (!tblSel) return;
   const tableId = parseInt(tblSel.value) || null;
 
+  // Always enforce Dine-in (صالة) when a table is selected
+  if (tableId) {
+    setOrderType('صالة');
+  }
+
   // 1. Confirm before switching if unsaved items exist in current cart
   if (invoiceItems.length > 0 && !currentInvoiceId && currentTableId && currentTableId !== tableId) {
     const ask = await Swal.fire({
@@ -928,11 +933,11 @@ async function resumeInvoiceById(id) {
   const numDisplay = document.getElementById('invoiceNumberDisplay');
   if (numDisplay) numDisplay.textContent = inv.invoice_number;
 
-  if (inv.table_id || inv.invoice_type === 'صالة') {
+  if (inv.table_id || inv.invoice_type === 'صالة' || currentTableId) {
     setOrderType('صالة');
     const tblSel = document.getElementById('posTableSelect');
-    if (tblSel) tblSel.value = inv.table_id;
-    currentTableId = inv.table_id;
+    if (tblSel && (inv.table_id || currentTableId)) tblSel.value = inv.table_id || currentTableId;
+    currentTableId = inv.table_id || currentTableId;
   } else if (inv.invoice_type === 'دليفري') {
     setOrderType('دليفري');
     const drvSel = document.getElementById('posDriverSelect');
@@ -2452,7 +2457,6 @@ async function executeConfirmedCheckout(withPrint = true) {
       try { await window.tables.updateStatus(settledTableId, 'فاضية'); } catch(e){}
     }
     await newInvoice();
-    openOrderTypeGateModal();
   }
 }
 
@@ -2497,7 +2501,6 @@ async function fastCashCheckout() {
       try { await window.tables.updateStatus(settledTableId, 'فاضية'); } catch(e){}
     }
     await newInvoice();
-    openOrderTypeGateModal();
   }
 }
 
@@ -3868,17 +3871,33 @@ async function checkPendingQrOrders() {
       modalBadge.textContent = `${count} معلقة`;
     }
 
-    // New order alert sound & notification
+    // Update tables with pending QR orders to 'محجوزة'
+    if (orders && orders.length > 0) {
+      orders.forEach(o => {
+        if (o.table_id) {
+          try {
+            if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+              window.WebDB.updateTableStatus(o.table_id, 'محجوزة', {
+                reservation_name: o.customer_name || 'طلب QR معلق',
+                reservation_phone: o.customer_phone || ''
+              });
+            }
+          } catch(e) {}
+          const tbl = allTables.find(t => String(t.id) === String(o.table_id));
+          if (tbl && tbl.status !== 'مشغولة') {
+            tbl.status = 'محجوزة';
+          }
+        }
+      });
+    }
+
+    // New order alert sound & auto-open incoming order panel
     if (_lastQrPendingCount !== null && count > _lastQrPendingCount) {
       playQrOrderChime();
       const latest = orders[0];
       const tableText = latest ? (latest.table_name || `طاولة ${latest.table_id || ''}`) : '';
       showToast(`🔔 طلب زبون جديد وارد عبر المنيو QR (${tableText})!`, 'info');
-      // If modal is open, refresh its content live
-      const modal = document.getElementById('posQrOrdersModal');
-      if (modal && (modal.classList.contains('active') || modal.style.display === 'flex')) {
-        renderQrOrdersList(orders);
-      }
+      openQrOrdersModal();
     }
 
     _lastQrPendingCount = count;
@@ -4108,6 +4127,17 @@ async function approveAndDispatchQrOrder(orderId) {
       try { await window.qrOrders.approve(orderId); } catch(e) {}
     }
 
+    // Immediately remove from pending cache and queue so it NEVER hangs
+    _cachedQrOrders = _cachedQrOrders.filter(o => String(o.id) !== String(orderId));
+    try {
+      const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+      const qIdx = queue.findIndex(o => String(o.id || o.order_id) === String(orderId));
+      if (qIdx !== -1) {
+        queue[qIdx].status = 'approved';
+        localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(queue));
+      }
+    } catch(e) {}
+
     // 2. Set POS to Dine-in order mode
     setOrderType('صالة');
 
@@ -4118,15 +4148,32 @@ async function approveAndDispatchQrOrder(orderId) {
         tblSel.value = String(order.table_id);
       }
       await onTableSelectChange();
+      // Update table to occupied
+      try {
+        if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+          window.WebDB.updateTableStatus(order.table_id, 'مشغولة');
+        }
+        if (window.tables && typeof window.tables.updateStatus === 'function') {
+          await window.tables.updateStatus(order.table_id, 'مشغولة').catch(() => {});
+        }
+      } catch(e) {}
     }
 
-    // 4. Update customer info if entered
-    if (order.customer_name) {
+    // 4. Update and auto-save customer info into database/CRM
+    if (order.customer_name && order.customer_name !== 'Guest') {
       const custInput = document.getElementById('customerSearchInput');
       if (custInput) custInput.value = order.customer_name;
+      try {
+        if (window.WebDB && typeof window.WebDB.saveCustomer === 'function') {
+          window.WebDB.saveCustomer(order.customer_name, order.customer_phone, 'طلب كيو ار منيو (طاولة ' + (order.table_name || order.table_id) + ')');
+        }
+        if (window.db && typeof window.db.run === 'function') {
+          await window.db.run("INSERT OR IGNORE INTO customers (name, phone, address) VALUES (?, ?, ?)", [order.customer_name, order.customer_phone || '', 'طلب كيو ار منيو (طاولة ' + (order.table_name || order.table_id) + ')']).catch(() => {});
+        }
+      } catch(e) {}
     }
 
-    // 5. Populate items into active POS cart
+    // 5. Populate items into active POS cart & deduct inventory stock
     const items = order.items || [];
     for (const qrItem of items) {
       let svc = allServices.find(s => s.id === qrItem.service_id);
@@ -4153,10 +4200,28 @@ async function approveAndDispatchQrOrder(orderId) {
         notes: notes,
         sent_qty: 0 // Unsent so sendOrderToKitchen will print it
       });
+
+      // Deduct stock from system inventory
+      try {
+        if (window.WebDB && typeof window.WebDB.deductStock === 'function') {
+          window.WebDB.deductStock(svcId || qrItem.service_name, qty);
+        }
+        if (window.db && typeof window.db.run === 'function') {
+          await window.db.run("UPDATE services SET current_stock = MAX(0, current_stock - ?) WHERE id = ? OR name = ?", [qty, svcId, qrItem.service_name]).catch(() => {});
+        }
+        // Deduct in-memory
+        if (svc) {
+          svc.current_stock = Math.max(0, (svc.current_stock !== undefined ? svc.current_stock : 100) - qty);
+          svc.quantity = svc.current_stock;
+        }
+      } catch(stkErr) {
+        console.warn('Stock deduction error:', stkErr);
+      }
     }
 
     renderItemsTable();
     recalcTotals();
+    renderServiceGrid(allServices);
 
     // 6. Automatically dispatch order to kitchen printer
     await sendOrderToKitchen();
@@ -4164,7 +4229,7 @@ async function approveAndDispatchQrOrder(orderId) {
     // 7. Show calm, refined notification & close modal
     closeModal('posQrOrdersModal');
     playQrOrderChime();
-    showToast(`تم اعتماد طلب ${order.table_name || order.order_number} وإرسال البون للمطبخ بنجاح ✓`, 'success');
+    showToast(`تم اعتماد طلب ${order.table_name || order.order_number} وإرسال البون للمطبخ وتحديث المخزون بنجاح ✓`, 'success');
 
     // Refresh pending count
     await checkPendingQrOrders();
@@ -4192,6 +4257,18 @@ async function rejectQrOrder(orderId) {
   const reason = (result.value || '').trim() || 'تم إلغاء الطلب من الكاشير';
 
   try {
+    // Immediately remove from pending cache
+    _cachedQrOrders = _cachedQrOrders.filter(o => String(o.id) !== String(orderId));
+    try {
+      const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+      const qIdx = queue.findIndex(o => String(o.id || o.order_id) === String(orderId));
+      if (qIdx !== -1) {
+        queue[qIdx].status = 'rejected';
+        queue[qIdx].rejection_reason = reason;
+        localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(queue));
+      }
+    } catch(e) {}
+
     if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
       try { await window.CafeSupabase.updateOrderStatus(orderId, 'rejected'); } catch(e) {}
     }
@@ -4200,6 +4277,7 @@ async function rejectQrOrder(orderId) {
     }
     showToast('تم رفض الطلب وإبلاغ العميل ✓', 'info');
     await fetchAndRenderQrOrders();
+    await checkPendingQrOrders();
   } catch (err) {
     showToast('خطأ: ' + err.message, 'error');
   }
@@ -4214,11 +4292,8 @@ function setupPosRealtimeSSE() {
       console.log('[Supabase Cloud RealTime] Instant QR Table Order Received:', order);
       playQrOrderChime();
       showToast(`🔔 طلب زبون جديد وارد عبر المنيو QR (${order.table_name || 'طاولة'})!`, 'info');
+      openQrOrdersModal();
       checkPendingQrOrders();
-      const modal = document.getElementById('posQrOrdersModal');
-      if (modal && modal.classList.contains('active')) {
-        fetchAndRenderQrOrders();
-      }
     });
   }
 
@@ -4236,12 +4311,8 @@ function setupPosRealtimeSSE() {
         console.log('[POS RealTime SSE] Incoming QR order received instantly:', data);
         playQrOrderChime();
         showToast(`🔔 طلب جديد وارد عبر المنيو QR (${data.table_name || 'طاولة'})!`, 'info');
+        openQrOrdersModal();
         checkPendingQrOrders();
-        
-        const modal = document.getElementById('posQrOrdersModal');
-        if (modal && modal.classList.contains('active')) {
-          fetchAndRenderQrOrders();
-        }
       } catch(err) {
         console.error('[POS SSE Parse Error]', err);
       }
