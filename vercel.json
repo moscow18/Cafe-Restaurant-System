@@ -4,14 +4,27 @@
   "buildCommand": "echo 'Skipping electron build on Vercel'",
   "cleanUrls": false,
   "rewrites": [
+    { "source": "/menu", "destination": "/renderer/qr-menu.html" },
+    { "source": "/qr", "destination": "/renderer/qr-menu.html" },
+    { "source": "/qr-menu", "destination": "/renderer/qr-menu.html" },
     { "source": "/renderer/renderer/:path*", "destination": "/renderer/:path*" },
     { "source": "/main-dashboard.html", "destination": "/renderer/main-dashboard.html" },
     { "source": "/pos-invoice.html", "destination": "/renderer/pos-invoice.html" },
     { "source": "/tables.html", "destination": "/renderer/tables.html" },
+    { "source": "/services.html", "destination": "/renderer/services.html" },
     { "source": "/reports.html", "destination": "/renderer/reports.html" },
     { "source": "/inventory.html", "destination": "/renderer/inventory.html" },
     { "source": "/finance.html", "destination": "/renderer/finance.html" },
     { "source": "/settings.html", "destination": "/renderer/settings.html" },
+    { "source": "/customers.html", "destination": "/renderer/customers.html" },
+    { "source": "/suppliers.html", "destination": "/renderer/suppliers.html" },
+    { "source": "/purchases.html", "destination": "/renderer/purchases.html" },
+    { "source": "/returns.html", "destination": "/renderer/returns.html" },
+    { "source": "/daily-report.html", "destination": "/renderer/daily-report.html" },
+    { "source": "/end-shift.html", "destination": "/renderer/end-shift.html" },
+    { "source": "/start-shift.html", "destination": "/renderer/start-shift.html" },
+    { "source": "/hr.html", "destination": "/renderer/hr.html" },
+    { "source": "/whatsapp-chat.html", "destination": "/renderer/whatsapp-chat.html" },
     { "source": "/login.html", "destination": "/renderer/login.html" }
   ]
 }
