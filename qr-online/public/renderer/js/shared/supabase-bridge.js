@@ -88,6 +88,8 @@ const CafeSupabase = {
           },
           (payload) => {
             if (payload && payload.new && typeof onUpdate === 'function') {
+              // Ensure event belongs exclusively to this order ID
+              if (String(payload.new.id) !== String(orderId)) return;
               onUpdate(payload.new);
             }
           }

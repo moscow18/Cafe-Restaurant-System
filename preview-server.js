@@ -81,9 +81,15 @@ function broadcastRealtimeEvent(event, data, filterFn) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const client of sseClients) {
     try {
-      if (!filterFn || filterFn(client)) {
-        client.res.write(payload);
+      if (filterFn) {
+        if (!filterFn(client)) continue;
+      } else {
+        // Safe default: Menu clients only receive status updates for their own order
+        if (client.clientType === 'menu' && client.orderId && data && data.order_id) {
+          if (Number(client.orderId) !== Number(data.order_id)) continue;
+        }
       }
+      client.res.write(payload);
     } catch (err) {
       sseClients.delete(client);
     }

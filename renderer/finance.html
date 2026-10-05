@@ -1337,7 +1337,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Modal: Manage Expense Types -->
-  <div class="modal-overlay" id="expenseTypesModal" style="position:fixed; inset:0; background:rgba(18,13,10,0.55); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9999; padding:16px;">
+  <div class="modal-overlay" id="expenseTypesModal" onclick="if(event.target===this) closeExpenseTypesModal()" style="position:fixed; inset:0; background:rgba(18,13,10,0.55); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9999; padding:16px;">
     <div style="background:#FFFFFF; border-radius:18px; width:460px; max-width:95%; padding:22px; box-shadow:0 25px 60px rgba(28,20,16,0.25); border:1px solid var(--fin-border);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--fin-border);">
         <h3 style="margin:0; font-size:16px; font-weight:900; color:var(--fin-text); display:flex; align-items:center; gap:8px;">

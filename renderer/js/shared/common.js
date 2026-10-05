@@ -724,6 +724,9 @@ if (typeof window !== 'undefined') {
       const tables = this.getTables();
       const t = tables.find(x => String(x.id) === String(id));
       if (t) {
+        if (t.status === status && (!extra.reservation_name || t.reservation_name === extra.reservation_name) && (!extra.reservation_phone || t.reservation_phone === extra.reservation_phone)) {
+          return;
+        }
         t.status = status;
         if (extra.reservation_name) t.reservation_name = extra.reservation_name;
         if (extra.reservation_phone) t.reservation_phone = extra.reservation_phone;

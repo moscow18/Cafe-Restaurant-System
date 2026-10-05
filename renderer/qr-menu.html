@@ -2459,7 +2459,10 @@
       }
 
       currentActiveOrder = { ...orderData, items: itemsList };
+      const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || orderData.table_id || orderData.table_name || 'global';
       try {
+        localStorage.setItem(`cafePro_active_order_tbl_${tblKey}`, JSON.stringify(currentActiveOrder));
+        localStorage.setItem(`cafePro_active_order_id_tbl_${tblKey}`, orderId);
         localStorage.setItem('cafePro_active_order', JSON.stringify(currentActiveOrder));
         localStorage.setItem('cafePro_active_order_id', orderId);
       } catch(e) {}
@@ -2472,14 +2475,23 @@
     }
 
     function setupOrderRealtimeListener(orderId) {
-      // 1. Supabase Cloud Realtime
+      if (!orderId) return;
+
+      // 1. Supabase Cloud Realtime with strict order ID check
       if (window.CafeSupabase && typeof window.CafeSupabase.subscribeToOrderStatus === 'function') {
         window.CafeSupabase.subscribeToOrderStatus(orderId, (updatedOrder) => {
+          if (!updatedOrder || String(updatedOrder.id) !== String(orderId)) return;
           console.log('[Supabase Realtime Status Change]', updatedOrder.status);
-          if (currentActiveOrder) {
+          if (currentActiveOrder && String(currentActiveOrder.id || currentActiveOrder.order_id) === String(orderId)) {
             currentActiveOrder = { ...currentActiveOrder, ...updatedOrder };
           }
           updateStepperUI(updatedOrder.status, updatedOrder);
+          if (updatedOrder.status === 'completed' || updatedOrder.status === 'rejected') {
+            if (window._orderStatusPoller) {
+              clearInterval(window._orderStatusPoller);
+              window._orderStatusPoller = null;
+            }
+          }
         });
       }
 
@@ -2495,10 +2507,18 @@
         menuRealtimeSource.addEventListener('order_status_changed', (evt) => {
           try {
             const payload = JSON.parse(evt.data);
-            if (payload && Number(payload.order_id) === Number(orderId)) {
+            if (payload && String(payload.order_id) === String(orderId)) {
               console.log('[RealTime SSE] Instant Status Update:', payload.status);
-              if (currentActiveOrder) currentActiveOrder = { ...currentActiveOrder, ...payload };
+              if (currentActiveOrder && String(currentActiveOrder.id || currentActiveOrder.order_id) === String(orderId)) {
+                currentActiveOrder = { ...currentActiveOrder, ...payload };
+              }
               updateStepperUI(payload.status, payload);
+              if (payload.status === 'completed' || payload.status === 'rejected') {
+                if (window._orderStatusPoller) {
+                  clearInterval(window._orderStatusPoller);
+                  window._orderStatusPoller = null;
+                }
+              }
             }
           } catch(e) {
             console.error('[SSE Parse Error]', e);
@@ -2508,31 +2528,43 @@
         console.warn('[SSE Connection Init Error]', err);
       }
 
-      // 3. Fallback Interval Poller (every 2.5s) to guarantee rejection and completion updates
+      // 3. Fallback Interval Poller relaxed to 8s (skip if hidden, stop if completed/rejected)
       if (window._orderStatusPoller) clearInterval(window._orderStatusPoller);
       window._orderStatusPoller = setInterval(async () => {
+        if (document.hidden) return;
         try {
           // Check local queue first
           const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
           const localMatch = queue.find(o => String(o.id || o.order_id) === String(orderId));
-          if (localMatch && localMatch.status && (!currentActiveOrder || localMatch.status !== currentActiveOrder.status || localMatch.rejection_reason !== currentActiveOrder.rejection_reason)) {
-            currentActiveOrder = { ...(currentActiveOrder || {}), ...localMatch };
-            updateStepperUI(localMatch.status, localMatch);
-            return;
+          if (localMatch && localMatch.status) {
+            if (!currentActiveOrder || localMatch.status !== currentActiveOrder.status || localMatch.rejection_reason !== currentActiveOrder.rejection_reason) {
+              currentActiveOrder = { ...(currentActiveOrder || {}), ...localMatch };
+              updateStepperUI(localMatch.status, localMatch);
+            }
+            if (localMatch.status === 'completed' || localMatch.status === 'rejected') {
+              clearInterval(window._orderStatusPoller);
+              window._orderStatusPoller = null;
+              return;
+            }
           }
 
           // Check Supabase
           if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
             const sbOrder = await window.CafeSupabase.getOrderStatus(orderId);
-            if (sbOrder && sbOrder.status) {
+            if (sbOrder && String(sbOrder.id) === String(orderId) && sbOrder.status) {
               if (!currentActiveOrder || sbOrder.status !== currentActiveOrder.status || sbOrder.rejection_reason !== currentActiveOrder.rejection_reason) {
                 currentActiveOrder = { ...(currentActiveOrder || {}), ...sbOrder };
                 updateStepperUI(sbOrder.status, sbOrder);
               }
+              if (sbOrder.status === 'completed' || sbOrder.status === 'rejected') {
+                clearInterval(window._orderStatusPoller);
+                window._orderStatusPoller = null;
+                return;
+              }
             }
           }
         } catch(e) {}
-      }, 2500);
+      }, 8000);
     }
 
     function updateStepperUI(status, extraData) {
@@ -2665,71 +2697,98 @@
       pill.style.display = 'flex';
     }
 
+    function orderBelongsToCurrentTable(ord) {
+      if (!selectedTable) return true;
+      if (!ord) return false;
+      const curId = selectedTable.id ? String(selectedTable.id) : null;
+      const curName = selectedTable.name ? String(selectedTable.name).trim().toLowerCase() : null;
+      const ordId = ord.table_id ? String(ord.table_id) : null;
+      const ordName = ord.table_name ? String(ord.table_name).trim().toLowerCase() : null;
+      if (curId && ordId && curId === ordId) return true;
+      if (curName && ordName && curName === ordName) return true;
+      return false;
+    }
+
     function reopenActiveOrderTracker() {
       const trackerSheet = document.getElementById('trackerSheet');
       if (trackerSheet && trackerSheet.classList.contains('active')) {
         closeSheet('trackerSheet');
         return;
       }
-      if (currentActiveOrder) {
+      if (currentActiveOrder && orderBelongsToCurrentTable(currentActiveOrder)) {
         openLiveTrackerSheet(currentActiveOrder, currentActiveOrder.items || currentActiveOrder.recapItems || []);
       } else {
-        const saved = localStorage.getItem('cafePro_active_order');
+        const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || 'global';
+        const saved = localStorage.getItem(`cafePro_active_order_tbl_${tblKey}`) || localStorage.getItem('cafePro_active_order');
         if (saved) {
           try {
             const ord = JSON.parse(saved);
-            currentActiveOrder = ord;
-            openLiveTrackerSheet(ord, ord.items || []);
-            return;
-          } catch(e) {}
-        }
-        const activeId = localStorage.getItem('cafePro_active_order_id');
-        if (activeId) {
-          checkExistingActiveOrder();
-        }
-      }
-    }
-
-    async function checkExistingActiveOrder() {
-      const activeId = localStorage.getItem('cafePro_active_order_id');
-      if (activeId) {
-        // Try local queue first
-        try {
-          const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
-          const match = queue.find(o => String(o.id || o.order_id) === String(activeId));
-          if (match) {
-            currentActiveOrder = match;
-            updateFloatingPill(match.status || 'pending', match);
-            setupOrderRealtimeListener(activeId);
-            return;
-          }
-        } catch(e) {}
-
-        // Try Supabase
-        if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
-          try {
-            const sbOrder = await window.CafeSupabase.getOrderStatus(activeId);
-            if (sbOrder) {
-              currentActiveOrder = sbOrder;
-              updateFloatingPill(sbOrder.status || 'pending', sbOrder);
-              setupOrderRealtimeListener(activeId);
+            if (orderBelongsToCurrentTable(ord)) {
+              currentActiveOrder = ord;
+              openLiveTrackerSheet(ord, ord.items || []);
               return;
             }
           } catch(e) {}
         }
-
-        // Try API
-        try {
-          const res = await fetch(`/api/qr-menu/order-status?order_id=${activeId}`);
-          const json = await res.json();
-          if (json && json.success && json.data) {
-            const ord = json.data;
-            currentActiveOrder = ord;
-            updateFloatingPill(ord.status || 'pending', ord);
-            setupOrderRealtimeListener(activeId);
-          }
-        } catch (e) {}
+        checkExistingActiveOrder();
       }
+    }
+
+    async function checkExistingActiveOrder() {
+      const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || null;
+      let activeId = tblKey ? localStorage.getItem(`cafePro_active_order_id_tbl_${tblKey}`) : null;
+      if (!activeId) {
+        const globalSaved = localStorage.getItem('cafePro_active_order');
+        if (globalSaved) {
+          try {
+            const gOrd = JSON.parse(globalSaved);
+            if (orderBelongsToCurrentTable(gOrd)) {
+              activeId = localStorage.getItem('cafePro_active_order_id');
+            }
+          } catch(e) {}
+        }
+      }
+      if (!activeId) return;
+
+      // Try local queue first
+      try {
+        const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+        const match = queue.find(o => String(o.id || o.order_id) === String(activeId));
+        if (match) {
+          if (!orderBelongsToCurrentTable(match)) return;
+          currentActiveOrder = match;
+          updateFloatingPill(match.status || 'pending', match);
+          setupOrderRealtimeListener(activeId);
+          return;
+        }
+      } catch(e) {}
+
+      // Try Supabase
+      if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
+        try {
+          const sbOrder = await window.CafeSupabase.getOrderStatus(activeId);
+          if (sbOrder) {
+            if (!orderBelongsToCurrentTable(sbOrder)) return;
+            currentActiveOrder = sbOrder;
+            updateFloatingPill(sbOrder.status || 'pending', sbOrder);
+            setupOrderRealtimeListener(activeId);
+            return;
+          }
+        } catch(e) {}
+      }
+
+      // Try API
+      try {
+        const res = await fetch(`/api/qr-menu/order-status?order_id=${activeId}`);
+        const json = await res.json();
+        if (json && json.success && json.data) {
+          const ord = json.data;
+          if (!orderBelongsToCurrentTable(ord)) return;
+          currentActiveOrder = ord;
+          updateFloatingPill(ord.status || 'pending', ord);
+          setupOrderRealtimeListener(activeId);
+        }
+      } catch (e) {}
     }
 
     // ─── Sheet Helpers ───

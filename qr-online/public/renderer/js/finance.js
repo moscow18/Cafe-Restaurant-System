@@ -209,16 +209,34 @@ async function loadEmpSelect(selId){
   if(res.success) res.data.forEach(e=>sel.innerHTML+=`<option value="${e.id}">${e.name}</option>`);
 }
 
-// ─── Expense Quick Station Helpers ───────────────────────────────────────────
 function openExpenseTypesModal() {
   const m = document.getElementById('expenseTypesModal');
-  if (m) m.style.display = 'flex';
+  if (m) {
+    m.classList.add('open');
+    m.style.display = 'flex';
+    m.style.opacity = '1';
+    m.style.pointerEvents = 'all';
+    loadExpenseTypes();
+    setTimeout(() => {
+      document.getElementById('newTypeName')?.focus();
+    }, 100);
+  }
 }
 
 function closeExpenseTypesModal() {
   const m = document.getElementById('expenseTypesModal');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('open');
+    m.style.display = 'none';
+    m.style.opacity = '0';
+    m.style.pointerEvents = 'none';
+  }
 }
+
+window.openExpenseTypesModal = openExpenseTypesModal;
+window.closeExpenseTypesModal = closeExpenseTypesModal;
+window.addExpenseType = addExpenseType;
+window.deleteExpenseType = deleteExpenseType;
 
 function addExpenseAmount(amt) {
   const inp = document.getElementById('exp_amount');

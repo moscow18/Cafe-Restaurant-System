@@ -863,9 +863,7 @@ async function onTableSelectChange() {
       invoiceItems = [];
       renderItemsTable();
       recalcTotals();
-      window._activeQrOrderId = null;
-      const servedBtn = document.getElementById('btnMarkQrServed');
-      if (servedBtn) servedBtn.style.display = 'none';
+      syncQrServedButtonForCurrentTable();
       try {
         if (window.db && typeof window.db.generateInvoiceNumber === 'function') {
           const invRes = await window.db.generateInvoiceNumber().catch(() => null);
@@ -967,14 +965,17 @@ async function resumeInvoiceById(id) {
     const tblSel = document.getElementById('posTableSelect');
     if (tblSel && (inv.table_id || currentTableId)) tblSel.value = inv.table_id || currentTableId;
     currentTableId = inv.table_id || currentTableId;
+    syncQrServedButtonForCurrentTable();
   } else if (inv.invoice_type === 'دليفري') {
     setOrderType('دليفري');
     const drvSel = document.getElementById('posDriverSelect');
     const feeEl = document.getElementById('posDeliveryFee');
     if (drvSel && inv.driver_id) drvSel.value = inv.driver_id;
     if (feeEl && inv.delivery_fee) feeEl.value = inv.delivery_fee;
+    syncQrServedButtonForCurrentTable();
   } else {
     setOrderType('تيك أواي');
+    syncQrServedButtonForCurrentTable();
   }
 
   if (inv.customer_id) {
@@ -3312,8 +3313,7 @@ async function newInvoice() {
   currentInvoiceId = null;
   currentTableId = null;
   window._activeQrOrderId = null;
-  const servedBtn = document.getElementById('btnMarkQrServed');
-  if (servedBtn) servedBtn.style.display = 'none';
+  syncQrServedButtonForCurrentTable();
 
   const tblSel = document.getElementById('posTableSelect');
   if (tblSel) tblSel.value = '';
@@ -3862,14 +3862,18 @@ function playQrOrderChime() {
   }
 }
 
+let _isCheckingQrPending = false;
+
 async function checkPendingQrOrders() {
+  if (_isCheckingQrPending) return;
+  _isCheckingQrPending = true;
   try {
     let orders = [];
 
-    // 1. Check Supabase Cloud Realtime Orders
-    if (window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
+    // 1. Check Supabase Cloud Realtime Orders (only when online)
+    if (navigator.onLine !== false && window.CafeSupabase && typeof window.CafeSupabase.getRecentOrders === 'function') {
       try {
-        const sbOrders = await window.CafeSupabase.getRecentOrders();
+        const sbOrders = await window.CafeSupabase.getRecentOrders(20);
         if (Array.isArray(sbOrders)) {
           orders = sbOrders.filter(o => o.status === 'pending');
         }
@@ -3954,6 +3958,8 @@ async function checkPendingQrOrders() {
     _lastQrPendingCount = count;
   } catch (err) {
     console.error('Error polling QR orders:', err);
+  } finally {
+    _isCheckingQrPending = false;
   }
 }
 
@@ -4274,10 +4280,14 @@ async function approveAndDispatchQrOrder(orderId) {
     recalcTotals();
     renderServiceGrid(allServices);
 
-    // Set as active QR order and display "تم تقديم الطلب للزبون" button
-    window._activeQrOrderId = order.id || order.order_id;
-    const servedBtn = document.getElementById('btnMarkQrServed');
-    if (servedBtn) servedBtn.style.display = 'flex';
+    // Set as active QR order strictly for this specific table
+    const ordId = order.id || order.order_id;
+    window._tableQrOrderMap = window._tableQrOrderMap || {};
+    if (order.table_id) {
+      window._tableQrOrderMap[order.table_id] = ordId;
+    }
+    window._activeQrOrderId = ordId;
+    syncQrServedButtonForCurrentTable();
 
     // 6. Automatically dispatch order to kitchen printer
     await sendOrderToKitchen();
@@ -4339,12 +4349,30 @@ async function rejectQrOrder(orderId) {
   }
 }
 
+window._tableQrOrderMap = window._tableQrOrderMap || {};
+
+function syncQrServedButtonForCurrentTable() {
+  window._tableQrOrderMap = window._tableQrOrderMap || {};
+  const servedBtn = document.getElementById('btnMarkQrServed');
+  if (!servedBtn) return;
+  const tblId = currentTableId || (currentInvoice && currentInvoice.table_id);
+  const activeOrdId = tblId ? window._tableQrOrderMap[tblId] : null;
+  if (activeOrdId) {
+    window._activeQrOrderId = activeOrdId;
+    servedBtn.style.display = 'flex';
+  } else {
+    window._activeQrOrderId = null;
+    servedBtn.style.display = 'none';
+  }
+}
+
 async function markCurrentQrOrderServed() {
-  if (!window._activeQrOrderId) {
-    showToast('لا يوجد طلب QR نشط حالياً', 'warning');
+  const tblId = currentTableId || (currentInvoice && currentInvoice.table_id);
+  const orderId = window._activeQrOrderId || (tblId && window._tableQrOrderMap ? window._tableQrOrderMap[tblId] : null);
+  if (!orderId) {
+    showToast('لا يوجد طلب QR نشط لهذه الطاولة حالياً', 'warning');
     return;
   }
-  const orderId = window._activeQrOrderId;
   try {
     if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
       await window.CafeSupabase.updateOrderStatus(orderId, 'completed');
@@ -4358,10 +4386,12 @@ async function markCurrentQrOrderServed() {
       localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(queue));
     }
   } catch(e) {}
-  showToast('تم تأكيد تقديم الطلب للزبون بنجاح ✓', 'success');
-  const btn = document.getElementById('btnMarkQrServed');
-  if (btn) btn.style.display = 'none';
+  if (tblId && window._tableQrOrderMap) {
+    delete window._tableQrOrderMap[tblId];
+  }
   window._activeQrOrderId = null;
+  syncQrServedButtonForCurrentTable();
+  showToast('تم تأكيد تقديم الطلب للزبون بنجاح ✓', 'success');
 }
 
 let _posSseSource = null;
@@ -4463,18 +4493,23 @@ function queueOfflineSyncAction(action) {
   } catch(e) {}
 }
 
+let _isSyncingOffline = false;
+
 async function syncOfflineData() {
+  if (_isSyncingOffline) return;
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     updateOnlineStatusBadge();
     return;
   }
-  const syncQueue = JSON.parse(localStorage.getItem('cafePro_offline_sync_queue') || '[]');
-  const invQueue = JSON.parse(localStorage.getItem('cafePro_offline_invoices_queue') || '[]');
-  
-  if (syncQueue.length === 0 && invQueue.length === 0) {
-    updateOnlineStatusBadge();
-    return;
-  }
+  _isSyncingOffline = true;
+  try {
+    const syncQueue = JSON.parse(localStorage.getItem('cafePro_offline_sync_queue') || '[]');
+    const invQueue = JSON.parse(localStorage.getItem('cafePro_offline_invoices_queue') || '[]');
+    
+    if (syncQueue.length === 0 && invQueue.length === 0) {
+      updateOnlineStatusBadge();
+      return;
+    }
 
   const badge = document.getElementById('onlineStatusBadge');
   const badgeText = document.getElementById('onlineStatusText');
@@ -4522,9 +4557,12 @@ async function syncOfflineData() {
     } catch(e) {}
   }
 
-  updateOnlineStatusBadge();
-  if (syncedCount > 0) {
-    showToast(`تمت استعادة الاتصال ومزامنة ${syncedCount} عملية أوفلاين بنجاح ✓`, 'success');
+    updateOnlineStatusBadge();
+    if (syncedCount > 0) {
+      showToast(`تمت استعادة الاتصال ومزامنة ${syncedCount} عملية أوفلاين بنجاح ✓`, 'success');
+    }
+  } finally {
+    _isSyncingOffline = false;
   }
 }
 
@@ -4533,6 +4571,15 @@ function triggerManualSync() {
   syncOfflineData();
 }
 
+function openExpenseTypesModal() {
+  if (window.electron && typeof window.electron.navigate === 'function') {
+    window.electron.navigate('finance.html');
+  } else {
+    window.location.href = 'finance.html';
+  }
+}
+
+window.openExpenseTypesModal = openExpenseTypesModal;
 window.updateOnlineStatusBadge = updateOnlineStatusBadge;
 window.syncOfflineData = syncOfflineData;
 window.triggerManualSync = triggerManualSync;
@@ -4546,10 +4593,12 @@ init().then(() => {
   if (settings.enable_qr_menu === undefined || Number(settings.enable_qr_menu) !== 0) {
     checkPendingQrOrders();
     setupPosRealtimeSSE();
-    // Periodic safety poll every 4 seconds to sync orders across all browsers
+    // Safety check every 10 seconds (only when active tab is visible)
     setInterval(() => {
-      checkPendingQrOrders();
-    }, 4000);
+      if (!document.hidden) {
+        checkPendingQrOrders();
+      }
+    }, 10000);
   } else {
     const qrBtn = document.getElementById('btnQrOrdersBadge');
     if (qrBtn) qrBtn.style.setProperty('display', 'none', 'important');
@@ -4566,7 +4615,9 @@ init().then(() => {
     showToast('انقطع الاتصال بالإنترنت — يعمل الكاشير الآن بكفاءة كاملة في وضع أوفلاين', 'warning');
   });
   updateOnlineStatusBadge();
-  setInterval(syncOfflineData, 25000);
+  setInterval(() => {
+    if (!document.hidden) syncOfflineData();
+  }, 35000);
 });
 
 // ─── Quit Confirmation ────────────────────────────────────────────────────────
