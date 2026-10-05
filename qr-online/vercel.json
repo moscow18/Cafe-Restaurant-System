@@ -5,6 +5,9 @@
   "outputDirectory": "public",
   "cleanUrls": false,
   "rewrites": [
+    { "source": "/menu", "destination": "/qr-menu.html" },
+    { "source": "/qr", "destination": "/qr-menu.html" },
+    { "source": "/qr-menu", "destination": "/qr-menu.html" },
     { "source": "/renderer/renderer/:path*", "destination": "/renderer/:path*" },
     { "source": "/main-dashboard.html", "destination": "/renderer/main-dashboard.html" },
     { "source": "/pos-invoice.html", "destination": "/renderer/pos-invoice.html" },

@@ -726,12 +726,12 @@ function getTableMenuUrl(t) {
              window.location.protocol.startsWith('http')) {
     base = window.location.origin;
   } else {
-    const ip = (_serverInfo && _serverInfo.localIp && _serverInfo.localIp !== '127.0.0.1') ? _serverInfo.localIp : '192.168.1.2';
-    const port = (_serverInfo && _serverInfo.port) ? _serverInfo.port : 3344;
-    base = `http://${ip}:${port}`;
+    // Default to public cloud domain so customer can open from 4G/5G mobile data or any Wi-Fi
+    base = 'https://cafe-restaurant-system.vercel.app';
   }
 
-  return `${base}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}&locked=1&store=${encodeURIComponent(storeSlug)}`;
+  // Open /qr-menu.html directly so it loads the customer menu immediately without any landing page
+  return `${base}/qr-menu.html?table_id=${t.id}&table=${encodeURIComponent(t.name)}&locked=1&store=${encodeURIComponent(storeSlug)}`;
 }
 
 function getQrCodeDataUrl(text, size = 180) {
@@ -768,19 +768,29 @@ async function openTableQrModal() {
   openModal('tableQrModal');
   await loadServerInfo();
 
-  const ip = (_serverInfo && _serverInfo.localIp && _serverInfo.localIp !== '127.0.0.1') ? _serverInfo.localIp : '192.168.1.2';
-  const port = (_serverInfo && _serverInfo.port) ? _serverInfo.port : 3344;
-  const defaultUrl = `http://${ip}:${port}`;
   const domainInp = document.getElementById('qrCustomDomainInput');
-  if (domainInp && !domainInp.value) {
-    domainInp.value = defaultUrl;
+  const cloudUrl = 'https://cafe-restaurant-system.vercel.app';
+  let currentVal = domainInp?.value?.trim() || '';
+  if (!currentVal) {
+    currentVal = cloudUrl;
+    if (domainInp) domainInp.value = currentVal;
   }
 
   const testBtn = document.getElementById('btnTestQrMenuDirect');
   if (testBtn) {
-    testBtn.href = `${(domainInp && domainInp.value) ? domainInp.value : defaultUrl}/menu`;
+    testBtn.href = `${currentVal}/qr-menu.html`;
   }
 
+  renderTableQrCards();
+}
+
+function setQrDomainToCloud() {
+  const domainInp = document.getElementById('qrCustomDomainInput');
+  const cloudUrl = 'https://cafe-restaurant-system.vercel.app';
+  if (domainInp) {
+    domainInp.value = cloudUrl;
+  }
+  try { localStorage.setItem('cafePro_qr_custom_domain', cloudUrl); } catch(e) {}
   renderTableQrCards();
 }
 

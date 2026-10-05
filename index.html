@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function() {
+      const p = new URLSearchParams(window.location.search);
+      if (p.has('table_id') || p.has('table') || window.location.pathname === '/menu') {
+        window.location.replace('/qr-menu.html' + window.location.search);
+      }
+    })();
+  </script>
   <title>نظام كافيه برو المتكامل • CafePro Restaurant & Cafe Management Suite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
