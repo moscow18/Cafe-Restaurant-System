@@ -6,6 +6,7 @@ let currentStatusFilter = 'all';
 document.addEventListener('DOMContentLoaded', async () => {
   enforceAdminUI();
   await loadShopName();
+  await loadServerInfo();
   await loadTables();
 });
 
@@ -652,12 +653,84 @@ async function confirmMergeTables() {
 // ─── TABLE QR CODE GENERATION & PRINTING (طباعة كروت وكود QR للترابيزات)
 // ══════════════════════════════════════════════════════════════════════════════
 
-let _serverInfo = { localIp: '127.0.0.1', port: 3344, menuUrl: 'http://127.0.0.1:3344/menu' };
+let _serverInfo = {
+  localIp: (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost') ? window.location.hostname : '192.168.1.2',
+  port: (typeof window !== 'undefined' && window.location && window.location.port) ? window.location.port : 3344,
+  menuUrl: 'http://192.168.1.2:3344/menu'
+};
+
+async function loadServerInfo() {
+  try {
+    const savedDomain = localStorage.getItem('cafePro_qr_custom_domain');
+    const domainInp = document.getElementById('qrCustomDomainInput');
+    if (savedDomain && domainInp) {
+      domainInp.value = savedDomain;
+    }
+
+    if (window.location && window.location.hostname &&
+        window.location.hostname !== '127.0.0.1' &&
+        window.location.hostname !== 'localhost' &&
+        window.location.protocol.startsWith('http')) {
+      _serverInfo = {
+        localIp: window.location.hostname,
+        port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
+        menuUrl: `${window.location.origin}/menu`
+      };
+      if (domainInp && !domainInp.value) {
+        domainInp.value = window.location.origin;
+      }
+      return;
+    }
+
+    const res = await fetch('/api/server-info');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.localIp && data.localIp !== '127.0.0.1') {
+        _serverInfo = data;
+        if (domainInp && !domainInp.value) {
+          domainInp.value = `http://${data.localIp}:${data.port || 3344}`;
+        }
+      }
+    }
+  } catch(e) {
+    console.warn('loadServerInfo error:', e);
+  }
+}
+
+function onCustomDomainChange() {
+  const domainInp = document.getElementById('qrCustomDomainInput');
+  const val = domainInp?.value?.trim() || '';
+  try {
+    if (val) localStorage.setItem('cafePro_qr_custom_domain', val);
+    else localStorage.removeItem('cafePro_qr_custom_domain');
+  } catch(e) {}
+  renderTableQrCards();
+}
 
 function getTableMenuUrl(t) {
   const storeSlug = (window._shopSettings && window._shopSettings.qr_store_slug) || 'cafe-pro';
-  const customDomain = document.getElementById('qrCustomDomainInput')?.value?.trim();
-  const base = customDomain ? customDomain.replace(/\/+$/, '') : `http://${_serverInfo.localIp}:${_serverInfo.port}`;
+  
+  let customDomain = document.getElementById('qrCustomDomainInput')?.value?.trim();
+  if (!customDomain) {
+    try {
+      customDomain = localStorage.getItem('cafePro_qr_custom_domain') || '';
+    } catch(e) {}
+  }
+
+  let base = '';
+  if (customDomain) {
+    base = customDomain.replace(/\/+$/, '');
+  } else if (window.location && window.location.hostname && 
+             window.location.hostname !== '127.0.0.1' && 
+             window.location.hostname !== 'localhost' &&
+             window.location.protocol.startsWith('http')) {
+    base = window.location.origin;
+  } else {
+    const ip = (_serverInfo && _serverInfo.localIp && _serverInfo.localIp !== '127.0.0.1') ? _serverInfo.localIp : '192.168.1.2';
+    const port = (_serverInfo && _serverInfo.port) ? _serverInfo.port : 3344;
+    base = `http://${ip}:${port}`;
+  }
+
   return `${base}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}&locked=1&store=${encodeURIComponent(storeSlug)}`;
 }
 
@@ -693,22 +766,11 @@ function getQrCodeDataUrl(text, size = 180) {
 
 async function openTableQrModal() {
   openModal('tableQrModal');
+  await loadServerInfo();
 
-  // Try to query server info for local network IP
-  try {
-    const res = await fetch('/api/server-info');
-    if (res.ok) {
-      _serverInfo = await res.json();
-    }
-  } catch (e) {
-    _serverInfo = {
-      localIp: window.location.hostname || '127.0.0.1',
-      port: window.location.port || '3344',
-      menuUrl: `${window.location.origin}/menu`
-    };
-  }
-
-  const defaultUrl = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
+  const ip = (_serverInfo && _serverInfo.localIp && _serverInfo.localIp !== '127.0.0.1') ? _serverInfo.localIp : '192.168.1.2';
+  const port = (_serverInfo && _serverInfo.port) ? _serverInfo.port : 3344;
+  const defaultUrl = `http://${ip}:${port}`;
   const domainInp = document.getElementById('qrCustomDomainInput');
   if (domainInp && !domainInp.value) {
     domainInp.value = defaultUrl;
@@ -716,18 +778,21 @@ async function openTableQrModal() {
 
   const testBtn = document.getElementById('btnTestQrMenuDirect');
   if (testBtn) {
-    testBtn.href = `${defaultUrl}/menu`;
+    testBtn.href = `${(domainInp && domainInp.value) ? domainInp.value : defaultUrl}/menu`;
   }
 
   renderTableQrCards();
 }
 
 function resetQrDomainToLocal() {
+  try { localStorage.removeItem('cafePro_qr_custom_domain'); } catch(e) {}
   const domainInp = document.getElementById('qrCustomDomainInput');
+  const ip = (_serverInfo && _serverInfo.localIp && _serverInfo.localIp !== '127.0.0.1') ? _serverInfo.localIp : '192.168.1.2';
+  const port = (_serverInfo && _serverInfo.port) ? _serverInfo.port : 3344;
   if (domainInp) {
-    domainInp.value = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
-    renderTableQrCards();
+    domainInp.value = `http://${ip}:${port}`;
   }
+  renderTableQrCards();
 }
 
 function renderTableQrCards() {
