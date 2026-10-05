@@ -208,6 +208,19 @@
       transform: scale(0.97);
     }
 
+    .table-picker-pill.locked-table {
+      cursor: default !important;
+      border-color: rgba(16, 185, 129, 0.4) !important;
+      background: rgba(16, 185, 129, 0.08) !important;
+    }
+    .table-picker-pill.locked-table:hover {
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      background: rgba(16, 185, 129, 0.12) !important;
+    }
+    .table-picker-pill.locked-table:active {
+      transform: none !important;
+    }
+
     .table-picker-pill .tbl-icon {
       color: var(--primary);
       display: flex;
@@ -1595,6 +1608,7 @@
     let allTables = [];
     let shopSettings = {};
     let selectedTable = null;
+    let isTableLocked = false;
     let activeCategoryId = 0;
     let searchQuery = '';
     let cart = [];
@@ -1760,11 +1774,16 @@
       const params = new URLSearchParams(window.location.search);
       const tblId = params.get('table_id') || params.get('tableId');
       const tblName = params.get('table') || params.get('table_name');
+      const lockParam = params.get('locked') || params.get('lock');
       if (tblId || tblName) {
         selectedTable = {
           id: tblId ? parseInt(tblId) : null,
           name: tblName ? decodeURIComponent(tblName) : `Table ${tblId}`
         };
+        // Table is locked when scanned via table QR code (table_id or locked=1)
+        if (lockParam === '1' || lockParam === 'true' || tblId) {
+          isTableLocked = true;
+        }
         updateTableHeaderDisplay();
       }
     }
@@ -1773,13 +1792,32 @@
       const t = I18N[currentLang];
       const disp = document.getElementById('headerTableNameDisplay');
       const cartDisp = document.getElementById('cartSheetTableDisplay');
+      const pill = document.querySelector('.table-picker-pill');
+      const arrow = document.querySelector('.table-picker-pill .tbl-arrow');
+      const iconWrap = document.querySelector('.table-picker-pill .tbl-icon');
+
       if (selectedTable) {
         const displayName = getTableDisplayName(selectedTable.name);
         if (disp) disp.textContent = displayName;
-        if (cartDisp) cartDisp.textContent = `${t.tablePrefix}: ${displayName}`;
+        if (cartDisp) {
+          const lockSuffix = isTableLocked ? (currentLang === 'ar' ? ' (مثبتة 🔒)' : ' (Locked 🔒)') : '';
+          cartDisp.textContent = `${t.tablePrefix}: ${displayName}${lockSuffix}`;
+        }
+
+        if (isTableLocked && pill) {
+          pill.classList.add('locked-table');
+          pill.title = currentLang === 'ar' ? `تم قفل الطلب على ${displayName}` : `Order locked to ${displayName}`;
+          if (arrow) arrow.style.display = 'none';
+          if (iconWrap) {
+            iconWrap.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+            iconWrap.style.color = '#10B981';
+          }
+        }
       } else {
         if (disp) disp.textContent = t.selectTable;
         if (cartDisp) cartDisp.textContent = t.tableNotSelected;
+        if (pill) pill.classList.remove('locked-table');
+        if (arrow) arrow.style.display = '';
       }
     }
 
@@ -2004,6 +2042,17 @@
 
     // ─── Table Picker ───
     function openTablePickerSheet() {
+      if (isTableLocked && selectedTable) {
+        const msg = currentLang === 'ar'
+          ? `تم قفل الطلب على (${getTableDisplayName(selectedTable.name)}) بواسطة رمز الـ QR لضمان وصول طلبك إليها مباشرة.`
+          : `Order is locked to (${getTableDisplayName(selectedTable.name)}) via QR code.`;
+        if (typeof showToast === 'function') {
+          showToast(msg, 'info');
+        } else {
+          alert(msg);
+        }
+        return;
+      }
       renderTablesPickerGrid();
       openSheet('tablePickerSheet');
     }
@@ -2024,6 +2073,7 @@
     }
 
     function pickTable(id, name) {
+      if (isTableLocked) return;
       selectedTable = { id, name };
       updateTableHeaderDisplay();
       closeSheet('tablePickerSheet');
@@ -2270,7 +2320,10 @@
 
       const totals = calculateCartTotals();
 
+      const storeSlug = new URLSearchParams(window.location.search).get('store') || shopSettings.qr_store_slug || 'cafe-pro';
+
       const payload = {
+        store_slug: storeSlug,
         table_id: selectedTable.id,
         table_name: selectedTable.name,
         customer_name: document.getElementById('custOrderName')?.value?.trim() || 'Guest',
@@ -2290,52 +2343,6 @@
           notes: it.notes
         }))
       };
-
-      // ── Auto-save Customer to Database / CRM ──
-      const cName = payload.customer_name;
-      const cPhone = payload.customer_phone;
-      if (cName && cName !== 'Guest') {
-        try {
-          if (window.WebDB && typeof window.WebDB.saveCustomer === 'function') {
-            window.WebDB.saveCustomer(cName, cPhone, `طلب كيو ار منيو (طاولة ${selectedTable.name || selectedTable.id})`);
-          } else {
-            const custs = JSON.parse(localStorage.getItem('cafePro_web_customers') || '[]');
-            const exists = custs.find(c => (cPhone && c.phone === cPhone) || c.name.trim().toLowerCase() === cName.toLowerCase());
-            if (!exists) {
-              custs.push({
-                id: Date.now(),
-                name: cName,
-                phone: cPhone || '',
-                address: `طلب كيو ار منيو (طاولة ${selectedTable.name || selectedTable.id})`,
-                opening_balance: 0,
-                current_balance: 0
-              });
-              localStorage.setItem('cafePro_web_customers', JSON.stringify(custs));
-            }
-          }
-        } catch(e) {}
-      }
-
-      // ── Update Table Status to 'محجوزة' upon QR order ──
-      if (selectedTable && selectedTable.id) {
-        try {
-          if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
-            window.WebDB.updateTableStatus(selectedTable.id, 'محجوزة', {
-              reservation_name: cName || 'عميل كيو ار',
-              reservation_phone: cPhone || ''
-            });
-          } else {
-            const tbs = JSON.parse(localStorage.getItem('cafePro_web_tables') || '[]');
-            const t = tbs.find(x => String(x.id) === String(selectedTable.id));
-            if (t) {
-              t.status = 'محجوزة';
-              t.reservation_name = cName || 'عميل كيو ار';
-              t.reservation_phone = cPhone || '';
-              localStorage.setItem('cafePro_web_tables', JSON.stringify(tbs));
-            }
-          }
-        } catch(e) {}
-      }
 
       let orderData = null;
 
@@ -2362,11 +2369,11 @@
         }
       }
 
-      // 2. Fallback to server endpoint
+      // 2. Fallback to server endpoint (with healthy 8s timeout)
       if (!orderData) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1200);
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
           const res = await fetch('/api/qr-menu/submit-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2381,24 +2388,22 @@
             }
           }
         } catch (err) {
-          console.warn('Backend serverless timeout, switching to local instant flow');
+          console.warn('Server endpoint error:', err);
         }
       }
 
       if (!orderData) {
-        // Fallback Interactive Simulation for Online Demos / Portfolios
-        const demoId = Math.floor(1000 + Math.random() * 9000);
-        orderData = {
-          success: true,
-          order_id: demoId,
-          order_number: `QR-${demoId}`,
-          table_id: selectedTable.id,
-          table_name: selectedTable.name,
-          customer_name: payload.customer_name,
-          status: 'pending',
-          is_demo: true,
-          items: payload.items
-        };
+        btn.disabled = false;
+        btn.innerHTML = `<span id="btnSendOrderText">${t.sendOrderBtn}</span>`;
+        const errMsg = currentLang === 'ar'
+          ? 'تعذر إرسال الطلب إلى الكاشير. يرجى التأكد من اتصال الإنترنت وإعادة المحاولة.'
+          : 'Failed to send order to cashier. Please check connection and try again.';
+        if (typeof showToast === 'function') {
+          showToast(errMsg, 'error');
+        } else {
+          alert(errMsg);
+        }
+        return;
       }
 
       // Also record to localStorage pending orders queue so POS on same browser receives it

@@ -2758,6 +2758,49 @@ function setupIpcHandlers(ipcMain, app) {
     }
   });
 
+  // ─── QR Menu Sync to JSON files ──────────────────────────────────────────
+  ipcMain.handle('qr-menu:sync', async (_, data) => {
+    try {
+      const baseDir = path.join(__dirname, '..');
+      const cats = (data && data.categories) ? data.categories : db.prepare("SELECT id, name FROM service_categories ORDER BY id ASC").all();
+      const srvs = (data && data.services) ? data.services : db.prepare(`
+        SELECT s.id, s.category_id, s.name, s.barcode, s.sell_price, s.image,
+               s.track_inventory, s.quantity, s.is_taxable,
+               c.name as category_name
+        FROM services s
+        LEFT JOIN service_categories c ON c.id = s.category_id
+        ORDER BY s.category_id ASC, s.name ASC
+      `).all();
+      const tbls = (data && data.tables) ? data.tables : db.prepare("SELECT id, name, section, seats, status FROM tables WHERE is_active = 1 ORDER BY id ASC").all();
+      let setRow = null;
+      try {
+        setRow = db.prepare("SELECT company_name, logo_path, phone, address, currency FROM company_settings WHERE id = 1").get();
+      } catch(e) {}
+      const menuPayload = {
+        success: true,
+        data: {
+          categories: cats,
+          services: srvs,
+          tables: tbls,
+          settings: setRow || { company_name: 'كافيه ومطعم برو' }
+        }
+      };
+      const jsonStr = JSON.stringify(menuPayload, null, 2);
+      const targetPaths = [
+        path.join(baseDir, 'menu-data.json'),
+        path.join(baseDir, 'renderer', 'menu-data.json'),
+        path.join(baseDir, 'qr-online', 'public', 'menu-data.json'),
+        path.join(baseDir, 'qr-online', 'public', 'renderer', 'menu-data.json')
+      ];
+      for (const p of targetPaths) {
+        try { fs.writeFileSync(p, jsonStr, 'utf-8'); } catch(e) {}
+      }
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   // ─── DB backup (legacy — kept for backward compatibility) ─────────────────
   ipcMain.handle('db:backup', async (_, destPath) => {
     try {

@@ -521,7 +521,7 @@ if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('cafePro_web_categories');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length === 5) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch(e) {}
       localStorage.setItem('cafePro_web_categories', JSON.stringify(DB_FALLBACK_CATEGORIES));
@@ -532,7 +532,7 @@ if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('cafePro_web_services');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length === 28 && parsed[0].name === 'إسبريسو سينجل / دبل') {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             return parsed;
           }
         }
@@ -612,10 +612,34 @@ if (typeof window !== 'undefined') {
     },
     saveInvoice(data, items) {
       const invoices = this.getInvoices();
+      const netTotal = parseFloat(data.net_total || data.total || 0);
+
+      // If updating an existing invoice, update in-place without duplicating
+      if (data.id) {
+        const idx = invoices.findIndex(i => String(i.id) === String(data.id));
+        if (idx !== -1) {
+          const prevTotal = parseFloat(invoices[idx].net_total || invoices[idx].dynamic_net_total || 0);
+          invoices[idx] = {
+            ...invoices[idx],
+            ...data,
+            net_total: netTotal,
+            dynamic_net_total: netTotal,
+            items: items || invoices[idx].items || []
+          };
+          localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
+          if (netTotal !== prevTotal && (netTotal - prevTotal) !== 0) {
+            this.addTreasury('إيراد', `تعديل فاتورة مبيعات ${invoices[idx].invoice_number}`, netTotal - prevTotal, data.payment_method || 'الخزينة');
+          }
+          if (data.table_id) {
+            this.updateTableStatus(data.table_id, data.status === 'محاسبة' ? 'فاضية' : 'مشغولة');
+          }
+          return { success: true, data: { invoiceId: data.id, invoiceNumber: invoices[idx].invoice_number } };
+        }
+      }
+
       const id = Date.now();
       const nextSeq = String(invoices.length + 1).padStart(4, '0');
       const invNum = data.invoice_number || `INV-${nextSeq}`;
-      const netTotal = parseFloat(data.net_total || data.total || 0);
       const newInv = {
         id: id,
         invoice_number: invNum,
@@ -641,7 +665,7 @@ if (typeof window !== 'undefined') {
       this.addTreasury('إيراد', `فاتورة مبيعات ${invNum}`, netTotal, data.payment_method || 'الخزينة');
 
       if (data.table_id) {
-        this.updateTableStatus(data.table_id, 'مشغولة');
+        this.updateTableStatus(data.table_id, data.status === 'محاسبة' ? 'فاضية' : 'مشغولة');
       }
 
       // Deduct inventory items

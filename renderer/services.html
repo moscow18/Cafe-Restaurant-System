@@ -1144,6 +1144,11 @@
           <span>رجوع للرئيسية</span>
         </button>
 
+        <button class="btn btn-outline btn-sm" onclick="syncQrMenuData(false)" title="مزامنة وتحديث بيانات المنيو الإلكتروني QR" style="font-weight:700; border-color:#CBD5E1; color:var(--srv-espresso);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span>مزامنة المنيو QR</span>
+        </button>
+
         <button class="btn btn-accent btn-sm" onclick="openServiceModal()" style="font-weight:800; background:var(--srv-caramel); color:#fff; border:none; padding:8px 16px; border-radius:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>+ إضافة صنف جديد</span>
@@ -1664,6 +1669,7 @@
     renderCategories();
     populateCategorySelect();
     showToast('تمت إضافة القسم بنجاح');
+    syncQrMenuData(true);
   }
 
   // ─── Services Data Loading ──────────────────────────────────────────────────
@@ -1946,6 +1952,7 @@
       renderCurrentView();
       renderCategories();
       showToast('تم حذف الصنف بنجاح');
+      syncQrMenuData(true);
     }
   }
 
@@ -2228,6 +2235,52 @@
     closeModal('serviceModal');
     renderCategories();
     renderCurrentView();
+    syncQrMenuData(true);
+  }
+
+  // ─── QR Menu Sync ──────────────────────────────────────────────────────────
+  async function syncQrMenuData(silent = false) {
+    try {
+      try {
+        localStorage.setItem('cafePro_web_categories', JSON.stringify(categories));
+        localStorage.setItem('cafePro_web_services', JSON.stringify(allServices));
+      } catch(e) {}
+
+      let tbls = [];
+      try {
+        if (window.db && typeof window.db.query === 'function') {
+          const res = await window.db.query("SELECT id, name, section, seats, status FROM tables WHERE is_active = 1 ORDER BY id ASC");
+          if (res && res.data) tbls = res.data;
+        }
+      } catch(e) {}
+
+      const payload = {
+        categories: categories,
+        services: allServices,
+        tables: tbls
+      };
+
+      if (window.electron && typeof window.electron.invoke === 'function') {
+        await window.electron.invoke('qr-menu:sync', payload);
+      }
+
+      try {
+        await fetch('/api/sync/catalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch(e) {}
+
+      if (!silent) {
+        showToast('تمت مزامنة المنيو الإلكتروني وقوائم الأصناف بنجاح ✓');
+      }
+    } catch(err) {
+      console.warn('QR Menu Sync warning:', err);
+      if (!silent) {
+        showToast('تعذرت مزامنة المنيو: ' + err.message, 'error');
+      }
+    }
   }
 
   // ─── Initialization ─────────────────────────────────────────────────────────

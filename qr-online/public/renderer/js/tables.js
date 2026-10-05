@@ -23,6 +23,7 @@ async function loadShopName() {
   try {
     const res = await window.db.getSettings();
     if (res?.success && res.data) {
+      window._shopSettings = res.data;
       if (res.data.company_name) {
         const el = document.getElementById('sidebarShopName');
         if (el) el.textContent = res.data.company_name;
@@ -239,6 +240,9 @@ function renderTables() {
             </button>
             <button type="button" class="btn-tbl-subtle" onclick="openReserveModal(${t.id}, '${escapeHtml(t.name)}')">حجز</button>
           `)}
+          <button type="button" class="btn-tbl-icon" onclick="event.stopPropagation(); printSingleTableQrCard(${t.id})" title="طباعة كود QR مخصص لهذه الترابيزة" style="color:#FF5B22;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </button>
           <button type="button" class="btn-tbl-icon" onclick="editTable(${JSON.stringify(t).replace(/"/g, '&quot;')})" title="تعديل بيانات الترابيزة">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
@@ -644,10 +648,18 @@ async function confirmMergeTables() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // ─── TABLE QR CODE GENERATION & PRINTING (طباعة كروت وكود QR للترابيزات)
 // ══════════════════════════════════════════════════════════════════════════════
 
 let _serverInfo = { localIp: '127.0.0.1', port: 3344, menuUrl: 'http://127.0.0.1:3344/menu' };
+
+function getTableMenuUrl(t) {
+  const storeSlug = (window._shopSettings && window._shopSettings.qr_store_slug) || 'cafe-pro';
+  const customDomain = document.getElementById('qrCustomDomainInput')?.value?.trim();
+  const base = customDomain ? customDomain.replace(/\/+$/, '') : `http://${_serverInfo.localIp}:${_serverInfo.port}`;
+  return `${base}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}&locked=1&store=${encodeURIComponent(storeSlug)}`;
+}
 
 async function openTableQrModal() {
   openModal('tableQrModal');
@@ -666,16 +678,26 @@ async function openTableQrModal() {
     };
   }
 
-  const urlDisplay = document.getElementById('qrMenuBaseUrlDisplay');
-  if (urlDisplay) {
-    urlDisplay.textContent = `http://${_serverInfo.localIp}:${_serverInfo.port}/menu`;
+  const defaultUrl = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
+  const domainInp = document.getElementById('qrCustomDomainInput');
+  if (domainInp && !domainInp.value) {
+    domainInp.value = defaultUrl;
   }
+
   const testBtn = document.getElementById('btnTestQrMenuDirect');
   if (testBtn) {
-    testBtn.href = `http://${_serverInfo.localIp}:${_serverInfo.port}/menu`;
+    testBtn.href = `${defaultUrl}/menu`;
   }
 
   renderTableQrCards();
+}
+
+function resetQrDomainToLocal() {
+  const domainInp = document.getElementById('qrCustomDomainInput');
+  if (domainInp) {
+    domainInp.value = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
+    renderTableQrCards();
+  }
 }
 
 function renderTableQrCards() {
@@ -687,17 +709,18 @@ function renderTableQrCards() {
     return;
   }
 
-  const baseOrigin = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
-
   container.innerHTML = allTables.map(t => {
-    const tableUrl = `${baseOrigin}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}`;
+    const tableUrl = getTableMenuUrl(t);
     const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
 
     return `
       <div style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between;">
         <div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-            <span style="font-weight:900; font-size:14px; color:#1E1B18;">${escapeHtml(t.name)}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-weight:900; font-size:14px; color:#1E1B18;">${escapeHtml(t.name)}</span>
+              <span style="font-size:10px; color:#059669; background:#ECFDF5; border:1px solid #A7F3D0; padding:1px 6px; border-radius:4px; font-weight:700;">مقفل 🔒</span>
+            </div>
             <span style="font-size:11px; font-weight:700; color:#FF5B22; background:#FFF5F0; padding:2px 8px; border-radius:6px; border:1px solid #FED7AA;">
               ${escapeHtml(t.section || 'الصالة')}
             </span>
@@ -708,19 +731,25 @@ function renderTableQrCards() {
           </div>
 
           <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:4px;">
-            امسح الكود بكاميرا الهاتف للطلب المباشر
+            رمز مخصص ومقفل لهذه الطاولة مباشرة
           </div>
-          <div style="font-size:10px; color:#94A3B8; font-family:monospace; direction:ltr; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:12px;">
+          <div style="font-size:9.5px; color:#94A3B8; font-family:monospace; direction:ltr; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:12px;" title="${escapeHtml(tableUrl)}">
             ${escapeHtml(tableUrl)}
           </div>
         </div>
 
-        <div style="display:flex; gap:6px; margin-top:8px;">
-          <a href="${tableUrl}" target="_blank" class="btn btn-outline btn-sm" style="flex:1; font-size:11px; font-weight:700; padding:5px 8px; text-decoration:none; text-align:center;">
-            معاينة ↗
-          </a>
-          <button type="button" class="btn btn-primary btn-sm" onclick="printSingleTableQrCard(${t.id})" style="flex:1; font-size:11px; font-weight:800; padding:5px 8px;">
-            طباعة الكارت
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+          <div style="display:flex; gap:6px;">
+            <a href="${tableUrl}" target="_blank" class="btn btn-outline btn-sm" style="flex:1; font-size:11px; font-weight:700; padding:5px 6px; text-decoration:none; text-align:center;">
+              معاينة ↗
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="printSingleTableQrCard(${t.id})" style="flex:1; font-size:11px; font-weight:800; padding:5px 6px;">
+              طباعة كارت A4
+            </button>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="printSingleTableThermalQr(${t.id})" style="font-size:11px; font-weight:700; padding:4px 6px; border-color:#0F172A; color:#0F172A; display:flex; align-items:center; justify-content:center; gap:5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span>طباعة حراري (إيصال/استيكر)</span>
           </button>
         </div>
       </div>
@@ -729,26 +758,29 @@ function renderTableQrCards() {
 }
 
 function buildTableQrPrintCardHTML(t) {
-  const baseOrigin = `http://${_serverInfo.localIp}:${_serverInfo.port}`;
-  const tableUrl = `${baseOrigin}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}`;
+  const tableUrl = getTableMenuUrl(t);
   const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
+  const shopName = (window._shopSettings && window._shopSettings.company_name) || 'كافيه ومطعم برو • CafePro';
 
   return `
-    <div class="print-qr-card" style="box-sizing:border-box; border:2px dashed #475569; border-radius:12px; padding:20px; text-align:center; font-family:'Cairo', sans-serif;">
-      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">
-        <span style="font-size:18px; font-weight:900; color:#121110;">كافيه برو • CafePro</span>
+    <div class="print-qr-card" style="box-sizing:border-box; border:2px dashed #0F172A; border-radius:12px; padding:20px; text-align:center; font-family:'Cairo', sans-serif; background:#FFFFFF; page-break-inside:avoid; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:18px; font-weight:900; color:#121110;">${escapeHtml(shopName)}</span>
       </div>
-      <div style="display:inline-block; background:#FF5B22; color:#FFFFFF; font-size:16px; font-weight:900; padding:4px 18px; border-radius:8px; margin-bottom:12px;">
-        ${escapeHtml(t.name)} ${t.section ? `(${escapeHtml(t.section)})` : ''}
+      <div style="display:inline-block; background:#FF5B22; color:#FFFFFF; font-size:15px; font-weight:900; padding:5px 22px; border-radius:8px; margin-bottom:10px;">
+        🔒 طاولة: ${escapeHtml(t.name)} ${t.section ? `(${escapeHtml(t.section)})` : ''}
       </div>
       <div style="margin:8px auto; width:160px; height:160px;">
-        <img src="${qrImgUrl}" alt="QR" style="width:160px; height:160px;" />
+        <img src="${qrImgUrl}" alt="QR" style="width:160px; height:160px; display:block; margin:0 auto;" />
       </div>
-      <div style="font-size:13px; font-weight:800; color:#1E1B18; margin-top:8px;">
-        امسح الكود واطلب من هاتفك مباشرة 📱
+      <div style="font-size:13.5px; font-weight:800; color:#1E1B18; margin-top:8px;">
+        امسح الكود لطلب المنيو من هاتفك 📱
       </div>
-      <div style="font-size:11px; color:#64748B; margin-top:2px;">
-        طلبك يصلك مباشرة على ترابيزتك بكل سرعة وسهولة
+      <div style="font-size:11px; font-weight:700; color:#059669; margin-top:3px;">
+        ✓ الرمز مقفل ومخصص لهذه الطاولة مباشرة
+      </div>
+      <div style="font-size:9.5px; color:#94A3B8; font-family:monospace; direction:ltr; margin-top:6px; overflow:hidden; text-overflow:ellipsis;">
+        ${escapeHtml(tableUrl)}
       </div>
     </div>
   `;
@@ -758,12 +790,14 @@ function printAllTableQrCards() {
   const printContainer = document.getElementById('printableQrContainer');
   if (!printContainer) return;
 
+  const shopName = (window._shopSettings && window._shopSettings.company_name) || 'CafePro';
+
   printContainer.innerHTML = `
     <div style="text-align:center; margin-bottom:16px;">
-      <h2 style="margin:0; font-size:18px; font-weight:900;">كروت المنيو الإلكتروني للترابيزات — CafePro</h2>
-      <p style="margin:4px 0 0; font-size:12px; color:#64748B;">قم بقص الكروت وثبيتها على الطاولات أو في حوامل الأكريليك</p>
+      <h2 style="margin:0; font-size:18px; font-weight:900;">كروت المنيو الإلكتروني للترابيزات — ${escapeHtml(shopName)}</h2>
+      <p style="margin:4px 0 0; font-size:12px; color:#64748B;">قم بقص الكروت وثبيتها على الطاولات أو في حوامل الأكريليك (جميع الأكواد مقفلة للطاولات تلقائياً)</p>
     </div>
-    <div class="print-qr-grid">
+    <div class="print-qr-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;">
       ${allTables.map(t => buildTableQrPrintCardHTML(t)).join('')}
     </div>
   `;
@@ -789,4 +823,64 @@ function printSingleTableQrCard(tableId) {
   setTimeout(() => {
     window.print();
   }, 300);
+}
+
+async function printSingleTableThermalQr(tableId) {
+  const table = allTables.find(t => t.id === tableId);
+  if (!table) return;
+
+  const tableUrl = getTableMenuUrl(table);
+  const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
+  const shopName = (window._shopSettings && window._shopSettings.company_name) || 'CafePro';
+
+  const thermalHtml = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="utf-8">
+      <title>QR ${escapeHtml(table.name)}</title>
+      <style>
+        @page { size: 80mm auto; margin: 0; }
+        body { font-family: 'Cairo', monospace, sans-serif; width: 72mm; margin: 0 auto; padding: 10px 0; text-align: center; color: #000; }
+        .title { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+        .badge { font-size: 14px; font-weight: 800; border: 1.5px solid #000; padding: 4px 12px; border-radius: 4px; display: inline-block; margin: 6px 0; }
+        .qr-wrap { margin: 8px auto; width: 150px; height: 150px; }
+        .qr-wrap img { width: 150px; height: 150px; }
+        .hint { font-size: 11px; font-weight: 700; margin-top: 6px; }
+        .subhint { font-size: 9px; margin-top: 2px; }
+      </style>
+    </head>
+    <body>
+      <div class="title">${escapeHtml(shopName)}</div>
+      <div class="badge">🔒 طاولة: ${escapeHtml(table.name)}</div>
+      <div class="qr-wrap"><img src="${qrImgUrl}" alt="QR" /></div>
+      <div class="hint">امسح الكود واطلب من هاتفك 📱</div>
+      <div class="subhint">الرمز مخصص لهذه الطاولة مباشرة</div>
+      <div style="font-size:8px; margin-top:6px; font-family:monospace; direction:ltr;">${escapeHtml(tableUrl)}</div>
+    </body>
+    </html>
+  `;
+
+  if (window.electron && typeof window.electron.printThermal === 'function') {
+    try {
+      const res = await window.electron.printThermal(thermalHtml, '');
+      if (res && res.success) {
+        if (typeof showToast === 'function') showToast(`تمت طباعة كود QR لـ ${table.name} على الطابعة الحرارية ✓`, 'success');
+        return;
+      }
+    } catch(e) {}
+  }
+
+  let f = document.getElementById('thermalTableQrFrame');
+  if (!f) {
+    f = document.createElement('iframe');
+    f.id = 'thermalTableQrFrame';
+    f.style.display = 'none';
+    document.body.appendChild(f);
+  }
+  f.srcdoc = thermalHtml;
+  f.onload = () => {
+    f.contentWindow.focus();
+    f.contentWindow.print();
+  };
 }

@@ -794,7 +794,9 @@ function getSelectedTableName() {
   const tblSel = document.getElementById('posTableSelect');
   if (!tblSel || !tblSel.value) return '';
   const opt = tblSel.options[tblSel.selectedIndex];
-  return opt ? opt.textContent : '';
+  if (!opt) return '';
+  // Strip status suffixes like (فاضية), (مشغولة), (محجوزة)
+  return opt.textContent.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
 async function onTableSelectChange() {
@@ -807,21 +809,29 @@ async function onTableSelectChange() {
     setOrderType('صالة');
   }
 
-  // 1. Confirm before switching if unsaved items exist in current cart
-  if (invoiceItems.length > 0 && !currentInvoiceId && currentTableId && currentTableId !== tableId) {
-    const ask = await Swal.fire({
-      title: 'تنبيه: السلة بها أصناف!',
-      text: 'عندك أصناف في السلة لسه ما اتبعتش، هل تريد تجاهلها والانتقال للترابيزة الجديدة؟',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#E05252',
-      cancelButtonColor: '#94A3B8',
-      confirmButtonText: 'نعم، تجاهل وانتقل',
-      cancelButtonText: 'إلغاء والعودة'
-    });
-    if (!ask.isConfirmed) {
-      if (currentTableId) tblSel.value = currentTableId;
-      return;
+  // 1. Confirm before switching if unsent or unsaved items exist in current cart
+  const hasUnsentItems = invoiceItems.some(it => {
+    const sent = Number(it.sent_qty || 0);
+    const curr = Number(it.quantity || 1);
+    return (curr - sent) > 0;
+  });
+
+  if (invoiceItems.length > 0 && currentTableId && currentTableId !== tableId) {
+    if (!currentInvoiceId || hasUnsentItems) {
+      const ask = await Swal.fire({
+        title: 'تنبيه: أصناف غير محفوظة!',
+        text: 'يوجد أصناف في السلة لم يتم إرسالها للمطبخ أو حفظها بعد. هل تريد تجاهلها والانتقال للترابيزة الجديدة؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#E05252',
+        cancelButtonColor: '#94A3B8',
+        confirmButtonText: 'نعم، تجاهل وانتقل',
+        cancelButtonText: 'إلغاء والعودة'
+      });
+      if (!ask.isConfirmed) {
+        if (currentTableId) tblSel.value = currentTableId;
+        return;
+      }
     }
   }
 
@@ -2477,7 +2487,26 @@ async function executeConfirmedCheckout(withPrint = true) {
     }
     const settledTableId = currentTableId;
     if (settledTableId) {
-      try { await window.tables.updateStatus(settledTableId, 'فاضية'); } catch(e){}
+      const activeQrId = (window._tableQrOrderMap && window._tableQrOrderMap[settledTableId]) || window._activeQrOrderId;
+      if (activeQrId) {
+        try {
+          if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+            await window.CafeSupabase.updateOrderStatus(activeQrId, 'completed');
+          }
+          if (window.qrOrders && typeof window.qrOrders.updateStatus === 'function') {
+            await window.qrOrders.updateStatus(activeQrId, 'completed');
+          }
+        } catch(e) {}
+        if (window._tableQrOrderMap) delete window._tableQrOrderMap[settledTableId];
+      }
+      try {
+        if (window.tables && typeof window.tables.updateStatus === 'function') {
+          await window.tables.updateStatus(settledTableId, 'فاضية');
+        }
+        if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+          window.WebDB.updateTableStatus(settledTableId, 'فاضية');
+        }
+      } catch(e){}
     }
     await newInvoice();
   }
@@ -2521,7 +2550,26 @@ async function fastCashCheckout() {
     await directPrintReceipt(false, false);
     showToast(`تم الدفع كاش سريع (${fmt(netTotal)} ج.م) وإرسال بون التجهيز ✓`, 'success');
     if (settledTableId) {
-      try { await window.tables.updateStatus(settledTableId, 'فاضية'); } catch(e){}
+      const activeQrId = (window._tableQrOrderMap && window._tableQrOrderMap[settledTableId]) || window._activeQrOrderId;
+      if (activeQrId) {
+        try {
+          if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+            await window.CafeSupabase.updateOrderStatus(activeQrId, 'completed');
+          }
+          if (window.qrOrders && typeof window.qrOrders.updateStatus === 'function') {
+            await window.qrOrders.updateStatus(activeQrId, 'completed');
+          }
+        } catch(e) {}
+        if (window._tableQrOrderMap) delete window._tableQrOrderMap[settledTableId];
+      }
+      try {
+        if (window.tables && typeof window.tables.updateStatus === 'function') {
+          await window.tables.updateStatus(settledTableId, 'فاضية');
+        }
+        if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+          window.WebDB.updateTableStatus(settledTableId, 'فاضية');
+        }
+      } catch(e){}
     }
     await newInvoice();
   }
@@ -4257,23 +4305,6 @@ async function approveAndDispatchQrOrder(orderId) {
         notes: notes,
         sent_qty: 0 // Unsent so sendOrderToKitchen will print it
       });
-
-      // Deduct stock from system inventory
-      try {
-        if (window.WebDB && typeof window.WebDB.deductStock === 'function') {
-          window.WebDB.deductStock(svcId || qrItem.service_name, qty);
-        }
-        if (window.db && typeof window.db.run === 'function') {
-          await window.db.run("UPDATE services SET current_stock = MAX(0, current_stock - ?) WHERE id = ? OR name = ?", [qty, svcId, qrItem.service_name]).catch(() => {});
-        }
-        // Deduct in-memory
-        if (svc) {
-          svc.current_stock = Math.max(0, (svc.current_stock !== undefined ? svc.current_stock : 100) - qty);
-          svc.quantity = svc.current_stock;
-        }
-      } catch(stkErr) {
-        console.warn('Stock deduction error:', stkErr);
-      }
     }
 
     renderItemsTable();
@@ -4323,6 +4354,9 @@ async function rejectQrOrder(orderId) {
   const reason = (result.value || '').trim() || 'تم إلغاء الطلب من الكاشير';
 
   try {
+    const ordToReject = _cachedQrOrders.find(o => String(o.id) === String(orderId));
+    const rejectedTblId = ordToReject ? ordToReject.table_id : null;
+
     // Immediately remove from pending cache
     _cachedQrOrders = _cachedQrOrders.filter(o => String(o.id) !== String(orderId));
     try {
@@ -4341,6 +4375,28 @@ async function rejectQrOrder(orderId) {
     if (window.qrOrders && typeof window.qrOrders.reject === 'function') {
       try { await window.qrOrders.reject(orderId, reason); } catch(e) {}
     }
+
+    // Reset table status to 'فاضية' if it has no active open invoice
+    if (rejectedTblId) {
+      let hasActiveInv = false;
+      try {
+        if (window.db && typeof window.db.queryOne === 'function') {
+          const chk = await window.db.queryOne("SELECT id FROM invoices WHERE table_id = ? AND status IN ('مفتوحة', 'مرسلة للمطبخ') LIMIT 1", [rejectedTblId]);
+          if (chk && chk.success && chk.data) hasActiveInv = true;
+        }
+      } catch(e) {}
+      if (!hasActiveInv) {
+        try {
+          if (window.tables && typeof window.tables.updateStatus === 'function') {
+            await window.tables.updateStatus(rejectedTblId, 'فاضية');
+          }
+          if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+            window.WebDB.updateTableStatus(rejectedTblId, 'فاضية');
+          }
+        } catch(e) {}
+      }
+    }
+
     showToast('تم رفض الطلب وإبلاغ العميل ✓', 'info');
     await fetchAndRenderQrOrders();
     await checkPendingQrOrders();
@@ -4399,13 +4455,14 @@ let _posSseSource = null;
 function setupPosRealtimeSSE() {
   // ─── 1. Supabase Cloud Realtime Channel (Instant Push Across Devices / Vercel) ───
   if (window.CafeSupabase && typeof window.CafeSupabase.subscribeToIncomingOrders === 'function') {
+    const storeSlug = (settings && settings.qr_store_slug) || 'cafe-pro';
     window.CafeSupabase.subscribeToIncomingOrders((order) => {
       console.log('[Supabase Cloud RealTime] Instant QR Table Order Received:', order);
       playQrOrderChime();
       showToast(`🔔 طلب زبون جديد وارد عبر المنيو QR (${order.table_name || 'طاولة'})!`, 'info');
       openQrOrdersModal();
       checkPendingQrOrders();
-    });
+    }, storeSlug);
   }
 
   if (_posSseSource) {

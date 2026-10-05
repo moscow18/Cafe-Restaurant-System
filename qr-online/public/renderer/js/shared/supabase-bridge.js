@@ -51,6 +51,10 @@ const CafeSupabase = {
         status: 'pending'
       };
 
+      if (orderPayload.store_slug) {
+        orderRow.notes = `[store:${orderPayload.store_slug}]`;
+      }
+
       const { data, error } = await sb
         .from('qr_orders')
         .insert([orderRow])
@@ -106,7 +110,7 @@ const CafeSupabase = {
   /**
    * Cashier POS subscription: Listen for incoming table orders in real-time
    */
-  subscribeToIncomingOrders(onNewOrder) {
+  subscribeToIncomingOrders(onNewOrder, filterStoreSlug) {
     const sb = getSupabase();
     if (!sb) return null;
 
@@ -122,6 +126,9 @@ const CafeSupabase = {
           },
           (payload) => {
             if (payload && payload.new && typeof onNewOrder === 'function') {
+              if (filterStoreSlug && payload.new.notes && payload.new.notes.includes('[store:')) {
+                if (!payload.new.notes.includes(`[store:${filterStoreSlug}]`)) return;
+              }
               onNewOrder(payload.new);
             }
           }

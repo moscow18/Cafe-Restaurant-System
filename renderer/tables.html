@@ -860,12 +860,18 @@
 
       <div class="modal-body" style="padding:16px 20px; overflow-y:auto; flex:1; background:#F8FAFC;">
         <!-- Network & Server Host Info Banner -->
-        <div style="background:#FFF5F0; border:1px solid #FED7AA; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:20px;">📶</span>
-            <div>
-              <div style="font-size:12.5px; font-weight:800; color:#9A3412;">رابط المنيو على شبكة الواي فاي المحلية للمطعم:</div>
-              <div id="qrMenuBaseUrlDisplay" style="font-size:12px; font-weight:700; color:#C2410C; font-family:monospace; direction:ltr; text-align:left;">جاري الاكتشاف...</div>
+        <div style="background:#FFF5F0; border:1px solid #FED7AA; border-radius:10px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div style="flex:1; min-width:280px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span style="font-size:18px;">🔒</span>
+              <span style="font-size:13px; font-weight:800; color:#9A3412;">رابط المنيو (يتم قفل كل كود على طاولته تلقائياً لمنع التغيير):</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="qrCustomDomainInput" placeholder="http://192.168.1.5:3344 أو https://menu.yourdomain.com" style="flex:1; font-size:12px; padding:6px 10px; border:1px solid #FED7AA; border-radius:6px; background:#fff; font-family:monospace; direction:ltr;" oninput="renderTableQrCards()" />
+              <button type="button" class="btn btn-outline btn-sm" onclick="resetQrDomainToLocal()" style="font-size:11px; white-space:nowrap; background:#fff; font-weight:700;">الواي فاي الافتراضي</button>
+            </div>
+            <div style="font-size:10.5px; color:#C2410C; margin-top:4px; font-weight:600;">
+              * يمكنك طباعة كارت A4 لحوامل الأكريليك أو طباعة إيصال/استيكر فوري على طابعة الفواتير الحرارية.
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">

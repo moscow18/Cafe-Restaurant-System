@@ -8,8 +8,11 @@ import sys
 import json
 import sqlite3
 import os
-import bcrypt
 from datetime import datetime
+try:
+    import bcrypt
+except ImportError:
+    bcrypt = None
 
 # Enforce UTF-8 unconditionally on Windows
 if hasattr(sys.stdin, 'reconfigure'):

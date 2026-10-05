@@ -277,6 +277,31 @@ const server = http.createServer(async (req, res) => {
               order: result.data
             });
           }
+        } else if (pathname === '/api/sync/catalog' || pathname === '/api/qr-menu/sync') {
+          try {
+            const menuData = {
+              success: true,
+              data: {
+                categories: parsedBody.categories || [],
+                services: parsedBody.services || [],
+                tables: parsedBody.tables || [],
+                settings: parsedBody.settings || {}
+              }
+            };
+            const jsonStr = JSON.stringify(menuData, null, 2);
+            const targetPaths = [
+              path.join(BASE_DIR, 'menu-data.json'),
+              path.join(BASE_DIR, 'renderer', 'menu-data.json'),
+              path.join(BASE_DIR, 'qr-online', 'public', 'menu-data.json'),
+              path.join(BASE_DIR, 'qr-online', 'public', 'renderer', 'menu-data.json')
+            ];
+            for (const p of targetPaths) {
+              try { fs.writeFileSync(p, jsonStr, 'utf-8'); } catch(e){}
+            }
+            result = { success: true, message: 'Catalog synced successfully' };
+          } catch(err) {
+            result = { success: false, error: err.message };
+          }
         }
       } catch(e) {
         result = { success: false, error: e.message };
