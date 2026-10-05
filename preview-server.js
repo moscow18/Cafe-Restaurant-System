@@ -154,20 +154,28 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ error: 'text parameter required' }));
     }
     try {
-      const QRCode = require('qrcode');
-      const pngBuffer = await QRCode.toBuffer(text, {
-        width: 320,
-        margin: 2,
-        color: { dark: '#121110', light: '#FFFFFF' }
-      });
+      let pngBuffer = null;
+      try {
+        const QRCode = require('qrcode');
+        pngBuffer = await QRCode.toBuffer(text, {
+          width: 320,
+          margin: 2,
+          color: { dark: '#121110', light: '#FFFFFF' }
+        });
+      } catch(modErr) {
+        // Fallback: fetch from qrserver
+        const extRes = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(text)}`);
+        const ab = await extRes.arrayBuffer();
+        pngBuffer = Buffer.from(ab);
+      }
       res.writeHead(200, {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=86400'
       });
       return res.end(pngBuffer);
     } catch(err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: err.message }));
+      res.writeHead(302, { 'Location': `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(text)}` });
+      return res.end();
     }
   }
 

@@ -661,6 +661,36 @@ function getTableMenuUrl(t) {
   return `${base}/menu?table_id=${t.id}&table=${encodeURIComponent(t.name)}&locked=1&store=${encodeURIComponent(storeSlug)}`;
 }
 
+function getQrCodeDataUrl(text, size = 180) {
+  try {
+    if (typeof QRCode !== 'undefined') {
+      const tempDiv = document.createElement('div');
+      new QRCode(tempDiv, {
+        text: text,
+        width: size,
+        height: size,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      const img = tempDiv.querySelector('img');
+      if (img && img.src && img.src.startsWith('data:image')) {
+        return img.src;
+      }
+      const canvas = tempDiv.querySelector('canvas');
+      if (canvas && typeof canvas.toDataURL === 'function') {
+        return canvas.toDataURL('image/png');
+      }
+    }
+  } catch(e) {
+    console.warn('QRCode generator warning:', e);
+  }
+  if (window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+    return `/api/qr-image?text=${encodeURIComponent(text)}`;
+  }
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
+}
+
 async function openTableQrModal() {
   openModal('tableQrModal');
 
@@ -711,7 +741,8 @@ function renderTableQrCards() {
 
   container.innerHTML = allTables.map(t => {
     const tableUrl = getTableMenuUrl(t);
-    const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
+    const qrImgUrl = getQrCodeDataUrl(tableUrl, 150);
+    const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tableUrl)}`;
 
     return `
       <div style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between;">
@@ -727,7 +758,7 @@ function renderTableQrCards() {
           </div>
 
           <div style="background:#FAF8F5; border:1px solid #EFE9E2; border-radius:10px; padding:12px; display:inline-block; margin-bottom:10px;">
-            <img src="${qrImgUrl}" alt="QR ${escapeHtml(t.name)}" style="width:140px; height:140px; display:block; margin:0 auto; object-fit:contain;" />
+            <img src="${qrImgUrl}" alt="QR ${escapeHtml(t.name)}" onerror="this.onerror=null; this.src='${fallbackUrl}';" style="width:140px; height:140px; display:block; margin:0 auto; object-fit:contain;" />
           </div>
 
           <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:4px;">
@@ -759,7 +790,8 @@ function renderTableQrCards() {
 
 function buildTableQrPrintCardHTML(t) {
   const tableUrl = getTableMenuUrl(t);
-  const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
+  const qrImgUrl = getQrCodeDataUrl(tableUrl, 160);
+  const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(tableUrl)}`;
   const shopName = (window._shopSettings && window._shopSettings.company_name) || 'كافيه ومطعم برو • CafePro';
 
   return `
@@ -771,7 +803,7 @@ function buildTableQrPrintCardHTML(t) {
         🔒 طاولة: ${escapeHtml(t.name)} ${t.section ? `(${escapeHtml(t.section)})` : ''}
       </div>
       <div style="margin:8px auto; width:160px; height:160px;">
-        <img src="${qrImgUrl}" alt="QR" style="width:160px; height:160px; display:block; margin:0 auto;" />
+        <img src="${qrImgUrl}" alt="QR" onerror="this.onerror=null; this.src='${fallbackUrl}';" style="width:160px; height:160px; display:block; margin:0 auto;" />
       </div>
       <div style="font-size:13.5px; font-weight:800; color:#1E1B18; margin-top:8px;">
         امسح الكود لطلب المنيو من هاتفك 📱
@@ -830,7 +862,8 @@ async function printSingleTableThermalQr(tableId) {
   if (!table) return;
 
   const tableUrl = getTableMenuUrl(table);
-  const qrImgUrl = `/api/qr-image?text=${encodeURIComponent(tableUrl)}`;
+  const qrImgUrl = getQrCodeDataUrl(tableUrl, 160);
+  const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(tableUrl)}`;
   const shopName = (window._shopSettings && window._shopSettings.company_name) || 'CafePro';
 
   const thermalHtml = `
@@ -853,7 +886,7 @@ async function printSingleTableThermalQr(tableId) {
     <body>
       <div class="title">${escapeHtml(shopName)}</div>
       <div class="badge">🔒 طاولة: ${escapeHtml(table.name)}</div>
-      <div class="qr-wrap"><img src="${qrImgUrl}" alt="QR" /></div>
+      <div class="qr-wrap"><img src="${qrImgUrl}" alt="QR" onerror="this.onerror=null; this.src='${fallbackUrl}';" /></div>
       <div class="hint">امسح الكود واطلب من هاتفك 📱</div>
       <div class="subhint">الرمز مخصص لهذه الطاولة مباشرة</div>
       <div style="font-size:8px; margin-top:6px; font-family:monospace; direction:ltr;">${escapeHtml(tableUrl)}</div>

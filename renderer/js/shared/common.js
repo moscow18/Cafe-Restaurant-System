@@ -506,12 +506,26 @@ if (typeof window !== 'undefined') {
   ];
 
   // ─── Reactive Client-Side Database Engine (for Web & Vercel Real Storage) ───
-  const DATA_VERSION = 'v5_fully_unified_28_qr_pos';
+  const DATA_VERSION = 'v7_clean_all_tables_and_reservations';
   try {
     if (localStorage.getItem('cafePro_data_version') !== DATA_VERSION) {
       localStorage.setItem('cafePro_data_version', DATA_VERSION);
       localStorage.setItem('cafePro_web_categories', JSON.stringify(DB_FALLBACK_CATEGORIES));
       localStorage.setItem('cafePro_web_services', JSON.stringify(DB_FALLBACK_SERVICES));
+      localStorage.setItem('cafePro_web_tables', JSON.stringify(DB_FALLBACK_TABLES.map(t => ({
+        ...t,
+        status: 'فاضية',
+        reservation_name: null,
+        reservation_phone: null,
+        reservation_time: null,
+        reservation_party_size: null,
+        active_invoice_id: null,
+        active_invoice_number: null,
+        active_invoice_total: 0
+      }))));
+      localStorage.setItem('cafePro_web_invoices', JSON.stringify([]));
+      localStorage.setItem('cafePro_web_reservations', JSON.stringify([]));
+      localStorage.setItem('cafePro_web_qr_orders', JSON.stringify([]));
     }
   } catch(e) {}
 
