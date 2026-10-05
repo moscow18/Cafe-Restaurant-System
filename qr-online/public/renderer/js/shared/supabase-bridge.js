@@ -33,43 +33,95 @@ const CafeSupabase = {
    * Submit an order from customer phone QR menu
    */
   async submitOrder(orderPayload) {
-    const sb = getSupabase();
-    if (!sb) return null;
+    if (!orderPayload) return null;
 
-    try {
-      const orderRow = {
-        order_number: orderPayload.order_number || `QR-${Math.floor(1000 + Math.random() * 9000)}`,
-        table_id: String(orderPayload.table_id || ''),
-        table_name: String(orderPayload.table_name || 'طاولة'),
-        customer_name: String(orderPayload.customer_name || 'عميل'),
-        customer_phone: String(orderPayload.customer_phone || ''),
-        items: orderPayload.items || [],
-        subtotal: parseFloat(orderPayload.subtotal) || 0,
-        tax_amount: parseFloat(orderPayload.tax_amount) || 0,
-        service_amount: parseFloat(orderPayload.service_amount) || 0,
-        total: parseFloat(orderPayload.total) || 0,
-        status: 'pending'
-      };
-
-      if (orderPayload.store_slug) {
-        orderRow.notes = `[store:${orderPayload.store_slug}]`;
-      }
-
-      const { data, error } = await sb
-        .from('qr_orders')
-        .insert([orderRow])
-        .select()
-        .single();
-
-      if (error) {
-        console.warn('[Supabase submitOrder Error]', error);
-        return null;
-      }
-      return data;
-    } catch (err) {
-      console.warn('[Supabase submitOrder Exception]', err);
-      return null;
+    // Attach any customer notes to customer_name to ensure cashier sees it clearly without schema issues
+    let customerName = (orderPayload.customer_name || 'عميل').trim();
+    const generalNote = (orderPayload.notes || '').trim();
+    if (generalNote) {
+      customerName = `${customerName} (${generalNote})`;
     }
+
+    // Ensure items have proper structure
+    const rawItems = Array.isArray(orderPayload.items) ? orderPayload.items : [];
+    const itemsList = rawItems.map((it, idx) => ({
+      id: it.id || it.service_id || idx + 1,
+      name: it.display_name || it.service_name || it.name || 'صنف',
+      service_name: it.service_name || it.name || 'صنف',
+      display_name: it.display_name || it.service_name || it.name || 'صنف',
+      price: parseFloat(it.price || it.unit_price) || 0,
+      quantity: parseInt(it.quantity || it.qty, 10) || 1,
+      line_total: parseFloat(it.line_total) || ((parseFloat(it.price || it.unit_price) || 0) * (parseInt(it.quantity || it.qty, 10) || 1)),
+      notes: it.notes || ''
+    }));
+
+    // If there's a general note, also add it to first item for kitchen visibility
+    if (generalNote && itemsList.length > 0 && !itemsList[0].notes) {
+      itemsList[0].notes = `ملاحظة: ${generalNote}`;
+    }
+
+    const orderRow = {
+      order_number: orderPayload.order_number || `QR-${Math.floor(1000 + Math.random() * 9000)}`,
+      table_id: String(orderPayload.table_id || ''),
+      table_name: String(orderPayload.table_name || 'طاولة'),
+      customer_name: customerName,
+      customer_phone: String(orderPayload.customer_phone || ''),
+      items: itemsList,
+      subtotal: parseFloat(orderPayload.subtotal) || 0,
+      tax_amount: parseFloat(orderPayload.tax_amount) || 0,
+      service_amount: parseFloat(orderPayload.service_amount) || 0,
+      total: parseFloat(orderPayload.total) || 0,
+      status: 'pending'
+    };
+
+    // 1. Try Supabase Client SDK first
+    const sb = getSupabase();
+    if (sb) {
+      try {
+        const { data, error } = await sb
+          .from('qr_orders')
+          .insert([orderRow])
+          .select()
+          .single();
+
+        if (!error && data && data.id) {
+          return data;
+        }
+        if (error) {
+          console.warn('[Supabase SDK submitOrder Error]', error);
+        }
+      } catch (err) {
+        console.warn('[Supabase SDK submitOrder Exception]', err);
+      }
+    }
+
+    // 2. Direct REST Fallback (Zero dependencies, 100% reliable on cellular 4G/5G mobile data)
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify([orderRow])
+      });
+
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          return rows[0];
+        }
+      } else {
+        const errText = await res.text();
+        console.warn('[Supabase REST submitOrder Error]', res.status, errText);
+      }
+    } catch (fetchErr) {
+      console.warn('[Supabase REST submitOrder Exception]', fetchErr);
+    }
+
+    return null;
   },
 
   /**
@@ -92,7 +144,6 @@ const CafeSupabase = {
           },
           (payload) => {
             if (payload && payload.new && typeof onUpdate === 'function') {
-              // Ensure event belongs exclusively to this order ID
               if (String(payload.new.id) !== String(orderId)) return;
               onUpdate(payload.new);
             }
@@ -110,7 +161,7 @@ const CafeSupabase = {
   /**
    * Cashier POS subscription: Listen for incoming table orders in real-time
    */
-  subscribeToIncomingOrders(onNewOrder, filterStoreSlug) {
+  subscribeToIncomingOrders(onNewOrder) {
     const sb = getSupabase();
     if (!sb) return null;
 
@@ -126,9 +177,6 @@ const CafeSupabase = {
           },
           (payload) => {
             if (payload && payload.new && typeof onNewOrder === 'function') {
-              if (filterStoreSlug && payload.new.notes && payload.new.notes.includes('[store:')) {
-                if (!payload.new.notes.includes(`[store:${filterStoreSlug}]`)) return;
-              }
               onNewOrder(payload.new);
             }
           }
@@ -145,33 +193,38 @@ const CafeSupabase = {
   /**
    * Update order status (approved, preparing, completed, rejected)
    */
-  async updateOrderStatus(orderId, newStatus, reason = '') {
+  async updateOrderStatus(orderId, newStatus) {
+    if (!orderId) return false;
     const sb = getSupabase();
-    if (!sb || !orderId) return false;
+    const updateData = { status: newStatus };
 
-    try {
-      const updateData = { status: newStatus };
-      if (reason) {
-        updateData.rejection_reason = reason;
-        updateData.notes = reason;
-      }
-      
-      let res = await sb
-        .from('qr_orders')
-        .update(updateData)
-        .eq('id', orderId);
-
-      // If updating with rejection_reason threw error due to schema column missing, fallback to notes
-      if (res.error && reason) {
-        res = await sb
+    if (sb) {
+      try {
+        const res = await sb
           .from('qr_orders')
-          .update({ status: newStatus, notes: reason })
+          .update(updateData)
           .eq('id', orderId);
-      }
 
-      return !res.error;
+        if (!res.error) return true;
+      } catch (e) {
+        console.warn('[Supabase updateOrderStatus Error]', e);
+      }
+    }
+
+    // Direct REST fallback
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders?id=eq.${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+      return res.ok;
     } catch (e) {
-      console.warn('[Supabase updateOrderStatus Error]', e);
+      console.warn('[Supabase REST updateOrderStatus Error]', e);
       return false;
     }
   },
@@ -180,41 +233,67 @@ const CafeSupabase = {
    * Get single order status and details by ID
    */
   async getOrderStatus(orderId) {
+    if (!orderId) return null;
     const sb = getSupabase();
-    if (!sb || !orderId) return null;
-    try {
-      const { data, error } = await sb
-        .from('qr_orders')
-        .select('*')
-        .eq('id', orderId)
-        .maybeSingle();
+    if (sb) {
+      try {
+        const { data, error } = await sb
+          .from('qr_orders')
+          .select('*')
+          .eq('id', orderId)
+          .maybeSingle();
 
-      if (error) return null;
-      return data;
-    } catch(e) {
-      return null;
+        if (!error && data) return data;
+      } catch(e) {}
     }
+
+    // Direct REST fallback
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders?id=eq.${orderId}&select=*`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) return rows[0];
+      }
+    } catch(e) {}
+    return null;
   },
 
   /**
-   * Fetch recent pending orders for cashier on startup
+   * Fetch recent pending orders for cashier on startup or polling
    */
-  async getRecentOrders() {
+  async getRecentOrders(limit = 20) {
     const sb = getSupabase();
-    if (!sb) return [];
+    if (sb) {
+      try {
+        const { data, error } = await sb
+          .from('qr_orders')
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(limit);
 
-    try {
-      const { data, error } = await sb
-        .from('qr_orders')
-        .select('*')
-        .order('id', { ascending: false })
-        .limit(20);
-
-      if (error) return [];
-      return data || [];
-    } catch (e) {
-      return [];
+        if (!error && Array.isArray(data)) return data;
+      } catch (e) {}
     }
+
+    // Direct REST fallback
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders?select=*&order=id.desc&limit=${limit}`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows)) return rows;
+      }
+    } catch(e) {}
+    return [];
   }
 };
 
