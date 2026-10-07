@@ -1969,7 +1969,11 @@ function setupIpcHandlers(ipcMain, app) {
 
         // Update table status if table_id is set
         if (invoiceData.table_id) {
-          if (invStatus === 'محاسَبة' || invStatus === 'مرتجع') {
+          const normInvStatus = (invStatus || '').replace(/[\u064B-\u065F]/g, '');
+          if (normInvStatus === 'محاسبة' || normInvStatus === 'مرتجع') {
+            try {
+              db.prepare("UPDATE invoices SET status = 'محاسبة' WHERE table_id = ? AND status IN ('مفتوحة', 'مرسلة للمطبخ')").run(invoiceData.table_id);
+            } catch(e) {}
             db.prepare("UPDATE tables SET status = 'فاضية' WHERE id = ?").run(invoiceData.table_id);
           } else {
             db.prepare("UPDATE tables SET status = 'مشغولة' WHERE id = ?").run(invoiceData.table_id);

@@ -647,6 +647,14 @@ if (typeof window !== 'undefined') {
           if (data.table_id) {
             const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
             const isSettled = normSt === 'محاسبة' || (parseFloat(data.remaining || 0) <= 0 && parseFloat(data.amount_paid || 0) > 0);
+            if (isSettled) {
+              invoices.forEach(inv => {
+                if (parseInt(inv.table_id) === parseInt(data.table_id)) {
+                  inv.status = 'محاسبة';
+                }
+              });
+              localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
+            }
             this.updateTableStatus(data.table_id, isSettled ? 'فاضية' : 'مشغولة');
           }
           return { success: true, data: { invoiceId: data.id, invoiceNumber: invoices[idx].invoice_number } };
@@ -683,6 +691,14 @@ if (typeof window !== 'undefined') {
       if (data.table_id) {
         const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
         const isSettled = normSt === 'محاسبة' || (parseFloat(data.remaining || 0) <= 0 && parseFloat(data.amount_paid || 0) > 0);
+        if (isSettled) {
+          invoices.forEach(inv => {
+            if (parseInt(inv.table_id) === parseInt(data.table_id)) {
+              inv.status = 'محاسبة';
+            }
+          });
+          localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
+        }
         this.updateTableStatus(data.table_id, isSettled ? 'فاضية' : 'مشغولة');
       }
 

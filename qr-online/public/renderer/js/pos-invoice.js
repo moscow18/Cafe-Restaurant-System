@@ -861,14 +861,9 @@ async function onTableSelectChange() {
 
   // 3. Search for open invoice on the selected table
   if (tableId) {
-    const checkRes = await window.db.queryOne(
-      `SELECT id FROM invoices WHERE table_id = ? AND status IN ('مفتوحة', 'مرسلة للمطبخ') ORDER BY id DESC LIMIT 1`,
-      [tableId]
-    );
-    if (checkRes && checkRes.success && checkRes.data && checkRes.data.id) {
-      await resumeInvoiceById(checkRes.data.id);
-    } else {
-      // Table is empty: ensure clean fresh invoice state
+    const selectedTblObj = (allTables || []).find(t => parseInt(t.id) === parseInt(tableId));
+    if (selectedTblObj && selectedTblObj.status === 'فاضية') {
+      // Table is officially empty: ensure clean fresh invoice state
       currentInvoiceId = null;
       invoiceItems = [];
       renderItemsTable();
@@ -884,7 +879,37 @@ async function onTableSelectChange() {
           }
         }
       } catch(e) {}
+      return;
     }
+
+    const checkRes = await window.db.queryOne(
+      `SELECT id, status FROM invoices WHERE table_id = ? AND status IN ('مفتوحة', 'مرسلة للمطبخ') ORDER BY id DESC LIMIT 1`,
+      [tableId]
+    );
+    if (checkRes && checkRes.success && checkRes.data && checkRes.data.id) {
+      const foundInv = checkRes.data;
+      const normSt = (foundInv.status || '').replace(/[\u064B-\u065F]/g, '');
+      if (normSt === 'مفتوحة' || normSt === 'مرسلة للمطبخ' || normSt === 'قيد الانتظار') {
+        await resumeInvoiceById(foundInv.id);
+        return;
+      }
+    }
+    // Table is empty: ensure clean fresh invoice state
+    currentInvoiceId = null;
+    invoiceItems = [];
+    renderItemsTable();
+    recalcTotals();
+    syncQrServedButtonForCurrentTable();
+    try {
+      if (window.db && typeof window.db.generateInvoiceNumber === 'function') {
+        const invRes = await window.db.generateInvoiceNumber().catch(() => null);
+        if (invRes && invRes.success && invRes.data) {
+          currentInvoiceNumber = invRes.data;
+          const disp = document.getElementById('invoiceNumberDisplay');
+          if (disp) disp.textContent = invRes.data;
+        }
+      }
+    } catch(e) {}
   }
 }
 
@@ -2479,6 +2504,24 @@ async function clearTableQrOrders(tableId) {
       localStorage.removeItem('cafePro_active_order_id');
     } catch(e) {}
 
+    // 4. Mark all WebDB invoices for this table as محاسبة
+    try {
+      if (window.WebDB && typeof window.WebDB.getInvoices === 'function') {
+        const invs = window.WebDB.getInvoices();
+        let invChanged = false;
+        invs.forEach(inv => {
+          if (parseInt(inv.table_id) === parseInt(tableId) && inv.status !== 'محاسبة') {
+            inv.status = 'محاسبة';
+            invChanged = true;
+          }
+        });
+        if (invChanged) {
+          localStorage.setItem('cafePro_web_invoices', JSON.stringify(invs));
+        }
+        window.WebDB.updateTableStatus(tableId, 'فاضية');
+      }
+    } catch(e) {}
+
     if (window._tableQrOrderMap) delete window._tableQrOrderMap[tableId];
     if (window._activeQrOrderId === activeQrId) window._activeQrOrderId = null;
   } catch(err) {
@@ -2861,20 +2904,35 @@ function buildKitchenTicketStandaloneHTML(diffItems = null) {
   <meta charset="utf-8">
   <title>بون تجهيز - مطبخ</title>
   <style>
+    @media print {
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+      html, body {
+        width: 80mm;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        color: #000;
+      }
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%;
       background: #fff;
       color: #000;
       direction: rtl;
-      font-family: 'Cairo', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Cairo', Arial, sans-serif;
       font-size: 13px;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
     .thermal-page {
-      width: 100%;
-      padding: 2mm 5mm 2mm 2mm;
+      width: 76mm;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 3mm 2mm;
       box-sizing: border-box;
       direction: rtl;
       text-align: right;
@@ -3141,7 +3199,7 @@ async function sendWhatsAppFromHistory(inv) {
 // ─── Print Receipt ────────────────────────────────────────────────────────────
 function buildReceiptHTML(inv) {
   const curr = settings.currency || 'ج.م';
-  const invNum = inv.invoiceNumber || inv.invoice_number || currentInvoiceNumber;
+  const invNum = inv.invoiceNumber || inv.invoice_number || currentInvoiceNumber || '0001';
   const date = inv.invoice_date || new Date().toLocaleDateString('ar-EG-u-nu-latn');
   const time = new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const subtotal = fmt(inv.subtotal || 0);
@@ -3155,9 +3213,8 @@ function buildReceiptHTML(inv) {
   const serviceRate = parseFloat(inv.service_rate || (window._lastCalc?.serviceRate) || 0);
   const taxAmount = parseFloat(inv.tax_amount || (window._lastCalc?.taxAmount) || 0);
   const taxRate = parseFloat(inv.tax_rate || (window._lastCalc?.taxRate) || 0);
-  const taxType = inv.tax_type || settings.tax_type || 'exclusive';
 
-  // Logo: prominent and centered
+  // Logo: clean & compact
   let logoHTML = '';
   if (settings.logo_path) {
     let safeLogo = settings.logo_path;
@@ -3165,17 +3222,17 @@ function buildReceiptHTML(inv) {
       if (safeLogo.startsWith('assets/')) safeLogo = '../' + safeLogo;
       else if (!safeLogo.startsWith('../')) safeLogo = 'file:///' + safeLogo.replace(/\\/g, '/');
     }
-    logoHTML = `<div style="text-align:center; margin:0 auto 8px;"><img src="${safeLogo}" style="max-height:90px; max-width:220px; object-fit:contain; display:block; margin:0 auto;" onerror="this.src='../assets/logo.png'"></div>`;
+    logoHTML = `<div style="text-align:center; margin:0 auto 4px;"><img src="${safeLogo}" style="max-height:52px; max-width:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.src='../assets/logo.png'"></div>`;
   } else {
-    logoHTML = `<div style="text-align:center; margin:0 auto 8px;"><img src="../assets/logo.png" style="max-height:90px; max-width:220px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none'"></div>`;
+    logoHTML = `<div style="text-align:center; margin:0 auto 4px;"><img src="../assets/logo.png" style="max-height:52px; max-width:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none'"></div>`;
   }
-  
+
   // Compact contact info
   let contactDetails = [];
   if (settings.phone) contactDetails.push(`ت: ${settings.phone}`);
   if (settings.address) contactDetails.push(settings.address);
   const contactHTML = contactDetails.length > 0 
-    ? `<div style="text-align:center; font-size:11px; font-weight:800; color:#333; margin-bottom:2px;">${contactDetails.join(' | ')}</div>` 
+    ? `<div style="text-align:center; font-size:10.5px; font-weight:700; color:#333; margin-top:2px;">${contactDetails.join(' | ')}</div>` 
     : '';
 
   // Customer Name
@@ -3187,99 +3244,117 @@ function buildReceiptHTML(inv) {
     if (c && c.name && c.name !== 'عميل نقدي') custName = c.name;
   }
 
-  // Order type and table — clean, no status
+  // Cashier name
+  let sellerName = 'الكاشير';
+  const empSelect = document.getElementById('employeeSelect');
+  if (empSelect && empSelect.selectedIndex >= 0 && empSelect.options[empSelect.selectedIndex]?.text) {
+    sellerName = empSelect.options[empSelect.selectedIndex].text;
+  }
+
+  // Order type and table
   const rawInvTable = (inv.invoice_type === 'صالة' || currentOrderType === 'صالة')
     ? (inv.table_name || getCleanTableName(getSelectedTableName ? getSelectedTableName() : ''))
     : '';
   let orderTypeStr = inv.invoice_type || currentOrderType || 'تيك أواي';
-  let orderBadgeText = '';
-  let orderDetailText = '';
+  let orderBadgeText = 'تيك أواي (سفري)';
+  let tableOrDetailText = '';
   if (orderTypeStr === 'صالة') {
-    orderBadgeText = 'طلب صالة (داخلي)';
-    orderDetailText = rawInvTable ? `ترابيزة: ${rawInvTable}` : 'جلوس بالصالة';
+    orderBadgeText = 'طلب صالة';
+    tableOrDetailText = rawInvTable ? `طاولة: ${rawInvTable}` : 'صالة داخلية';
   } else if (orderTypeStr === 'دليفري') {
-    orderBadgeText = 'طلب دليفري (توصيل)';
-    orderDetailText = inv.driver_name ? `الطيار: ${inv.driver_name}` : 'توصيل خارجي';
+    orderBadgeText = 'طلب دليفري';
+    tableOrDetailText = inv.driver_name ? `الطيار: ${inv.driver_name}` : 'توصيل خارجي';
   } else {
-    orderBadgeText = 'طلب سفري (تيك أواي)';
-    orderDetailText = 'استلام فوري من الكاشير';
+    orderBadgeText = 'سفري (تيك أواي)';
+    tableOrDetailText = 'استلام فوري';
   }
 
-  // Items: 3 compact columns with VERY BOLD typography
-  const items = inv.items || invoiceItems;
+  // Items: clean Costa & Counter style rows
+  const items = inv.items || invoiceItems || [];
   const itemsRows = items.map((item) => `
-    <tr style="border-bottom:1px dashed #666;">
-      <td style="padding:3px 1px; vertical-align:middle;">
-        <div style="font-size:13px; font-weight:900; line-height:1.2; color:#000;">
+    <tr style="border-bottom: 1px dotted #ccc;">
+      <td style="padding: 4px 0; vertical-align: top; text-align: right;">
+        <div style="font-size: 12.5px; font-weight: 900; line-height: 1.25; color: #000;">
           ${escapeHtml(item.service_name)}
         </div>
         ${(item.notes && item.notes.trim()) ? `
-          <div style="font-size:10.5px; font-weight:800; color:#222; margin-top:1px;">
+          <div style="font-size: 10px; font-weight: 700; color: #444; margin-top: 1px; padding-right: 6px;">
             ↳ (${escapeHtml(item.notes.trim())})
           </div>
         ` : ''}
       </td>
-      <td style="text-align:center; padding:3px 1px; font-size:14px; font-weight:900; vertical-align:middle; width:38px;">
+      <td style="text-align: center; vertical-align: top; padding: 4px 0; font-size: 13px; font-weight: 900; width: 34px;">
         ${item.quantity}
       </td>
-      <td style="text-align:left; padding:3px 1px; font-size:13px; font-weight:900; vertical-align:middle; width:65px;">
+      <td style="text-align: left; vertical-align: top; padding: 4px 0; font-size: 12.5px; font-weight: 900; width: 65px; font-variant-numeric: tabular-nums;">
         ${fmt(item.total)}
       </td>
     </tr>
   `).join('');
 
-  // Only display notes if explicitly entered for this order - NO boilerplate notes!
   const notesStr = (inv.notes || document.getElementById('invoiceNotes')?.value || '').trim();
-  const notesHTML = notesStr ? `<div style="font-size:11px; font-weight:800; border-top:1px dashed #000; padding-top:2px; margin-top:2px;">ملاحظات: ${escapeHtml(notesStr)}</div>` : '';
+  const notesHTML = notesStr ? `<div style="font-size: 10.5px; font-weight: 700; border-top: 1px dotted #888; padding-top: 3px; margin-top: 3px;">ملاحظات: ${escapeHtml(notesStr)}</div>` : '';
+
+  const changeDue = (inv.cash_received && parseFloat(inv.cash_received) > parseFloat(inv.net_total || 0))
+    ? parseFloat(inv.cash_received) - parseFloat(inv.net_total || 0)
+    : 0;
 
   return `
     <div class="receipt" style="
-      width:100%;
-      max-width:100%;
-      box-sizing:border-box;
-      font-family:'Cairo',Arial,sans-serif;
-      color:#000;
-      direction:rtl;
-      text-align:right;
-      padding:0;
-      margin:0;
-      -webkit-print-color-adjust:exact;
-      print-color-adjust:exact;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Cairo', Arial, sans-serif;
+      color: #000;
+      direction: rtl;
+      text-align: right;
+      padding: 0;
+      margin: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     ">
       ${logoHTML}
-      <div style="text-align:center; font-size:18px; font-weight:900; line-height:1.2; margin-bottom:2px; letter-spacing:0.3px;">
+      <div style="text-align:center; font-size:17px; font-weight:900; line-height:1.2; letter-spacing:0.3px;">
         ${settings.company_name || 'كافيه ومطعم برو'}
       </div>
       ${contactHTML}
-
-      <!-- Prominent Order Type Boxed Badge -->
-      <div style="text-align:center; margin:5px 0 6px; padding:6px 4px; border:2.5px solid #000; border-radius:6px; background:#fff;">
-        <div style="font-size:17px; font-weight:900; color:#000; letter-spacing:0.5px; line-height:1.2;">
-          ★ ${inv.is_check ? (orderTypeStr === 'صالة' ? `${orderBadgeText} - شيك الحساب` : 'شيك الحساب للمعاينة') : orderBadgeText} ★
-        </div>
-        ${orderDetailText ? `<div style="font-size:13px; font-weight:900; color:#000; margin-top:2px;">${orderDetailText}</div>` : ''}
+      <div style="text-align:center; font-size:11.5px; font-weight:800; color:#333; margin-top:2px; letter-spacing:0.4px;">
+        ${inv.is_check ? '★ شيك حساب طاولة (معاينة قبل الدفع) ★' : 'فاتورة ضريبية مبسطة | Tax Invoice'}
       </div>
 
-      <!-- Compact Meta Divider -->
-      <table style="width:100%; border-collapse:collapse; font-size:12px; font-weight:900; line-height:1.4; margin-bottom:3px;">
-        <tr>
-          <td style="text-align:right; padding:0;">فاتورة: #${invNum}</td>
-          <td style="text-align:left; padding:0;">النوع: <b>${orderBadgeText}</b></td>
-        </tr>
-        <tr style="font-size:11px; font-weight:800; color:#222;">
-          <td style="text-align:right; padding:0;">${date} — ${time}</td>
-          <td style="text-align:left; padding:0;">${custName ? `العميل: ${escapeHtml(custName)}` : ''}</td>
-        </tr>
-      </table>
-      <div style="border-top:1.5px dashed #000; margin:2px 0;"></div>
+      <div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
 
-      <!-- Items Table: Bold, clear, compact -->
+      <!-- Date & Time Row -->
+      <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#222;">
+        <span>التاريخ: ${date}</span>
+        <span>الوقت: ${time}</span>
+      </div>
+
+      <!-- Prominent Order# (Costa Style) -->
+      <div style="text-align:center; margin:4px 0 2px;">
+        <div style="font-size:11px; font-weight:800; color:#444;">رقم الطلب / Order#</div>
+        <div style="font-size:24px; font-weight:900; letter-spacing:1px; line-height:1.1;">#${invNum}</div>
+      </div>
+
+      <!-- Type & Table / Cashier & Customer (Costa Style) -->
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-top:2px;">
+        <span>النوع: <b>${orderBadgeText}</b></span>
+        ${tableOrDetailText ? `<span><b>${tableOrDetailText}</b></span>` : ''}
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#333; margin-top:2px;">
+        <span>الكاشير: ${escapeHtml(sellerName)}</span>
+        <span>العميل: ${escapeHtml(custName || 'عميل نقدي')}</span>
+      </div>
+
+      <div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
+
+      <!-- Items Table (Counter & Costa Style) -->
       <table style="width:100%; border-collapse:collapse; text-align:right; margin:2px 0;">
         <thead>
-          <tr style="border-bottom:1.5px solid #000; font-size:12px; font-weight:900;">
-            <th style="padding:2px 1px;">الصنف والتخصيص</th>
-            <th style="text-align:center; width:38px; padding:2px 1px;">الكمية</th>
-            <th style="text-align:left; width:65px; padding:2px 1px;">الإجمالي</th>
+          <tr style="border-bottom:1.5px solid #000; font-size:11.5px; font-weight:900;">
+            <th style="padding:2px 0; text-align:right;">الصنف والتفاصيل</th>
+            <th style="text-align:center; width:34px; padding:2px 0;">الكمية</th>
+            <th style="text-align:left; width:65px; padding:2px 0;">الإجمالي</th>
           </tr>
         </thead>
         <tbody>
@@ -3287,66 +3362,79 @@ function buildReceiptHTML(inv) {
         </tbody>
       </table>
 
-      <!-- Totals: Compact and Super Bold -->
-      <div style="border-top:1px dashed #000; margin:2px 0;"></div>
-      ${hasDiscount ? `
-        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800;">
-          <span>الإجمالي قبل الخصم:</span>
+      <div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
+
+      <!-- Totals Section -->
+      <div style="font-size:11.5px; font-weight:800; line-height:1.45;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>المجموع قبل الخصم:</span>
           <span>${subtotal} ${curr}</span>
         </div>
-        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#000;">
+        ${hasDiscount ? `
+        <div style="display:flex; justify-content:space-between;">
           <span>قيمة الخصم:</span>
           <span>-${discount} ${curr}</span>
-        </div>
-      ` : ''}
-      ${deliveryFee > 0 ? `
-        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800;">
+        </div>` : ''}
+        ${deliveryFee > 0 ? `
+        <div style="display:flex; justify-content:space-between;">
           <span>خدمة التوصيل:</span>
           <span>+${fmt(deliveryFee)} ${curr}</span>
-        </div>
-      ` : ''}
-      ${serviceAmount > 0 ? `
-        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#5b21b6;">
+        </div>` : ''}
+        ${serviceAmount > 0 ? `
+        <div style="display:flex; justify-content:space-between;">
           <span>خدمة الصالة (${serviceRate}%):</span>
           <span>+${fmt(serviceAmount)} ${curr}</span>
-        </div>
-      ` : ''}
-      ${taxAmount > 0 ? `
-        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#92400e;">
-          <span>ضريبة ق.م (${taxRate}% ${taxType === 'inclusive' ? 'شامل' : ''}):</span>
+        </div>` : ''}
+        ${taxAmount > 0 ? `
+        <div style="display:flex; justify-content:space-between;">
+          <span>ضريبة القيمة المضافة (${taxRate}%):</span>
           <span>+${fmt(taxAmount)} ${curr}</span>
-        </div>
-      ` : ''}
-
-      <!-- Net Total: Huge & Bold -->
-      <div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:2px 0; margin:2px 0; display:flex; justify-content:space-between; font-size:17px; font-weight:900;">
-        <span>الصافي المطلوب:</span>
-        <span>${net} ${curr}</span>
+        </div>` : ''}
       </div>
 
+      <!-- Net Total Boxed / Double Line (Costa & Counter Style) -->
+      <div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:4px 0; margin:4px 0; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:15px; font-weight:900;">الصافي المطلوب:</span>
+        <span style="font-size:18px; font-weight:900; font-variant-numeric:tabular-nums;">${net} ${curr}</span>
+      </div>
+
+      <!-- Payment / Check Details -->
       ${inv.is_check ? `
-      <div style="text-align:center; font-size:12px; font-weight:800; margin-top:4px; padding:3px; background:#f4f4f5; border-radius:4px; border:1px dashed #000;">
-        ★ شيك حساب طاولة للمعاينة والدفع ★
+      <div style="text-align:center; font-size:11.5px; font-weight:900; margin:5px 0; padding:4px; border:1px dashed #000; border-radius:4px; background:#fafafa;">
+        ★ شيك حساب طاولة للمعاينة والدفع للكابتن ★
       </div>
       ` : `
-      <!-- Paid, Change Due -->
-      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-top:2px;">
-        <span>المدفوع: ${paid} ${curr}</span>
-        ${(inv.cash_received && parseFloat(inv.cash_received) > parseFloat(inv.net_total || 0)) ? `<span>المستلم: ${fmt(inv.cash_received)} ${curr}</span>` : ''}
+      <div style="font-size:11.5px; font-weight:800; margin-top:2px; line-height:1.4;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>طريقة الدفع:</span>
+          <span>${inv.payment_method || 'نقدي'}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>المدفوع:</span>
+          <span>${paid} ${curr}</span>
+        </div>
+        ${changeDue > 0 ? `
+        <div style="display:flex; justify-content:space-between; font-weight:900; color:#15803D;">
+          <span>الباقي للعميل:</span>
+          <span>${fmt(changeDue)} ${curr}</span>
+        </div>` : (parseFloat(inv.remaining || 0) > 0 ? `
+        <div style="display:flex; justify-content:space-between; color:#DC2626;">
+          <span>المتبقي:</span>
+          <span>${remaining} ${curr}</span>
+        </div>` : '')}
       </div>
-      ${(inv.cash_received && parseFloat(inv.cash_received) > parseFloat(inv.net_total || 0)) ? `
-      <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:900; margin-top:2px; color:#166534;">
-        <span>الباقي للعميل:</span>
-        <span>${fmt(parseFloat(inv.cash_received) - parseFloat(inv.net_total || 0))} ${curr}</span>
-      </div>` : (parseFloat(inv.remaining || 0) > 0 ? `
-      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-top:2px; color:#dc2626;">
-        <span>المتبقي:</span>
-        <span>${remaining} ${curr}</span>
-      </div>` : '')}
       `}
 
       ${notesHTML}
-      <div style="border-top:1.5px dashed #000; margin:4px 0 2px;"></div>
+
+      <div style="border-bottom:1px dashed #000; margin:5px 0 3px;"></div>
+
+      <!-- Friendly Costa Style Footer -->
+      <div style="text-align:center; font-size:11px; font-weight:800; line-height:1.35; margin:4px 0 2px; color:#222;">
+        <div>يسعدنا دائماً خدمتكم وتشريفكم لنا ✨</div>
+        <div style="font-size:10px; color:#555; margin-top:1px;">It is a pleasure to serve you</div>
+        ${settings.phone ? `<div style="font-size:10px; color:#444; margin-top:2px;">لأي ملاحظات يرجى الاتصال: ${settings.phone}</div>` : ''}
+      </div>
     </div>
   `;
 }
@@ -3390,20 +3478,35 @@ function buildReceiptStandaloneHTML(inv) {
 '  <meta charset="utf-8">' +
 '  <title>فاتورة</title>' +
 '  <style>' +
+'    @media print {' +
+'      @page {' +
+'        size: 80mm auto;' +
+'        margin: 0;' +
+'      }' +
+'      html, body {' +
+'        width: 80mm;' +
+'        margin: 0;' +
+'        padding: 0;' +
+'        background: #fff;' +
+'        color: #000;' +
+'      }' +
+'    }' +
 '    * { box-sizing: border-box; margin: 0; padding: 0; }' +
 '    html, body {' +
 '      width: 100%;' +
 '      background: #fff;' +
 '      color: #000;' +
 '      direction: rtl;' +
-'      font-family: Arial, "Cairo", sans-serif;' +
-'      font-size: 13px;' +
+'      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", Arial, sans-serif;' +
+'      font-size: 12px;' +
 '      -webkit-print-color-adjust: exact;' +
 '      print-color-adjust: exact;' +
 '    }' +
 '    .thermal-page {' +
-'      width: 100%;' +
-'      padding: 2mm 6mm 2mm 2mm;' +
+'      width: 76mm;' +
+'      max-width: 100%;' +
+'      margin: 0 auto;' +
+'      padding: 3mm 2mm;' +
 '      box-sizing: border-box;' +
 '      direction: rtl;' +
 '      text-align: right;' +
@@ -3501,6 +3604,14 @@ async function newInvoice() {
 
   try { await reloadServicesStock(); } catch(e) {}
   try { await loadTables(); } catch(e) {}
+
+  // Explicitly guarantee UI fields are completely reset
+  const tblSelAfter = document.getElementById('posTableSelect');
+  if (tblSelAfter) tblSelAfter.value = '';
+  const cartTitleAfter = document.getElementById('cartOrderTitle');
+  if (cartTitleAfter) cartTitleAfter.textContent = 'طلب جديد';
+  renderItemsTable();
+  recalcTotals();
 
   try {
     if (window.db && window.db.generateInvoiceNumber) {
