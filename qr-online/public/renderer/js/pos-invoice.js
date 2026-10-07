@@ -2434,6 +2434,102 @@ async function openCheckoutModal(action) {
   }, 150);
 }
 
+/**
+ * ─── تصفير ومسح حالة طلبات الـ QR الخاصة بالترابيزة عند المحاسبة ───
+ * يحول الحالة إلى 'paid' في Supabase والسجل المحلي لكي تفتح الشاشة نظيفة للزبائن القادمين
+ */
+async function clearTableQrOrders(tableId) {
+  if (!tableId) return;
+  const strId = String(tableId);
+  try {
+    const activeQrId = (window._tableQrOrderMap && window._tableQrOrderMap[tableId]) || window._activeQrOrderId;
+
+    // 1. Supabase Cloud Sync
+    if (window.CafeSupabase) {
+      if (typeof window.CafeSupabase.clearTableOrders === 'function') {
+        await window.CafeSupabase.clearTableOrders(tableId, 'paid');
+      } else if (activeQrId && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+        await window.CafeSupabase.updateOrderStatus(activeQrId, 'paid');
+      }
+    }
+
+    // 2. Local QR helper bridge
+    if (window.qrOrders) {
+      if (typeof window.qrOrders.clearTableOrders === 'function') {
+        await window.qrOrders.clearTableOrders(tableId, 'paid');
+      } else if (activeQrId && typeof window.qrOrders.updateStatus === 'function') {
+        await window.qrOrders.updateStatus(activeQrId, 'paid');
+      }
+    }
+
+    // 3. Clean local storage active keys
+    try {
+      const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+      let qChanged = false;
+      q.forEach(o => {
+        if (String(o.table_id) === strId || (activeQrId && String(o.id || o.order_id) === String(activeQrId))) {
+          o.status = 'paid';
+          qChanged = true;
+        }
+      });
+      if (qChanged) localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(q));
+      localStorage.removeItem(`cafePro_active_order_tbl_${tableId}`);
+      localStorage.removeItem(`cafePro_active_order_id_tbl_${tableId}`);
+      localStorage.removeItem('cafePro_active_order');
+      localStorage.removeItem('cafePro_active_order_id');
+    } catch(e) {}
+
+    if (window._tableQrOrderMap) delete window._tableQrOrderMap[tableId];
+    if (window._activeQrOrderId === activeQrId) window._activeQrOrderId = null;
+  } catch(err) {
+    console.warn('clearTableQrOrders warning:', err);
+  }
+}
+
+/**
+ * ─── طباعة الشيك للترابيزة / العميل قبل المحاسبة ───
+ * يطبع نفس ريسيت الفاتورة الأصلية للمعاينة والدفع على الترابيزة دون إغلاق أو تصفير الفاتورة
+ */
+async function printCheckReceipt() {
+  if (!invoiceItems || !invoiceItems.length) {
+    showToast('لا توجد أصناف في الطلب لطباعة الشيك', 'warning');
+    return;
+  }
+
+  try {
+    const subtotal = parseFloat(document.getElementById('subtotalDisplay')?.textContent) || 0;
+    const discountAmt = parseFloat(document.getElementById('discountAmount')?.value) || 0;
+    const netText = document.getElementById('netTotalDisplay')?.textContent || '0';
+    const netTotal = parseFloat(netText.replace(/[^\d.]/g, '')) || 0;
+
+    const inv = {
+      ...(lastSavedInvoice || {}),
+      items: [...invoiceItems],
+      invoice_number: currentInvoiceNumber || (lastSavedInvoice?.invoiceNumber) || (lastSavedInvoice?.invoice_number) || 'معاينة شيك',
+      invoiceNumber: currentInvoiceNumber || (lastSavedInvoice?.invoiceNumber) || (lastSavedInvoice?.invoice_number) || 'معاينة شيك',
+      invoice_date: document.getElementById('invoiceDate')?.value || getLocalISODate(),
+      customer_name: getSelectedCustomerName ? getSelectedCustomerName() : 'عميلنا العزيز',
+      customer_phone: getSelectedCustomerPhone ? getSelectedCustomerPhone() : null,
+      table_name: getCleanTableName ? getCleanTableName(getSelectedTableName ? getSelectedTableName() : '') : '',
+      subtotal,
+      discount_amount: discountAmt,
+      net_total: netTotal,
+      amount_paid: 0,
+      remaining: netTotal,
+      table_id: currentTableId,
+      invoice_type: currentOrderType,
+      is_check: true
+    };
+
+    const html = buildReceiptStandaloneHTML(inv);
+    await printThermalDocument(html, 'posReceiptFrame');
+    showToast('تمت طباعة الشيك للمعاينة بنجاح ✓', 'success');
+  } catch (err) {
+    console.error('Error printing check:', err);
+    showToast('خطأ أثناء طباعة الشيك: ' + err.message, 'error');
+  }
+}
+
 async function executeConfirmedCheckout(withPrint = true) {
   const paidVal = document.getElementById('checkoutAmountPaid')?.value;
   if (paidVal === '' || isNaN(parseFloat(paidVal)) || parseFloat(paidVal) < 0) {
@@ -2456,58 +2552,57 @@ async function executeConfirmedCheckout(withPrint = true) {
 
   closeModal('checkoutModal');
   
-  const success = await doSaveInvoice({
-    payment_method: method,
-    treasury_type: treasuryType,
-    amount_paid: paid
-  }, withPrint);
+  const settledTableId = currentTableId;
+  const isWhatsApp = (pendingAction === 'savePrintAndWhatsApp');
 
-  if (success) {
-    const isWhatsApp = (pendingAction === 'savePrintAndWhatsApp');
+  try {
+    const success = await doSaveInvoice({
+      payment_method: method,
+      treasury_type: treasuryType,
+      amount_paid: paid
+    }, withPrint);
 
-    // Auto-dispatch any unsent items to kitchen/barista for ALL order types!
-    const unsentItems = (invoiceItems || []).map(it => {
-      const sent = Number(it.sent_qty || 0);
-      const curr = Number(it.quantity || 1);
-      return { ...it, diffQty: Math.max(0, curr - sent) };
-    }).filter(it => it.diffQty > 0);
+    if (success) {
+      // Auto-dispatch any unsent items to kitchen/barista for ALL order types!
+      const unsentItems = (invoiceItems || []).map(it => {
+        const sent = Number(it.sent_qty || 0);
+        const curr = Number(it.quantity || 1);
+        return { ...it, diffQty: Math.max(0, curr - sent) };
+      }).filter(it => it.diffQty > 0);
 
-    if (unsentItems.length > 0) {
-      try {
-        await printKitchenTicket(unsentItems);
-        invoiceItems.forEach(it => { it.sent_qty = Number(it.quantity || 1); });
-        await new Promise(r => setTimeout(r, 650));
-      } catch (kErr) { console.error('Kitchen ticket print error:', kErr); }
-    }
-
-    if (withPrint) {
-      await directPrintReceipt(isWhatsApp, false);
-    } else {
-      showToast('تم حفظ الفاتورة وإرسال البون للتجهيز بنجاح ✓', 'success');
-    }
-    const settledTableId = currentTableId;
-    if (settledTableId) {
-      const activeQrId = (window._tableQrOrderMap && window._tableQrOrderMap[settledTableId]) || window._activeQrOrderId;
-      if (activeQrId) {
+      if (unsentItems.length > 0) {
         try {
-          if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
-            await window.CafeSupabase.updateOrderStatus(activeQrId, 'completed');
-          }
-          if (window.qrOrders && typeof window.qrOrders.updateStatus === 'function') {
-            await window.qrOrders.updateStatus(activeQrId, 'completed');
-          }
-        } catch(e) {}
-        if (window._tableQrOrderMap) delete window._tableQrOrderMap[settledTableId];
+          await printKitchenTicket(unsentItems);
+          invoiceItems.forEach(it => { it.sent_qty = Number(it.quantity || 1); });
+          await new Promise(r => setTimeout(r, 450));
+        } catch (kErr) { console.error('Kitchen ticket print error:', kErr); }
       }
-      try {
-        if (window.tables && typeof window.tables.updateStatus === 'function') {
-          await window.tables.updateStatus(settledTableId, 'فاضية');
-        }
-        if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
-          window.WebDB.updateTableStatus(settledTableId, 'فاضية');
-        }
-      } catch(e){}
+
+      if (withPrint) {
+        try {
+          await directPrintReceipt(isWhatsApp, false);
+        } catch(pErr) { console.warn('Print receipt error:', pErr); }
+      } else {
+        showToast('تم حفظ الفاتورة وإرسال البون للتجهيز بنجاح ✓', 'success');
+      }
+
+      if (settledTableId) {
+        await clearTableQrOrders(settledTableId);
+        try {
+          if (window.tables && typeof window.tables.updateStatus === 'function') {
+            await window.tables.updateStatus(settledTableId, 'فاضية');
+          }
+          if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+            window.WebDB.updateTableStatus(settledTableId, 'فاضية');
+          }
+        } catch(e){}
+      }
     }
+  } catch(err) {
+    console.error('executeConfirmedCheckout error:', err);
+    showToast('حدث خطأ أثناء المحاسبة: ' + err.message, 'error');
+  } finally {
+    // التصفير الإجباري الأكيد للفاتورة لكي لا يحدث أي Freeze أبداً
     await newInvoice();
   }
 }
@@ -2526,51 +2621,51 @@ async function fastCashCheckout() {
   const settledTableId = currentTableId;
   const itemsSnapshot = [...invoiceItems];
 
-  const success = await doSaveInvoice({
-    payment_method: 'نقدي',
-    treasury_type: 'الخزينة',
-    amount_paid: netTotal
-  }, true);
+  try {
+    const success = await doSaveInvoice({
+      payment_method: 'نقدي',
+      treasury_type: 'الخزينة',
+      amount_paid: netTotal
+    }, true);
 
-  if (success) {
-    // Auto-dispatch any unsent items to kitchen/barista for ALL order types!
-    const unsentItems = (itemsSnapshot || []).map(it => {
-      const sent = Number(it.sent_qty || 0);
-      const curr = Number(it.quantity || 1);
-      return { ...it, diffQty: Math.max(0, curr - sent) };
-    }).filter(it => it.diffQty > 0);
+    if (success) {
+      // Auto-dispatch any unsent items to kitchen/barista for ALL order types!
+      const unsentItems = (itemsSnapshot || []).map(it => {
+        const sent = Number(it.sent_qty || 0);
+        const curr = Number(it.quantity || 1);
+        return { ...it, diffQty: Math.max(0, curr - sent) };
+      }).filter(it => it.diffQty > 0);
 
-    if (unsentItems.length > 0) {
-      try {
-        await printKitchenTicket(unsentItems);
-        await new Promise(r => setTimeout(r, 650));
-      } catch (kErr) { console.error('Kitchen ticket print error:', kErr); }
-    }
-
-    await directPrintReceipt(false, false);
-    showToast(`تم الدفع كاش سريع (${fmt(netTotal)} ج.م) وإرسال بون التجهيز ✓`, 'success');
-    if (settledTableId) {
-      const activeQrId = (window._tableQrOrderMap && window._tableQrOrderMap[settledTableId]) || window._activeQrOrderId;
-      if (activeQrId) {
+      if (unsentItems.length > 0) {
         try {
-          if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
-            await window.CafeSupabase.updateOrderStatus(activeQrId, 'completed');
-          }
-          if (window.qrOrders && typeof window.qrOrders.updateStatus === 'function') {
-            await window.qrOrders.updateStatus(activeQrId, 'completed');
-          }
-        } catch(e) {}
-        if (window._tableQrOrderMap) delete window._tableQrOrderMap[settledTableId];
+          await printKitchenTicket(unsentItems);
+          await new Promise(r => setTimeout(r, 450));
+        } catch (kErr) { console.error('Kitchen ticket print error:', kErr); }
       }
+
       try {
-        if (window.tables && typeof window.tables.updateStatus === 'function') {
-          await window.tables.updateStatus(settledTableId, 'فاضية');
-        }
-        if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
-          window.WebDB.updateTableStatus(settledTableId, 'فاضية');
-        }
-      } catch(e){}
+        await directPrintReceipt(false, false);
+      } catch(pErr) { console.warn('Print error:', pErr); }
+
+      showToast(`تم الدفع كاش سريع (${fmt(netTotal)} ج.م) وإرسال بون التجهيز ✓`, 'success');
+
+      if (settledTableId) {
+        await clearTableQrOrders(settledTableId);
+        try {
+          if (window.tables && typeof window.tables.updateStatus === 'function') {
+            await window.tables.updateStatus(settledTableId, 'فاضية');
+          }
+          if (window.WebDB && typeof window.WebDB.updateTableStatus === 'function') {
+            window.WebDB.updateTableStatus(settledTableId, 'فاضية');
+          }
+        } catch(e){}
+      }
     }
+  } catch(err) {
+    console.error('fastCashCheckout error:', err);
+    showToast('حدث خطأ أثناء المحاسبة السريعة: ' + err.message, 'error');
+  } finally {
+    // التصفير الإجباري الأكيد للفاتورة لكي لا يحدث أي Freeze أبداً
     await newInvoice();
   }
 }
@@ -2677,35 +2772,44 @@ function getCleanTableName(name) {
 }
 
 async function printThermalDocument(html, frameId = 'posThermalFrame') {
-  // Try silent IPC print first (no dialog)
-  if (window.electron && typeof window.electron.printThermal === 'function') {
+  if (!html) return;
+  // Try silent native Electron IPC print first (not web shim)
+  if (window.electron && !window.electron.__isWebShim && typeof window.electron.printThermal === 'function') {
     const printerKey = frameId === 'posKitchenFrame' ? 'printer_kitchen' : 'printer_receipt';
     const printerName = (settings && settings[printerKey]) ? settings[printerKey] : (settings && settings.printer_receipt ? settings.printer_receipt : '');
     try {
       const result = await window.electron.printThermal(html, printerName);
       if (result && result.success) return;
-      // Fall through to iframe if silent print fails
-      console.warn('Silent print failed:', result && result.error);
+      console.warn('Silent native print returned:', result && result.error);
     } catch (e) {
-      console.warn('printThermal IPC error:', e);
+      console.warn('printThermal native error:', e);
     }
   }
-  // Fallback: iframe print (shows dialog)
-  let iframe = document.getElementById(frameId);
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = frameId;
-    iframe.style.cssText = 'position:fixed;right:-9999px;bottom:-9999px;width:72mm;height:100px;border:none;';
-    document.body.appendChild(iframe);
+
+  // Web Browser Printing Pipeline: Non-blocking print via dedicated invisible iframe
+  try {
+    let iframe = document.getElementById(frameId);
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = frameId;
+      iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;visibility:hidden;';
+      document.body.appendChild(iframe);
+    }
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (err) {
+        console.warn('Browser print execution warning:', err);
+      }
+    }, 250);
+  } catch (err) {
+    console.error('printThermalDocument browser print error:', err);
   }
-  const doc = iframe.contentWindow.document;
-  doc.open();
-  doc.write(html);
-  doc.close();
-  setTimeout(() => {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-  }, 350);
 }
 
 function buildKitchenTicketStandaloneHTML(diffItems = null) {
@@ -2853,7 +2957,7 @@ async function doSaveInvoice(checkoutData, isPrint = false) {
     amount_paid: amtPaid,
     remaining,
     notes: document.getElementById('invoiceNotes')?.value || null,
-    status: remaining <= 0 && amtPaid > 0 ? '\u0645\u062d\u0627\u0633\u064e\u0628\u0629' : '\u0645\u0641\u062a\u0648\u062d\u0629',
+    status: remaining <= 0 && amtPaid > 0 ? 'محاسبة' : 'مفتوحة',
     tax_rate: calc.taxRate || 0,
     tax_amount: calc.taxAmount || 0,
     service_rate: calc.serviceRate || 0,
@@ -2888,8 +2992,8 @@ async function doSaveInvoice(checkoutData, isPrint = false) {
       showToast('تم حفظ الفاتورة بنجاح ✓', 'success');
     }
 
-    await reloadServicesStock();
-    await loadTables();
+    try { await reloadServicesStock(); } catch(e) {}
+    try { await loadTables(); } catch(e) {}
 
     return true;
   } else {
@@ -3151,7 +3255,7 @@ function buildReceiptHTML(inv) {
       <!-- Prominent Order Type Boxed Badge -->
       <div style="text-align:center; margin:5px 0 6px; padding:6px 4px; border:2.5px solid #000; border-radius:6px; background:#fff;">
         <div style="font-size:17px; font-weight:900; color:#000; letter-spacing:0.5px; line-height:1.2;">
-          ★ ${orderBadgeText} ★
+          ★ ${inv.is_check ? (orderTypeStr === 'صالة' ? `${orderBadgeText} - شيك الحساب` : 'شيك الحساب للمعاينة') : orderBadgeText} ★
         </div>
         ${orderDetailText ? `<div style="font-size:13px; font-weight:900; color:#000; margin-top:2px;">${orderDetailText}</div>` : ''}
       </div>
@@ -3220,6 +3324,11 @@ function buildReceiptHTML(inv) {
         <span>${net} ${curr}</span>
       </div>
 
+      ${inv.is_check ? `
+      <div style="text-align:center; font-size:12px; font-weight:800; margin-top:4px; padding:3px; background:#f4f4f5; border-radius:4px; border:1px dashed #000;">
+        ★ شيك حساب طاولة للمعاينة والدفع ★
+      </div>
+      ` : `
       <!-- Paid, Change Due -->
       <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; margin-top:2px;">
         <span>المدفوع: ${paid} ${curr}</span>
@@ -3234,6 +3343,7 @@ function buildReceiptHTML(inv) {
         <span>المتبقي:</span>
         <span>${remaining} ${curr}</span>
       </div>` : '')}
+      `}
 
       ${notesHTML}
       <div style="border-top:1.5px dashed #000; margin:4px 0 2px;"></div>
@@ -3388,16 +3498,22 @@ async function newInvoice() {
   window._resumedInvoiceNumber = null;
   window._resumedPaymentMethod = null;
   closeModal('savedModal');
-  await reloadServicesStock();
-  await loadTables();
 
-  if (window.db && window.db.generateInvoiceNumber) {
-    const invRes = await window.db.generateInvoiceNumber();
-    if (invRes && invRes.success) {
-      currentInvoiceNumber = invRes.data;
-      document.getElementById('invoiceNumberDisplay').textContent = invRes.data;
+  try { await reloadServicesStock(); } catch(e) {}
+  try { await loadTables(); } catch(e) {}
+
+  try {
+    if (window.db && window.db.generateInvoiceNumber) {
+      const invRes = await window.db.generateInvoiceNumber();
+      if (invRes && invRes.success && invRes.data) {
+        currentInvoiceNumber = invRes.data;
+        document.getElementById('invoiceNumberDisplay').textContent = invRes.data;
+      }
+    } else {
+      currentInvoiceNumber = '0001';
+      document.getElementById('invoiceNumberDisplay').textContent = currentInvoiceNumber;
     }
-  } else {
+  } catch(e) {
     currentInvoiceNumber = '0001';
     document.getElementById('invoiceNumberDisplay').textContent = currentInvoiceNumber;
   }
@@ -3518,6 +3634,10 @@ document.addEventListener('keydown', e => {
   if (e.key === 'F3') {
     e.preventDefault();
     sendOrderToKitchen();
+  }
+  if (e.key === 'F4') {
+    e.preventDefault();
+    printCheckReceipt();
   }
   if (e.key === 'Escape') {
     const gateModal = document.getElementById('orderTypeGateModal');

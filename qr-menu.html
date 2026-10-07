@@ -2440,6 +2440,11 @@
 
     // ─── Real-Time Live Order Tracker (Server-Sent Events / SSE & Supabase) ───
     function openLiveTrackerSheet(orderData, recapItems) {
+      if (!orderData) return;
+      if (orderData.status === 'paid' || orderData.status === 'closed') {
+        dismissActiveOrderTracker(false);
+        return;
+      }
       const t = I18N[currentLang];
       const orderId = orderData.id || orderData.order_id;
       const orderNum = orderData.order_number || `QR-${String(orderId).padStart(4, '0')}`;
@@ -2479,6 +2484,37 @@
       setupOrderRealtimeListener(orderId);
     }
 
+    function dismissActiveOrderTracker(notify = false) {
+      if (window._orderStatusPoller) {
+        clearInterval(window._orderStatusPoller);
+        window._orderStatusPoller = null;
+      }
+      if (menuRealtimeSource) {
+        try { menuRealtimeSource.close(); } catch(e) {}
+        menuRealtimeSource = null;
+      }
+
+      // Hide pill & close sheet
+      const pill = document.getElementById('floatingActiveOrderPill');
+      if (pill) pill.style.display = 'none';
+      closeSheet('trackerSheet');
+
+      // Clear all active order storage keys for this table and globally
+      const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || (currentActiveOrder && (currentActiveOrder.table_id || currentActiveOrder.table_name)) || 'global';
+      try {
+        localStorage.removeItem(`cafePro_active_order_tbl_${tblKey}`);
+        localStorage.removeItem(`cafePro_active_order_id_tbl_${tblKey}`);
+        localStorage.removeItem('cafePro_active_order');
+        localStorage.removeItem('cafePro_active_order_id');
+      } catch(e) {}
+
+      currentActiveOrder = null;
+
+      if (notify && typeof showToast === 'function') {
+        showToast(currentLang === 'ar' ? 'تم دفع الحساب بنجاح، شكراً لزيارتكم! نتشرف بكم دائماً ✨' : 'Bill paid successfully, thank you for your visit! ✨', 'success');
+      }
+    }
+
     function setupOrderRealtimeListener(orderId) {
       if (!orderId) return;
 
@@ -2487,6 +2523,10 @@
         window.CafeSupabase.subscribeToOrderStatus(orderId, (updatedOrder) => {
           if (!updatedOrder || String(updatedOrder.id) !== String(orderId)) return;
           console.log('[Supabase Realtime Status Change]', updatedOrder.status);
+          if (updatedOrder.status === 'paid' || updatedOrder.status === 'closed') {
+            dismissActiveOrderTracker(true);
+            return;
+          }
           if (currentActiveOrder && String(currentActiveOrder.id || currentActiveOrder.order_id) === String(orderId)) {
             currentActiveOrder = { ...currentActiveOrder, ...updatedOrder };
           }
@@ -2514,6 +2554,10 @@
             const payload = JSON.parse(evt.data);
             if (payload && String(payload.order_id) === String(orderId)) {
               console.log('[RealTime SSE] Instant Status Update:', payload.status);
+              if (payload.status === 'paid' || payload.status === 'closed') {
+                dismissActiveOrderTracker(true);
+                return;
+              }
               if (currentActiveOrder && String(currentActiveOrder.id || currentActiveOrder.order_id) === String(orderId)) {
                 currentActiveOrder = { ...currentActiveOrder, ...payload };
               }
@@ -2533,7 +2577,7 @@
         console.warn('[SSE Connection Init Error]', err);
       }
 
-      // 3. Fallback Interval Poller relaxed to 8s (skip if hidden, stop if completed/rejected)
+      // 3. Fallback Interval Poller relaxed to 8s (skip if hidden, stop if paid/closed)
       if (window._orderStatusPoller) clearInterval(window._orderStatusPoller);
       window._orderStatusPoller = setInterval(async () => {
         if (document.hidden) return;
@@ -2542,6 +2586,10 @@
           const queue = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
           const localMatch = queue.find(o => String(o.id || o.order_id) === String(orderId));
           if (localMatch && localMatch.status) {
+            if (localMatch.status === 'paid' || localMatch.status === 'closed') {
+              dismissActiveOrderTracker(true);
+              return;
+            }
             if (!currentActiveOrder || localMatch.status !== currentActiveOrder.status || localMatch.rejection_reason !== currentActiveOrder.rejection_reason) {
               currentActiveOrder = { ...(currentActiveOrder || {}), ...localMatch };
               updateStepperUI(localMatch.status, localMatch);
@@ -2557,6 +2605,10 @@
           if (window.CafeSupabase && typeof window.CafeSupabase.getOrderStatus === 'function') {
             const sbOrder = await window.CafeSupabase.getOrderStatus(orderId);
             if (sbOrder && String(sbOrder.id) === String(orderId) && sbOrder.status) {
+              if (sbOrder.status === 'paid' || sbOrder.status === 'closed') {
+                dismissActiveOrderTracker(true);
+                return;
+              }
               if (!currentActiveOrder || sbOrder.status !== currentActiveOrder.status || sbOrder.rejection_reason !== currentActiveOrder.rejection_reason) {
                 currentActiveOrder = { ...(currentActiveOrder || {}), ...sbOrder };
                 updateStepperUI(sbOrder.status, sbOrder);
@@ -2573,6 +2625,10 @@
     }
 
     function updateStepperUI(status, extraData) {
+      if (status === 'paid' || status === 'closed') {
+        dismissActiveOrderTracker(true);
+        return;
+      }
       const t = I18N[currentLang];
       const s1 = document.getElementById('stepNode1');
       const s2 = document.getElementById('stepNode2');
@@ -2660,6 +2716,10 @@
     function updateFloatingPill(status, orderData) {
       const pill = document.getElementById('floatingActiveOrderPill');
       if (!pill) return;
+      if (status === 'paid' || status === 'closed') {
+        pill.style.display = 'none';
+        return;
+      }
       const orderId = (orderData && (orderData.id || orderData.order_id)) || (currentActiveOrder && (currentActiveOrder.id || currentActiveOrder.order_id)) || localStorage.getItem('cafePro_active_order_id');
       if (!orderId) {
         pill.style.display = 'none';
@@ -2721,6 +2781,10 @@
         return;
       }
       if (currentActiveOrder && orderBelongsToCurrentTable(currentActiveOrder)) {
+        if (currentActiveOrder.status === 'paid' || currentActiveOrder.status === 'closed') {
+          dismissActiveOrderTracker(false);
+          return;
+        }
         openLiveTrackerSheet(currentActiveOrder, currentActiveOrder.items || currentActiveOrder.recapItems || []);
       } else {
         const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || 'global';
@@ -2728,6 +2792,10 @@
         if (saved) {
           try {
             const ord = JSON.parse(saved);
+            if (ord.status === 'paid' || ord.status === 'closed') {
+              dismissActiveOrderTracker(false);
+              return;
+            }
             if (orderBelongsToCurrentTable(ord)) {
               currentActiveOrder = ord;
               openLiveTrackerSheet(ord, ord.items || []);
@@ -2740,6 +2808,17 @@
     }
 
     async function checkExistingActiveOrder() {
+      function isFinishedOrStale(ord) {
+        if (!ord) return true;
+        const st = ord.status;
+        if (st === 'paid' || st === 'closed') return true;
+        if (ord.created_at) {
+          const created = new Date(ord.created_at).getTime();
+          if (!isNaN(created) && (Date.now() - created > 6 * 60 * 60 * 1000)) return true;
+        }
+        return false;
+      }
+
       const tblKey = (selectedTable && (selectedTable.id || selectedTable.name)) || null;
       let activeId = tblKey ? localStorage.getItem(`cafePro_active_order_id_tbl_${tblKey}`) : null;
       if (!activeId) {
@@ -2747,6 +2826,10 @@
         if (globalSaved) {
           try {
             const gOrd = JSON.parse(globalSaved);
+            if (isFinishedOrStale(gOrd)) {
+              dismissActiveOrderTracker(false);
+              return;
+            }
             if (orderBelongsToCurrentTable(gOrd)) {
               activeId = localStorage.getItem('cafePro_active_order_id');
             }
@@ -2761,6 +2844,10 @@
         const match = queue.find(o => String(o.id || o.order_id) === String(activeId));
         if (match) {
           if (!orderBelongsToCurrentTable(match)) return;
+          if (isFinishedOrStale(match)) {
+            dismissActiveOrderTracker(false);
+            return;
+          }
           currentActiveOrder = match;
           updateFloatingPill(match.status || 'pending', match);
           setupOrderRealtimeListener(activeId);
@@ -2774,6 +2861,10 @@
           const sbOrder = await window.CafeSupabase.getOrderStatus(activeId);
           if (sbOrder) {
             if (!orderBelongsToCurrentTable(sbOrder)) return;
+            if (isFinishedOrStale(sbOrder)) {
+              dismissActiveOrderTracker(false);
+              return;
+            }
             currentActiveOrder = sbOrder;
             updateFloatingPill(sbOrder.status || 'pending', sbOrder);
             setupOrderRealtimeListener(activeId);
@@ -2789,6 +2880,10 @@
         if (json && json.success && json.data) {
           const ord = json.data;
           if (!orderBelongsToCurrentTable(ord)) return;
+          if (isFinishedOrStale(ord)) {
+            dismissActiveOrderTracker(false);
+            return;
+          }
           currentActiveOrder = ord;
           updateFloatingPill(ord.status || 'pending', ord);
           setupOrderRealtimeListener(activeId);

@@ -1095,6 +1095,36 @@
       box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
     }
 
+    /* 2.5 Check Button: Sleek Modern Indigo */
+    .btn-check-print {
+      height: 44px;
+      background: #FFFFFF;
+      color: #4F46E5;
+      border: 1.5px solid #6366F1;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(99, 102, 241, 0.06);
+    }
+
+    .btn-check-print svg {
+      color: #6366F1;
+      flex-shrink: 0;
+    }
+
+    .btn-check-print .pos-kbd-badge {
+      background: #EEF2FF;
+      color: #4338CA;
+      border: 1px solid #C7D2FE;
+    }
+
+    .btn-check-print:hover {
+      background: #EEF2FF;
+      border-color: #4F46E5;
+      color: #3730A3;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+    }
+
     /* 3. Primary Checkout Button: Authoritative Solid Brand Action */
     .btn-checkout {
       height: 48px;
@@ -1726,15 +1756,20 @@
 
         <!-- Action Buttons Container (Harmonious 2-Tier Ergonomic Architecture) -->
         <div class="cart-action-group">
-          <!-- Secondary Actions: Equal 50/50 Grid -->
-          <div class="cart-secondary-grid">
+          <!-- Secondary Actions: Equal 3-Column Grid -->
+          <div class="cart-secondary-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
             <button type="button" class="btn-pos-action btn-kitchen" id="btnSendToKitchen" onclick="sendOrderToKitchen()" title="إرسال الأصناف لمطبعة المطبخ [F3]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-              <span>إرسال للمطبخ</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+              <span>المطبخ</span>
               <kbd class="pos-kbd-badge">F3</kbd>
             </button>
+            <button type="button" class="btn-pos-action btn-check-print" id="btnPrintCheck" onclick="printCheckReceipt()" title="طباعة الشيك للترابيزة قبل المحاسبة [F4]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>الشيك</span>
+              <kbd class="pos-kbd-badge">F4</kbd>
+            </button>
             <button type="button" class="btn-pos-action btn-fast-cash" id="btnFastCash" onclick="fastCashCheckout()" title="دفع نقدي فوري بالمبلغ المطلوب بالضبط [F2]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
               <span>كاش سريع</span>
               <kbd class="pos-kbd-badge pos-kbd-green">F2</kbd>
             </button>

@@ -645,7 +645,9 @@ if (typeof window !== 'undefined') {
             this.addTreasury('إيراد', `تعديل فاتورة مبيعات ${invoices[idx].invoice_number}`, netTotal - prevTotal, data.payment_method || 'الخزينة');
           }
           if (data.table_id) {
-            this.updateTableStatus(data.table_id, data.status === 'محاسبة' ? 'فاضية' : 'مشغولة');
+            const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
+            const isSettled = normSt === 'محاسبة' || (parseFloat(data.remaining || 0) <= 0 && parseFloat(data.amount_paid || 0) > 0);
+            this.updateTableStatus(data.table_id, isSettled ? 'فاضية' : 'مشغولة');
           }
           return { success: true, data: { invoiceId: data.id, invoiceNumber: invoices[idx].invoice_number } };
         }
@@ -667,7 +669,7 @@ if (typeof window !== 'undefined') {
         discount: parseFloat(data.discount || 0),
         tax_amount: parseFloat(data.tax_amount || 0),
         service_amount: parseFloat(data.service_amount || 0),
-        status: data.status || 'محاسبة',
+        status: (data.status || 'محاسبة').replace(/[\u064B-\u065F]/g, ''),
         invoice_type: data.invoice_type || 'صالة',
         table_id: data.table_id || null,
         payment_method: data.payment_method || 'الخزينة',
@@ -679,7 +681,9 @@ if (typeof window !== 'undefined') {
       this.addTreasury('إيراد', `فاتورة مبيعات ${invNum}`, netTotal, data.payment_method || 'الخزينة');
 
       if (data.table_id) {
-        this.updateTableStatus(data.table_id, data.status === 'محاسبة' ? 'فاضية' : 'مشغولة');
+        const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
+        const isSettled = normSt === 'محاسبة' || (parseFloat(data.remaining || 0) <= 0 && parseFloat(data.amount_paid || 0) > 0);
+        this.updateTableStatus(data.table_id, isSettled ? 'فاضية' : 'مشغولة');
       }
 
       // Deduct inventory items
@@ -824,8 +828,38 @@ if (typeof window !== 'undefined') {
 
   window.WebDB = WebDB;
 
+  function WebPrintThermal(html) {
+    if (!html) return { success: false, error: 'Empty HTML content' };
+    try {
+      let iframe = document.getElementById('webThermalPrintFrame');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'webThermalPrintFrame';
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;visibility:hidden;';
+        document.body.appendChild(iframe);
+      }
+      const doc = iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+      setTimeout(() => {
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        } catch(e) {
+          console.warn('Web print error:', e);
+        }
+      }, 250);
+      return { success: true };
+    } catch(err) {
+      console.error('WebPrintThermal error:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
   if (!window.electron) {
     window.electron = {
+      __isWebShim: true,
       navigate: (page) => { window.location.href = page; },
       openExternal: (url) => { window.open(url, '_blank'); },
       getUserDataPath: async () => 'C:/Temp',
@@ -834,7 +868,9 @@ if (typeof window !== 'undefined') {
       quitWithoutBackup: () => {},
       cancelQuit: () => {},
       onConfirmBackupBeforeQuit: (cb) => {},
-      printThermal: async () => ({ success: true }),
+      printThermal: async (html, printerName) => {
+        return WebPrintThermal(html);
+      },
       requestFocus: async () => {}
     };
   }
@@ -946,11 +982,15 @@ if (typeof window !== 'undefined') {
       },
       updateStatus: async (id, status) => {
         try {
+          const controller = new AbortController();
+          const tId = setTimeout(() => controller.abort(), 2000);
           const res = await fetch('/api/tables/updateStatus', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tableId: id, status })
+            body: JSON.stringify({ tableId: id, status }),
+            signal: controller.signal
           });
+          clearTimeout(tId);
           if (res.ok) return await res.json();
         } catch(e) {}
         WebDB.updateTableStatus(id, status);
@@ -1452,6 +1492,39 @@ if (typeof window !== 'undefined') {
           if (res.ok) return await res.json();
         } catch(e) {}
         return { success: false, error: 'Network error' };
+      },
+      updateStatus: async (orderId, newStatus) => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.updateOrderStatus === 'function') {
+          try { await window.CafeSupabase.updateOrderStatus(orderId, newStatus); } catch(e) {}
+        }
+        try {
+          const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+          const idx = q.findIndex(o => String(o.id || o.order_id) === String(orderId));
+          if (idx !== -1) {
+            q[idx].status = newStatus;
+            localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(q));
+          }
+        } catch(e) {}
+        return { success: true };
+      },
+      clearTableOrders: async (tableId, targetStatus = 'paid') => {
+        if (window.CafeSupabase && typeof window.CafeSupabase.clearTableOrders === 'function') {
+          try { await window.CafeSupabase.clearTableOrders(tableId, targetStatus); } catch(e) {}
+        }
+        try {
+          const q = JSON.parse(localStorage.getItem('cafePro_qr_orders_queue') || '[]');
+          let changed = false;
+          q.forEach(o => {
+            if (String(o.table_id) === String(tableId)) {
+              o.status = targetStatus;
+              changed = true;
+            }
+          });
+          if (changed) localStorage.setItem('cafePro_qr_orders_queue', JSON.stringify(q));
+          localStorage.removeItem(`cafePro_active_order_tbl_${tableId}`);
+          localStorage.removeItem(`cafePro_active_order_id_tbl_${tableId}`);
+        } catch(e) {}
+        return { success: true };
       }
     };
   }

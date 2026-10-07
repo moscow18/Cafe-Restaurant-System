@@ -191,7 +191,7 @@ const CafeSupabase = {
   },
 
   /**
-   * Update order status (approved, preparing, completed, rejected)
+   * Update order status (approved, preparing, completed, rejected, paid, closed)
    */
   async updateOrderStatus(orderId, newStatus) {
     if (!orderId) return false;
@@ -200,19 +200,22 @@ const CafeSupabase = {
 
     if (sb) {
       try {
-        const res = await sb
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+        const updatePromise = sb
           .from('qr_orders')
           .update(updateData)
           .eq('id', orderId);
-
+        const res = await Promise.race([updatePromise, timeoutPromise]);
         if (!res.error) return true;
       } catch (e) {
         console.warn('[Supabase updateOrderStatus Error]', e);
       }
     }
 
-    // Direct REST fallback
+    // Direct REST fallback with AbortController timeout
     try {
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 4000);
       const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders?id=eq.${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -220,11 +223,58 @@ const CafeSupabase = {
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(updateData),
+        signal: controller.signal
       });
+      clearTimeout(tId);
       return res.ok;
     } catch (e) {
       console.warn('[Supabase REST updateOrderStatus Error]', e);
+      return false;
+    }
+  },
+
+  /**
+   * Mark all open/active orders for a specific table as paid / settled
+   */
+  async clearTableOrders(tableId, targetStatus = 'paid') {
+    if (!tableId) return false;
+    const strId = String(tableId);
+    const sb = getSupabase();
+    const updateData = { status: targetStatus };
+
+    if (sb) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+        const updatePromise = sb
+          .from('qr_orders')
+          .update(updateData)
+          .eq('table_id', strId)
+          .in('status', ['pending', 'approved', 'preparing', 'completed']);
+        await Promise.race([updatePromise, timeoutPromise]);
+        return true;
+      } catch(e) {
+        console.warn('[Supabase clearTableOrders SDK Error]', e);
+      }
+    }
+
+    try {
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_orders?table_id=eq.${encodeURIComponent(strId)}&status=in.(pending,approved,preparing,completed)`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData),
+        signal: controller.signal
+      });
+      clearTimeout(tId);
+      return res.ok;
+    } catch(e) {
+      console.warn('[Supabase REST clearTableOrders Error]', e);
       return false;
     }
   },
