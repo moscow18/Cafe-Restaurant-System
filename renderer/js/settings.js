@@ -604,30 +604,43 @@ function chooseLogo() {
 }
 
 async function handleLogoUpload(event) {
-  const file = event.target.files[0];
+  const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  // Use dialog to get the file path
-  const result = await window.electron.showOpenDialog({
-    title: 'اختر شعار المحل',
-    filters: [{ name: 'صور', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }],
-    properties: ['openFile']
-  });
+  if (window.electron && typeof window.electron.showOpenDialog === 'function') {
+    const result = await window.electron.showOpenDialog({
+      title: 'اختر شعار المحل',
+      filters: [{ name: 'صور', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }],
+      properties: ['openFile']
+    });
 
-  if (result.canceled || !result.filePaths.length) return;
+    if (result.canceled || !result.filePaths.length) return;
 
-  const sourcePath = result.filePaths[0];
-  const copyRes = await window.db.copyLogo(sourcePath);
+    const sourcePath = result.filePaths[0];
+    const copyRes = await window.db.copyLogo(sourcePath);
 
-  if (copyRes.success) {
-    currentLogoPath = copyRes.data;
-    const logoUrl = await window.electron.getLogoPath(copyRes.data);
-    if (logoUrl) {
-      document.getElementById('logoPreview').innerHTML = `<img src="${logoUrl}" alt="Logo" />`;
+    if (copyRes.success) {
+      currentLogoPath = copyRes.data;
+      const logoUrl = await window.electron.getLogoPath(copyRes.data);
+      if (logoUrl) {
+        document.getElementById('logoPreview').innerHTML = `<img src="${logoUrl}" alt="Logo" />`;
+      }
+      showToast('تم رفع الشعار — اضغط حفظ لتطبيقه', 'info');
+    } else {
+      showToast('خطأ في رفع الشعار: ' + copyRes.error, 'error');
     }
-    showToast('تم رفع الشعار — اضغط حفظ لتطبيقه', 'info');
   } else {
-    showToast('خطأ في رفع الشعار: ' + copyRes.error, 'error');
+    // Browser / Web mode: Read local file as Data URL
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      currentLogoPath = e.target.result;
+      const preview = document.getElementById('logoPreview');
+      if (preview) {
+        preview.innerHTML = `<img src="${currentLogoPath}" alt="Logo" style="max-height:85px; max-width:200px; object-fit:contain;" />`;
+      }
+      showToast('تم اختيار الشعار بنجاح — اضغط حفظ التعديلات لتطبيقه', 'info');
+    };
+    reader.readAsDataURL(file);
   }
 }
 

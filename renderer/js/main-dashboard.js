@@ -213,8 +213,9 @@ async function loadStats() {
     }
 
     const elBal = document.getElementById('treasuryBalance');
-    if (elBal && balRes.success) {
-      elBal.textContent = Number(balRes.data).toLocaleString('en-US');
+    if (elBal && balRes) {
+      const treasuryVal = (typeof balRes.data !== 'undefined') ? Number(balRes.data) : Number(balRes || 0);
+      elBal.textContent = treasuryVal.toLocaleString('en-US');
     }
 
     loadTodayInvoices();

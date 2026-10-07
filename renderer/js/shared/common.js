@@ -529,7 +529,84 @@ if (typeof window !== 'undefined') {
     }
   } catch(e) {}
 
+  const DB_DEFAULT_SETTINGS = {
+    company_name: 'كافيه ومطعم برو',
+    address: 'شارع الجمهورية - وسط البلد',
+    phone: '01000000000',
+    logo_path: '',
+    tax_number: '',
+    currency: 'جنيه',
+    receipt_notes: 'شكراً لزيارتكم',
+    receipt_footer: 'يسعدنا دائماً خدمتكم وتشريفكم لنا',
+    show_customer_phone: 1,
+    prevent_cashier_price_edit: 0,
+    admin_wa_phone: '',
+    report_save_path: '',
+    day_cutoff_hour: 0,
+    recipe_mode_enabled: 0,
+    delivery_enabled: 1,
+    tax_enabled: 0,
+    tax_rate: 14,
+    tax_type: 'inclusive',
+    tax_exempt_takeaway: 0,
+    service_charge_enabled: 0,
+    service_charge_rate: 12,
+    printer_receipt: '',
+    printer_kitchen: '',
+    printer_barcode: '',
+    printer_reports: '',
+    barcode_width: 38,
+    barcode_height: 25,
+    barcode_bar_height: 0,
+    barcode_orientation: 'portrait',
+    barcode_show_price: 1,
+    barcode_show_name: 1,
+    barcode_show_studio: 1,
+    cashier_hide_reports: 0,
+    cashier_hide_hr: 0,
+    cashier_prevent_returns: 0,
+    cashier_hide_finance: 0,
+    cashier_prevent_discount: 0,
+    cashier_prevent_settings: 0,
+    cashier_lock_to_pos: 0,
+    stock_out_behavior: 'warn',
+    wa_phone1: '',
+    wa_phone2: '',
+    wa_tpl_invoice_confirm: '',
+    wa_tpl_order_ready: '',
+    wa_tpl_delivered: '',
+    wa_tpl_full_payment: '',
+    wa_tpl_partial_payment: '',
+    enable_qr_menu: 1,
+    qr_store_slug: 'cafe-pro',
+    qr_service_mode: 'order'
+  };
+
   const WebDB = {
+    getSettings() {
+      try {
+        const stored = localStorage.getItem('cafePro_web_settings');
+        if (stored) {
+          return { ...DB_DEFAULT_SETTINGS, ...JSON.parse(stored) };
+        }
+      } catch(e) {}
+      localStorage.setItem('cafePro_web_settings', JSON.stringify(DB_DEFAULT_SETTINGS));
+      return DB_DEFAULT_SETTINGS;
+    },
+    updateSettings(data) {
+      try {
+        const curr = this.getSettings();
+        const merged = { ...curr, ...data };
+        localStorage.setItem('cafePro_web_settings', JSON.stringify(merged));
+        return { success: true, data: merged };
+      } catch(e) {
+        return { success: false, error: e.message };
+      }
+    },
+    normalizeTreasuryType(type) {
+      if (!type || type === 'نقدي' || type === 'cash') return 'الخزينة';
+      return type;
+    },
     getCategories() {
       try {
         const stored = localStorage.getItem('cafePro_web_categories');
@@ -642,7 +719,8 @@ if (typeof window !== 'undefined') {
           };
           localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
           if (netTotal !== prevTotal && (netTotal - prevTotal) !== 0) {
-            this.addTreasury('إيراد', `تعديل فاتورة مبيعات ${invoices[idx].invoice_number}`, netTotal - prevTotal, data.payment_method || 'الخزينة');
+            const trType = this.normalizeTreasuryType(data.payment_method);
+            this.addTreasury('إيراد', `تعديل فاتورة مبيعات ${invoices[idx].invoice_number}`, netTotal - prevTotal, trType);
           }
           if (data.table_id) {
             const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
@@ -686,7 +764,8 @@ if (typeof window !== 'undefined') {
       invoices.unshift(newInv);
       localStorage.setItem('cafePro_web_invoices', JSON.stringify(invoices));
 
-      this.addTreasury('إيراد', `فاتورة مبيعات ${invNum}`, netTotal, data.payment_method || 'الخزينة');
+      const trType = this.normalizeTreasuryType(data.payment_method);
+      this.addTreasury('إيراد', `فاتورة مبيعات ${invNum}`, netTotal, trType);
 
       if (data.table_id) {
         const normSt = (data.status || '').replace(/[\u064B-\u065F]/g, '');
@@ -823,22 +902,51 @@ if (typeof window !== 'undefined') {
       this.addTreasury('مصروف', `${typeName}: ${desc}`, amount, source);
     },
     getTreasury() {
+      let list = [];
       try {
         const stored = localStorage.getItem('cafePro_web_treasury');
-        if (stored) return JSON.parse(stored);
+        if (stored) list = JSON.parse(stored);
       } catch(e) {}
-      const today = getLocalISODate();
-      const initial = [
-        { id: 1, type: 'إيراد', notes: 'رصيد افتتاحي', amount: 500, treasury_type: 'الخزينة', date: today },
-        { id: 2, type: 'إيراد', notes: 'مبيعات صباحية', amount: 325, treasury_type: 'الخزينة', date: today }
-      ];
-      localStorage.setItem('cafePro_web_treasury', JSON.stringify(initial));
-      return initial;
+      if (!Array.isArray(list) || list.length === 0) {
+        const today = getLocalISODate();
+        list = [
+          { id: 1, type: 'إيراد', description: 'رصيد افتتاحي', notes: 'رصيد افتتاحي', amount: 500, balance_after: 500, treasury_type: 'الخزينة', date: today, time: '09:00' },
+          { id: 2, type: 'إيراد', description: 'مبيعات صباحية', notes: 'مبيعات صباحية', amount: 325, balance_after: 825, treasury_type: 'الخزينة', date: today, time: '11:30' }
+        ];
+        localStorage.setItem('cafePro_web_treasury', JSON.stringify(list));
+      } else {
+        list = list.map(t => ({
+          ...t,
+          description: t.description || t.notes || 'حركة خزينة',
+          notes: t.notes || t.description || '',
+          treasury_type: this.normalizeTreasuryType(t.treasury_type),
+          balance_after: typeof t.balance_after !== 'undefined' ? t.balance_after : (t.amount || 0),
+          time: t.time || '12:00'
+        }));
+      }
+      return list;
     },
     addTreasury(type, notes, amount, treasuryType = 'الخزينة') {
+      const normType = this.normalizeTreasuryType(treasuryType);
       const list = this.getTreasury();
-      list.push({ id: Date.now(), type, notes, amount: parseFloat(amount), treasury_type: treasuryType, date: getLocalISODate() });
+      const numAmt = parseFloat(amount || 0);
+      const prevBal = list.filter(t => this.normalizeTreasuryType(t.treasury_type) === normType)
+        .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount || 0) : -parseFloat(t.amount || 0)), 0);
+      const newBal = prevBal + (type === 'إيراد' ? numAmt : -numAmt);
+      const entry = {
+        id: Date.now(),
+        type: type || 'إيراد',
+        description: notes || 'حركة خزينة',
+        notes: notes || '',
+        amount: numAmt,
+        balance_after: Math.max(0, newBal),
+        treasury_type: normType,
+        date: getLocalISODate(),
+        time: new Date().toTimeString().slice(0, 5)
+      };
+      list.push(entry);
       localStorage.setItem('cafePro_web_treasury', JSON.stringify(list));
+      return entry;
     }
   };
 
@@ -1062,21 +1170,19 @@ if (typeof window !== 'undefined') {
           const res = await fetch('/api/db/settings');
           if (res.ok) {
             const data = await res.json();
-            if (data && data.success && data.data) return data;
+            if (data && data.success && data.data) {
+              WebDB.updateSettings(data.data);
+              return data;
+            }
           }
         } catch(e) {}
         return {
           success: true,
-          data: {
-            company_name: 'كافيه ومطعم برو',
-            logo_path: '',
-            day_cutoff_hour: 0,
-            currency: 'جنيه',
-            delivery_enabled: 1
-          }
+          data: WebDB.getSettings()
         };
       },
       updateSettings: async (data) => {
+        WebDB.updateSettings(data);
         try {
           const res = await fetch('/api/db/updateSettings', {
             method: 'POST',
@@ -1134,8 +1240,34 @@ if (typeof window !== 'undefined') {
         if (sLower.includes('from employees')) {
           return { success: true, data: WebDB.getEmployees() };
         }
+        if (sLower.includes('from treasury')) {
+          let list = WebDB.getTreasury();
+          let targetType = null;
+          if (params && params.length > 0 && typeof params[0] === 'string') {
+            targetType = WebDB.normalizeTreasuryType(params[0]);
+          } else if (sLower.includes('فودافون')) targetType = 'فودافون كاش';
+          else if (sLower.includes('إنستا')) targetType = 'إنستا باي';
+          else if (sLower.includes('فيزا')) targetType = 'فيزا';
+          else if (sLower.includes('الخزينة')) targetType = 'الخزينة';
+
+          if (targetType) {
+            list = list.filter(t => WebDB.normalizeTreasuryType(t.treasury_type) === targetType);
+          }
+
+          const dateParams = (params || []).filter(p => typeof p === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p));
+          if (sLower.includes('date>=') && dateParams.length > 0) {
+            list = list.filter(t => (t.date || '') >= dateParams[0]);
+          }
+          if (sLower.includes('date<=') && dateParams.length > 0) {
+            const toDate = dateParams.length > 1 ? dateParams[1] : dateParams[0];
+            list = list.filter(t => (t.date || '') <= toDate);
+          }
+
+          list = list.slice().sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+          return { success: true, data: list };
+        }
         if (sLower.includes('from invoice_items')) {
-          if (sLower.includes('invoice_id') && params.length > 0) {
+          if (sLower.includes('invoice_id') && params.length > 0 && !sLower.includes('in (select')) {
             const invId = parseInt(params[0]);
             let items = [];
             try {
@@ -1149,16 +1281,122 @@ if (typeof window !== 'undefined') {
             }
             return { success: true, data: items };
           }
-          return { success: true, data: [] };
+
+          const invs = WebDB.getInvoices().filter(i => !i.is_returned);
+          let allItems = [];
+          invs.forEach(inv => {
+            if (Array.isArray(inv.items)) {
+              inv.items.forEach(it => {
+                allItems.push({ ...it, invoice_date: inv.invoice_date });
+              });
+            }
+          });
+
+          if (sLower.includes('group by service_name')) {
+            const dishMap = {};
+            allItems.forEach(it => {
+              const name = it.service_name || it.name || 'صنف';
+              const qty = parseFloat(it.quantity || it.qty || 1);
+              const rev = parseFloat(it.total || it.price || 0);
+              if (!dishMap[name]) dishMap[name] = { service_name: name, qty: 0, rev: 0 };
+              dishMap[name].qty += qty;
+              dishMap[name].rev += rev;
+            });
+            let result = Object.values(dishMap).sort((a, b) => b.qty - a.qty);
+            if (result.length === 0) {
+              result = WebDB.getServices().map(s => ({ service_name: s.name, qty: 0, rev: s.price || 0 }));
+            }
+            return { success: true, data: result.slice(0, 5) };
+          }
+
+          if (sLower.includes('group by cat_name') || sLower.includes('group by category')) {
+            const services = WebDB.getServices();
+            const categories = WebDB.getCategories();
+            const catMap = {};
+            allItems.forEach(it => {
+              let catName = it.category_name;
+              if (!catName) {
+                const s = services.find(x => x.id === it.service_id || x.name === it.service_name);
+                if (s && s.category_id) {
+                  const c = categories.find(cat => cat.id === s.category_id);
+                  if (c) catName = c.name;
+                }
+              }
+              catName = catName || 'أصناف متنوعة';
+              const qty = parseFloat(it.quantity || it.qty || 1);
+              const rev = parseFloat(it.total || it.price || 0);
+              if (!catMap[catName]) catMap[catName] = { cat_name: catName, orders_count: 0, total_qty: 0, total_rev: 0 };
+              catMap[catName].orders_count += 1;
+              catMap[catName].total_qty += qty;
+              catMap[catName].total_rev += rev;
+            });
+            let result = Object.values(catMap).sort((a, b) => b.total_qty - a.total_qty);
+            if (result.length === 0) {
+              result = categories.map(c => ({ cat_name: c.name, orders_count: 0, total_qty: 0, total_rev: 0 }));
+            }
+            return { success: true, data: result.slice(0, 5) };
+          }
+
+          return { success: true, data: allItems };
         }
         if (sLower.includes('from invoices')) {
           const invs = WebDB.getInvoices();
+          if (sLower.includes('group by hr')) {
+            const targetDate = params[0] || getLocalISODate();
+            const filtered = invs.filter(i => (i.invoice_date || '').startsWith(targetDate) && !i.is_returned);
+            const hrMap = {};
+            for (let h = 0; h < 24; h++) hrMap[h] = { hr: h, cnt: 0, rev: 0 };
+            filtered.forEach(i => {
+              let h = 14;
+              if (i.invoice_time) {
+                h = parseInt(i.invoice_time.split(':')[0], 10) || 0;
+              }
+              if (hrMap[h]) {
+                hrMap[h].cnt += 1;
+                hrMap[h].rev += parseFloat(i.net_total || i.dynamic_net_total || 0);
+              }
+            });
+            const result = Object.values(hrMap).filter(x => x.cnt > 0);
+            return { success: true, data: result };
+          }
+          if (sLower.includes('group by invoice_date')) {
+            const dayMap = {};
+            invs.filter(i => !i.is_returned).forEach(i => {
+              const d = i.invoice_date;
+              if (d) {
+                if (!dayMap[d]) dayMap[d] = { d, cnt: 0, rev: 0 };
+                dayMap[d].cnt += 1;
+                dayMap[d].rev += parseFloat(i.net_total || i.dynamic_net_total || 0);
+              }
+            });
+            return { success: true, data: Object.values(dayMap) };
+          }
           if (sLower.includes('table_id') && params.length > 0) {
             const tId = parseInt(params[0]);
             const filtered = invs.filter(i => parseInt(i.table_id) === tId && (i.status === 'مفتوحة' || i.status === 'مرسلة للمطبخ' || i.status === 'قيد الانتظار'));
             return { success: true, data: filtered };
           }
-          return { success: true, data: invs };
+          const custs = WebDB.getCustomers();
+          const tables = WebDB.getTables();
+          const enriched = invs.map(i => {
+            let custName = i.customer_name;
+            if (!custName && i.customer_id) {
+              const c = custs.find(x => x.id == i.customer_id);
+              if (c) custName = c.name;
+            }
+            let locName = i.invoice_type || 'طلب مباشر';
+            if (i.table_id) {
+              const t = tables.find(x => x.id == i.table_id);
+              if (t) locName = t.name;
+            }
+            return {
+              ...i,
+              customer_name: custName || 'عميل نقدي',
+              location_name: locName,
+              created_at: (i.invoice_date || getLocalISODate()) + ' ' + (i.invoice_time || '12:00:00')
+            };
+          });
+          return { success: true, data: enriched };
         }
         if (sLower.includes('from customers')) {
           return { success: true, data: WebDB.getCustomers() };
@@ -1181,10 +1419,56 @@ if (typeof window !== 'undefined') {
         const sLower = (sql || '').toLowerCase().trim();
         const today = getLocalISODate();
 
+        if (sLower.includes('count(case when')) {
+          const invs = WebDB.getInvoices();
+          let filtered = invs;
+          if (params && params.length > 0 && typeof params[0] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params[0])) {
+            const targetDate = params[0];
+            const dateInvs = invs.filter(i => (i.invoice_date || '').startsWith(targetDate));
+            if (dateInvs.length > 0) filtered = dateInvs;
+          }
+          let cancelled_cnt = 0, partial_cnt = 0, pending_cnt = 0, completed_cnt = 0;
+          filtered.forEach(i => {
+            const isRet = !!i.is_returned;
+            const paid = parseFloat(i.amount_paid || 0);
+            const net = parseFloat(i.net_total || i.dynamic_net_total || 0);
+            const normSt = (i.status || '').replace(/[\u064B-\u065F]/g, '');
+            if (isRet) {
+              cancelled_cnt++;
+            } else if (paid < net && paid > 0) {
+              partial_cnt++;
+            } else if (normSt === 'محاسبة' || normSt === 'مكتمل' || paid >= net) {
+              completed_cnt++;
+            } else {
+              pending_cnt++;
+            }
+          });
+          return {
+            success: true,
+            data: {
+              cancelled_cnt,
+              partial_cnt,
+              pending_cnt,
+              completed_cnt,
+              total_cnt: filtered.length
+            }
+          };
+        }
+
+        if (sLower.includes("date(?,'-1 day')") || sLower.includes("date( ? , '-1 day' )")) {
+          const todayParam = params[0] || today;
+          const d = new Date(todayParam);
+          d.setDate(d.getDate() - 1);
+          const yest = d.toISOString().split('T')[0];
+          const invs = WebDB.getInvoices().filter(i => (i.invoice_date || '').startsWith(yest) && !i.is_returned);
+          const total = invs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
+          return { success: true, data: { yest_total: total, total: total, cnt: invs.length } };
+        }
+
         if (sLower.includes('from invoices')) {
           const invs = WebDB.getInvoices();
           if (sLower.includes('sum(net_total)')) {
-            const todayInvs = invs.filter(i => (i.invoice_date || '').startsWith(today));
+            const todayInvs = invs.filter(i => (i.invoice_date || '').startsWith(today) && !i.is_returned);
             const total = todayInvs.reduce((s, i) => s + (parseFloat(i.net_total || i.dynamic_net_total) || 0), 0);
             return { success: true, data: { total: total, cnt: todayInvs.length } };
           }
@@ -1206,20 +1490,30 @@ if (typeof window !== 'undefined') {
           return { success: true, data: { total: total } };
         }
 
-        if (sLower.includes('from treasury') && sLower.includes('treasury_type')) {
+        if (sLower.includes('from advances')) {
+          return { success: true, data: { total: 0 } };
+        }
+
+        if (sLower.includes('from treasury')) {
           const tr = WebDB.getTreasury();
           let matchType = 'الخزينة';
           if (sLower.includes('فودافون')) matchType = 'فودافون كاش';
           else if (sLower.includes('إنستا')) matchType = 'إنستا باي';
           else if (sLower.includes('فيزا')) matchType = 'فيزا';
 
-          const total = tr.filter(t => (t.date || '').startsWith(today) && t.treasury_type === matchType)
-            .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
+          let filtered = tr.filter(t => WebDB.normalizeTreasuryType(t.treasury_type) === matchType);
+          if (sLower.includes('date=?') || sLower.includes('date = ?')) {
+            filtered = filtered.filter(t => (t.date || '').startsWith(today));
+          }
+          const total = filtered.reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount || 0) : -parseFloat(t.amount || 0)), 0);
           return { success: true, data: { net: Math.max(0, total) } };
         }
 
         if (sLower.includes('from customers')) {
           const custs = WebDB.getCustomers();
+          if (sLower.includes('count(')) {
+            return { success: true, data: { cnt: custs.length } };
+          }
           if (params.length > 0) {
             const p = String(params[0]).trim();
             const found = custs.find(c => (c.phone && c.phone === p) || (c.name && c.name.includes(p)));
@@ -1316,39 +1610,50 @@ if (typeof window !== 'undefined') {
       updateInvoiceStatus: async () => ({ success: true }),
       reversePayment: async () => ({ success: true }),
       addTreasuryEntry: async (type, notes, amount, treasuryType = 'الخزينة') => {
+        const normType = WebDB.normalizeTreasuryType(treasuryType);
         try {
           const res = await fetch('/api/db/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sql: `INSERT INTO treasury (type, notes, amount, treasury_type, date, time) VALUES (?,?,?,?,?,?)`,
-              params: [type, notes, amount, treasuryType, getLocalISODate(), new Date().toTimeString().slice(0,5)]
+              params: [type, notes, amount, normType, getLocalISODate(), new Date().toTimeString().slice(0,5)]
             })
           });
-          if (res.ok) return await res.json();
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success) {
+              WebDB.addTreasury(type, notes, amount, normType);
+              return data;
+            }
+          }
         } catch(e) {}
-        WebDB.addTreasury(type, notes, amount, treasuryType);
+        WebDB.addTreasury(type, notes, amount, normType);
         return { success: true };
       },
       getTreasuryBalance: async (type = 'الخزينة') => {
+        const normType = WebDB.normalizeTreasuryType(type);
         try {
           const res = await fetch('/api/db/queryOne', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sql: `SELECT COALESCE(SUM(CASE WHEN type='إيراد' THEN amount ELSE -amount END),0) as balance FROM treasury WHERE treasury_type=?`,
-              params: [type]
+              params: [normType]
             })
           });
           if (res.ok) {
             const data = await res.json();
-            if (data && data.success && data.data) return parseFloat(data.data.balance) || 0;
+            if (data && data.success && data.data) {
+              const val = parseFloat(data.data.balance) || 0;
+              return { success: true, data: val };
+            }
           }
         } catch(e) {}
         const tr = WebDB.getTreasury();
-        const total = tr.filter(t => t.treasury_type === type)
-          .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
-        return Math.max(0, total);
+        const total = tr.filter(t => WebDB.normalizeTreasuryType(t.treasury_type) === normType)
+          .reduce((s, t) => s + (t.type === 'إيراد' ? parseFloat(t.amount || 0) : -parseFloat(t.amount || 0)), 0);
+        return { success: true, data: Math.max(0, total) };
       },
       getLowStockItems: async () => ({ success: true, data: [] }),
       getUnreadWhatsAppMessagesCount: async () => ({ success: true, count: 0 })

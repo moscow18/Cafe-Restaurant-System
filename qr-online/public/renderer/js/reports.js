@@ -769,7 +769,7 @@ function buildReportReceiptHTML(inv, settings) {
       <!-- Prominent Order Type Boxed Badge -->
       <div style="text-align:center; margin:5px 0 6px; padding:6px 4px; border:2.5px solid #000; border-radius:6px; background:#fff;">
         <div style="font-size:17px; font-weight:900; color:#000; letter-spacing:0.5px; line-height:1.2;">
-          ★ ${orderBadgeText} ★
+          ${orderBadgeText}
         </div>
         ${orderDetailText ? `<div style="font-size:13px; font-weight:900; color:#000; margin-top:2px;">${orderDetailText}</div>` : ''}
       </div>

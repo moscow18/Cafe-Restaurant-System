@@ -2954,7 +2954,7 @@ function buildKitchenTicketStandaloneHTML(diffItems = null) {
   <div class="thermal-page">
     <div style="text-align:center; padding-bottom:5px; border-bottom:2px solid #000; margin-bottom:5px;">
       <div style="font-size:18px; font-weight:900; line-height:1.2; color:#000;">
-        ★ بون تجهيز - ${orderTitle} ★
+        بون تجهيز - ${orderTitle}
       </div>
       ${tableLabel ? `<div style="font-size:22px; font-weight:900; margin:4px 0 2px; color:#000;">طاولة: ${tableLabel}</div>` : ''}
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:900; margin-top:4px; color:#000;">
@@ -3322,7 +3322,7 @@ function buildReceiptHTML(inv) {
       </div>
       ${contactHTML}
       <div style="text-align:center; font-size:12px; font-weight:900; color:#000; margin-top:3px;">
-        ${inv.is_check ? '★ شيك حساب طاولة (معاينة قبل الدفع) ★' : 'فاتورة ضريبية مبسطة | Tax Invoice'}
+        ${inv.is_check ? 'شيك حساب طاولة (معاينة قبل الدفع)' : 'فاتورة مبيعات'}
       </div>
 
       <div style="border-bottom:1.5px solid #000; margin:5px 0;"></div>
@@ -3404,7 +3404,7 @@ function buildReceiptHTML(inv) {
       <!-- Payment / Check Details -->
       ${inv.is_check ? `
       <div style="text-align:center; font-size:12.5px; font-weight:900; margin:6px 0; padding:5px; border:1.5px dashed #000; color:#000;">
-        ★ شيك حساب طاولة للمعاينة والدفع للكابتن ★
+        شيك حساب طاولة للمعاينة والدفع للكابتن
       </div>
       ` : `
       <div style="font-size:12px; font-weight:900; margin-top:2px; line-height:1.45; color:#000;">
@@ -3432,7 +3432,7 @@ function buildReceiptHTML(inv) {
 
       <!-- Footer -->
       <div style="text-align:center; font-size:12px; font-weight:900; line-height:1.4; margin:4px 0 2px; color:#000;">
-        <div>يسعدنا دائماً خدمتكم وتشريفكم لنا ✨</div>
+        <div>يسعدنا دائماً خدمتكم وتشريفكم لنا</div>
         <div style="font-size:11px; font-weight:800; margin-top:2px;">It is a pleasure to serve you</div>
         ${settings.phone ? `<div style="font-size:11px; font-weight:900; margin-top:2px;">لأي ملاحظات يرجى الاتصال: ${settings.phone}</div>` : ''}
       </div>

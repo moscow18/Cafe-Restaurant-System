@@ -512,9 +512,10 @@ async function loadTreasury(type='الخزينة'){
   const isVodafone=type==='فودافون كاش';
   const isInstapay=type==='إنستا باي';
   const balRes=await window.db.getTreasuryBalance(type);
-  if(balRes.success){
+  if(balRes && (balRes.success || typeof balRes.data !== 'undefined' || typeof balRes === 'number')){
+    const balVal = (typeof balRes.data !== 'undefined') ? Number(balRes.data) : Number(balRes || 0);
     const balEl=document.getElementById(isVodafone?'vodafoneBalance':(isInstapay?'instapayBalance':'treasuryBalance1'));
-    if(balEl) balEl.textContent=Number(balRes.data).toLocaleString('en-US')+' جنيه';
+    if(balEl) balEl.textContent=balVal.toLocaleString('en-US')+' جنيه';
   }
   const from=document.getElementById('filterFrom').value;
   const to=document.getElementById('filterTo').value;
